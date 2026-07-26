@@ -39,6 +39,15 @@ app.get('/next-bus', async (req, res) => {
 });
 
 const PORT = Number(process.env.PORT ?? 3000);
+
+// デバッグ用: 環境変数が実際に読み込めているか確認（パスワード部分は伏せる）
+if (process.env.DATABASE_URL) {
+  const masked = process.env.DATABASE_URL.replace(/:([^:@]+)@/, ':****@');
+  console.log(`[startup] DATABASE_URL detected: ${masked}`);
+} else {
+  console.log('[startup] DATABASE_URL is NOT set. Falling back to localhost.');
+}
+
 app.listen(PORT, () => {
   console.log(`API server listening on port ${PORT}`);
 });
