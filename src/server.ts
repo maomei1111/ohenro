@@ -38,6 +38,40 @@ app.get('/next-bus', async (req, res) => {
   }
 });
 
+// WebView(file://)からOverpass APIへ直接fetchするとCORS(Origin: null)で拒否されるため、
+// サーバー側で代理リクエストする。ブラウザ⇔サーバー間はcors()で許可済み、
+// サーバー⇔Overpass間はサーバー同士の通信なのでCORSの制約を受けない。
+app.get('/overpass-proxy', async (req, res) => {
+  try {
+    const bbox = String(req.query.bbox ?? ''); // "south,west,north,east"
+    if (!bbox || bbox.split(',').length !== 4) {
+      return res.status(400).json({ error: 'bbox は "south,west,north,east" 形式で必須です' });
+    }
+
+    const query = `[out:json][timeout:20];(
+      node["name"]["amenity"~"place_of_worship|cafe|restaurant|fuel"](${bbox});
+      node["name"]["shop"~"convenience|supermarket"](${bbox});
+      node["name"]["tourism"~"attraction|viewpoint|museum"](${bbox});
+      node["name"]["historic"](${bbox});
+      node["name"]["railway"~"station"](${bbox});
+      node["name"]["highway"="bus_stop"](${bbox});
+    );out body;`;
+
+    const overpassRes = await fetch('https://overpass-api.de/api/interpreter', {
+      method: 'POST',
+      body: query,
+    });
+    if (!overpassRes.ok) {
+      return res.status(502).json({ error: `overpass upstream error (status ${overpassRes.status})` });
+    }
+    const data = await overpassRes.json();
+    res.json(data);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'internal error' });
+  }
+});
+
 const PORT = Number(process.env.PORT ?? 3000);
 
 // デバッグ用: 環境変数が実際に読み込めているか確認（パスワード部分は伏せる）
