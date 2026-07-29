@@ -34,13 +34,22 @@ export async function findNextBus(
 
   // 出発側の停留所候補 × 到着側の停留所候補、それぞれの組み合わせで
   // 同じtrip上に両方の停留所があり、出発→到着の順で通過する便を探す。
+  // 停留所の座標も併せて取得し、地図側で「徒歩→バス→徒歩」の3区間を描けるようにする。
   const rows = await ds.query(
     `
     SELECT
       st_from.departure_time AS from_departure,
       st_to.arrival_time     AS to_arrival,
       st_from.trip_id,
-      st_from.agency_key
+      st_from.agency_key,
+      st_from.stop_id   AS from_stop_id,
+      s_from.stop_name  AS from_stop_name,
+      s_from.stop_lat   AS from_stop_lat,
+      s_from.stop_lon   AS from_stop_lon,
+      st_to.stop_id     AS to_stop_id,
+      s_to.stop_name    AS to_stop_name,
+      s_to.stop_lat     AS to_stop_lat,
+      s_to.stop_lon     AS to_stop_lon
     FROM gtfs_stop_times st_from
     JOIN gtfs_stop_times st_to
       ON st_from.agency_key = st_to.agency_key
@@ -53,6 +62,12 @@ export async function findNextBus(
       ON cal.agency_key = trip.agency_key
      AND cal.service_id = trip.service_id
      AND cal."${dayColumn}" = true
+    JOIN gtfs_stops s_from
+      ON s_from.agency_key = st_from.agency_key
+     AND s_from.stop_id    = st_from.stop_id
+    JOIN gtfs_stops s_to
+      ON s_to.agency_key = st_to.agency_key
+     AND s_to.stop_id    = st_to.stop_id
     WHERE st_from.agency_key = ANY($1)
       AND st_from.stop_id = ANY($2)
       AND st_to.stop_id   = ANY($3)
