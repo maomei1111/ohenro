@@ -57,18 +57,29 @@ app.get('/overpass-proxy', async (req, res) => {
       node["name"]["highway"="bus_stop"](${bbox});
     );out body;`;
 
+    console.log(`[overpass-proxy] requesting bbox=${bbox}`);
     const overpassRes = await fetch('https://overpass-api.de/api/interpreter', {
       method: 'POST',
+      headers: {
+        'Content-Type': 'text/plain',
+        'User-Agent': 'ohenro-route-planner/1.0 (contact: dev)', // 一部APIはUser-Agent必須のため明示
+      },
       body: query,
     });
+
     if (!overpassRes.ok) {
-      return res.status(502).json({ error: `overpass upstream error (status ${overpassRes.status})` });
+      const bodyText = await overpassRes.text();
+      console.error(`[overpass-proxy] upstream error status=${overpassRes.status} body=${bodyText.slice(0, 500)}`);
+      return res.status(502).json({
+        error: `overpass upstream error (status ${overpassRes.status})`,
+        upstreamBody: bodyText.slice(0, 300),
+      });
     }
     const data = await overpassRes.json();
     res.json(data);
   } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: 'internal error' });
+    console.error('[overpass-proxy] exception:', e);
+    res.status(500).json({ error: 'internal error', detail: (e as Error).message });
   }
 });
 
