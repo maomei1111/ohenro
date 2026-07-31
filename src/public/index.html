@@ -522,6 +522,32 @@ async function fetchNextBus(fromNo, toNo, timeStr, weekday){
   }
 }
 
+// agency_key(内部識別子)→日本語の事業者名。GTFS取り込み時に付けたキーと対応させている。
+const AGENCY_NAMES = {
+  tokushimabus: '徳島バス',
+  yonkoh: '四国交通',
+  murotocity: '室戸市営バス「むろはぴ号」',
+  yasudatown: '安田町「やすら号」',
+  konancity: '香南市営バス',
+  nankokucity: '南国市「NACOバス」',
+  tosaden: 'とさでん交通',
+  myyubus: 'MY遊バス',
+  tosacity: '土佐市「ドラゴンバス」',
+  shimantocity: '四万十市営バス',
+  sukumo_yururin: '宿毛市「ゆるりんバス」',
+  sukumo_hana: '宿毛市「はなちゃんバス」',
+  kotoden: 'ことでんバス',
+  mitoyo: '三豊市コミュニティバス',
+  sanuki: 'さぬき市バス',
+  kotosan_sakaide: '琴参バス（坂出路線）',
+  kotosan_seiline: '琴参バス（坂出瀬居線）',
+  ozu: '大洲市内循環バス「ぐるりんおおず」',
+  iyo: '伊予市コミュニティバス「あいくる」',
+};
+function agencyDisplayName(key){
+  return AGENCY_NAMES[key] || key;
+}
+
 async function runPlanner(){
   const startNo = Number(startSel.value);
   const endNo = Number(endSel.value);
@@ -580,8 +606,8 @@ async function runPlanner(){
           chosen = 'bus';
           arriveMin = busArrive;
           note = busResult.transfers === 1
-            ? `${busResult.agency_key}｜${busResult.from_departure}発 → 「${busResult.mid_stop_name}」で乗り換え(${busResult.mid_arrival}着/${busResult.mid_departure}発) → ${busResult.to_arrival}着`
-            : `${busResult.agency_key}｜${busResult.from_departure}発 → ${busResult.to_arrival}着`;
+            ? `${agencyDisplayName(busResult.agency_key)}｜${busResult.from_departure}発 → 「${busResult.mid_stop_name}」で乗り換え(${busResult.mid_arrival}着/${busResult.mid_departure}発) → ${busResult.to_arrival}着`
+            : `${agencyDisplayName(busResult.agency_key)}｜${busResult.from_departure}発 → ${busResult.to_arrival}着`;
         } else {
           chosen = 'walk';
           arriveMin = walkArrive;
@@ -764,16 +790,22 @@ function landmarkLabel(tags){
 
 function landmarkColor(tags){
   const p = landmarkPriority(tags);
-  if(p===1) return '#2E7D32';
-  if(p===2) return '#1D2B4F';
-  if(p===3) return '#AD8A50';
-  if(p===4) return '#C0472C';
-  if(p===5) return '#5B6B4F';
+  if(p===1) return '#2E7D32'; // トイレ: 緑
+  if(p===2) return '#1D2B4F'; // 宿泊: 紺
+  if(p===3) return '#AD8A50'; // 道の駅: 金
+  if(p===4) return '#C0472C'; // 温泉: 朱
+  if(p===5) return '#5B6B4F'; // 自販機: 落ち着いた緑
+  if(tags.amenity==='place_of_worship') return '#7B4B94'; // 寺社: 紫
+  if(tags.shop) return '#B5651D'; // 商店: 茶
+  if(tags.amenity==='cafe' || tags.amenity==='restaurant') return '#D08A2E'; // 飲食: 橙
+  if(tags.railway==='station') return '#2C6E8C'; // 駅: 青
+  if(tags.highway==='bus_stop') return '#8C6E2C'; // バス停: 黄土色
+  if(tags.historic) return '#5C4A3D'; // 史跡: こげ茶
+  if(tags.tourism) return '#3C7A6E'; // 観光: 深緑がかった青
   return '#8a8578';
 }
 
-// 優先度の高い5カテゴリだけ絵文字アイコンを割り当て、視覚的に見分けやすくする
-// (それ以外の既存カテゴリは、地図が煩雑になりすぎないよう引き続きシンプルな丸のまま)
+// 全カテゴリに絵文字アイコンを割り当て、地図上で一目でジャンルが分かるようにする
 function landmarkGlyph(tags){
   const p = landmarkPriority(tags);
   if(p===1) return '🚻';
@@ -781,7 +813,14 @@ function landmarkGlyph(tags){
   if(p===3) return '🛣️';
   if(p===4) return '♨️';
   if(p===5) return '🥤';
-  return null;
+  if(tags.amenity==='place_of_worship') return '卍'; // 地図記号でおなじみの寺院マーク
+  if(tags.shop) return '🏪';
+  if(tags.amenity==='cafe' || tags.amenity==='restaurant') return '🍴';
+  if(tags.railway==='station') return '🚉';
+  if(tags.highway==='bus_stop') return '🚏';
+  if(tags.historic) return '🏯';
+  if(tags.tourism) return '📷';
+  return '📍';
 }
 
 function drawPolyline(coords, color, dashed){
@@ -819,10 +858,7 @@ function addPinMarker(position, color, label, title, scale, labelFontSize){
 function addLandmarkMarker(lm){
   const color = landmarkColor(lm.tags);
   const glyph = landmarkGlyph(lm.tags);
-  // 絵文字アイコンがあるカテゴリは少し大きめの丸に、無いカテゴリ(既存の寺社・商店等)は小さい丸のまま
-  const marker = glyph
-    ? addPinMarker({lat:lm.lat, lng:lm.lng}, color, glyph, lm.name, 10, '12px')
-    : addPinMarker({lat:lm.lat, lng:lm.lng}, color, null, lm.name, 6);
+  const marker = addPinMarker({lat:lm.lat, lng:lm.lng}, color, glyph, lm.name, 10, '12px');
   marker.addListener('click', ()=>{
     new google.maps.InfoWindow({
       content: `<div style="font-family:'Noto Sans JP',sans-serif;font-size:12px;">${lm.name}</div>`
@@ -940,6 +976,11 @@ async function openMap(fromNo, toNo, mode, note, distanceKm, busResult){
       landmarks = await fetchLandmarks(allCoords);
       if(myToken !== mapReqToken) return;
       landmarksOk = true;
+      // 出発・到着の札所自体は既に大きいピンで表示済みなので、目印一覧からは除外する
+      landmarks = landmarks.filter(lm =>
+        metersBetween(lm.lat, lm.lng, from.lat, from.lng) > 60 &&
+        metersBetween(lm.lat, lm.lng, to.lat, to.lng) > 60
+      );
       landmarks.forEach(addLandmarkMarker);
     }catch(e){
       lmErr = e.message;
