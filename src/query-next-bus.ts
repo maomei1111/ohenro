@@ -1,5 +1,7 @@
 /**
  * 「札所Aから札所Bへ、指定時刻以降で最初に乗れる便」を検索するクエリ。
+ * 直通便に加えて、同一事業者内での「乗り換え1回まで」の経路も探索し、
+ * 早く着く方を返す。
  *
  * 実務上の注意:
  *  - GTFSの時刻は "25:30:00" のように24時を超える表記がある（深夜便対応のため）。
@@ -7,9 +9,16 @@
  *  - 曜日（平日/土日祝）は calendar.txt の service_id で絞り込む。
  *    祝日の特例は calendar_dates.txt（今回は未実装）で上書きされるので、
  *    本格運用では calendar_dates.txt も取り込むこと。
+ *
+ * 乗り換え機能の割り切り（設計時に合意した制約）:
+ *  - 乗り換えは1回まで（2回以上の乗り継ぎは非対応）
+ *  - 乗り換えは同一事業者内のみ対象（事業者をまたぐ乗り換えは非対応）
+ *  - 乗り換えに必要な時間は一律5分固定（停留所間の徒歩移動などは考慮しない）
  */
 import { AppDataSource } from './data-source';
 import { TempleStopLink } from './entities/gtfs.entities';
+
+const TRANSFER_MINUTES = 5; // 乗り換えに最低限必要な時間（固定値）
 
 function gtfsTimeToMinutes(hhmmss: string): number {
   const [h, m] = hhmmss.split(':').map(Number);
@@ -18,23 +27,14 @@ function gtfsTimeToMinutes(hhmmss: string): number {
 
 const WEEKDAY_COLUMNS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
 
-export async function findNextBus(
-  fromTempleNo: number,
-  toTempleNo: number,
-  afterMinutes: number, // 0:00からの経過分。例: 9:15 -> 555
-  weekday: number // 0=日曜 ... 6=土曜 (Date.getDay()の値をそのまま渡せる)
+async function findDirectBus(
+  fromLinks: TempleStopLink[],
+  toLinks: TempleStopLink[],
+  afterMinutes: number,
+  dayColumn: string
 ) {
-  const ds = AppDataSource.isInitialized ? AppDataSource : await AppDataSource.initialize();
+  const ds = AppDataSource;
 
-  const fromLinks = await ds.getRepository(TempleStopLink).find({ where: { temple_no: fromTempleNo } });
-  const toLinks = await ds.getRepository(TempleStopLink).find({ where: { temple_no: toTempleNo } });
-  if (!fromLinks.length || !toLinks.length) return null;
-
-  const dayColumn = WEEKDAY_COLUMNS[weekday];
-
-  // 出発側の停留所候補 × 到着側の停留所候補、それぞれの組み合わせで
-  // 同じtrip上に両方の停留所があり、出発→到着の順で通過する便を探す。
-  // 停留所の座標も併せて取得し、地図側で「徒歩→バス→徒歩」の3区間を描けるようにする。
   const rows = await ds.query(
     `
     SELECT
@@ -80,17 +80,149 @@ export async function findNextBus(
     ]
   );
 
-  // afterMinutes以降で最も早い便を選ぶ（GTFSの25:xx:xx表記もgtfsTimeToMinutesで正しく分換算される）
   const candidates = rows
     .map((r: any) => ({
       ...r,
+      transfers: 0,
       departureMin: gtfsTimeToMinutes(r.from_departure),
       arrivalMin: gtfsTimeToMinutes(r.to_arrival),
     }))
     .filter((r: any) => r.departureMin >= afterMinutes)
-    .sort((a: any, b: any) => a.departureMin - b.departureMin);
+    .sort((a: any, b: any) => a.arrivalMin - b.arrivalMin);
 
   return candidates[0] ?? null;
+}
+
+async function findOneTransferBus(
+  fromLinks: TempleStopLink[],
+  toLinks: TempleStopLink[],
+  afterMinutes: number,
+  dayColumn: string
+) {
+  const ds = AppDataSource;
+
+  // leg1: 出発停留所 → 中継停留所（乗換候補地点） / leg2: 中継停留所 → 到着停留所
+  // 同一事業者内の乗り換えのみを対象とする（JOIN条件の agency_key 一致で担保）
+  const rows = await ds.query(
+    `
+    SELECT
+      leg1.agency_key   AS agency_key,
+      leg1.trip1        AS trip1,
+      leg1.from_departure,
+      leg1.mid_stop_id,
+      leg1.mid_stop_name,
+      leg1.mid_arrival,
+      leg2.trip2        AS trip2,
+      leg2.mid_departure,
+      leg2.to_stop_id,
+      leg2.to_stop_name,
+      leg2.to_stop_lat,
+      leg2.to_stop_lon,
+      leg2.to_arrival
+    FROM (
+      SELECT
+        st_a.agency_key   AS agency_key,
+        st_a.trip_id      AS trip1,
+        st_a.departure_time AS from_departure,
+        st_b.stop_id      AS mid_stop_id,
+        s_b.stop_name     AS mid_stop_name,
+        st_b.arrival_time AS mid_arrival
+      FROM gtfs_stop_times st_a
+      JOIN gtfs_stop_times st_b
+        ON st_a.agency_key = st_b.agency_key
+       AND st_a.trip_id    = st_b.trip_id
+       AND st_b.stop_sequence > st_a.stop_sequence
+      JOIN gtfs_trips trip1
+        ON trip1.agency_key = st_a.agency_key AND trip1.trip_id = st_a.trip_id
+      JOIN gtfs_calendar cal1
+        ON cal1.agency_key = trip1.agency_key
+       AND cal1.service_id = trip1.service_id
+       AND cal1."${dayColumn}" = true
+      JOIN gtfs_stops s_b
+        ON s_b.agency_key = st_b.agency_key AND s_b.stop_id = st_b.stop_id
+      WHERE st_a.agency_key = ANY($1)
+        AND st_a.stop_id = ANY($2)
+    ) leg1
+    JOIN (
+      SELECT
+        st_c.agency_key   AS agency_key,
+        st_c.trip_id      AS trip2,
+        st_c.stop_id      AS mid_stop_id,
+        st_c.departure_time AS mid_departure,
+        st_d.stop_id      AS to_stop_id,
+        s_d.stop_name     AS to_stop_name,
+        s_d.stop_lat      AS to_stop_lat,
+        s_d.stop_lon      AS to_stop_lon,
+        st_d.arrival_time AS to_arrival
+      FROM gtfs_stop_times st_c
+      JOIN gtfs_stop_times st_d
+        ON st_c.agency_key = st_d.agency_key
+       AND st_c.trip_id    = st_d.trip_id
+       AND st_d.stop_sequence > st_c.stop_sequence
+      JOIN gtfs_trips trip2
+        ON trip2.agency_key = st_c.agency_key AND trip2.trip_id = st_c.trip_id
+      JOIN gtfs_calendar cal2
+        ON cal2.agency_key = trip2.agency_key
+       AND cal2.service_id = trip2.service_id
+       AND cal2."${dayColumn}" = true
+      JOIN gtfs_stops s_d
+        ON s_d.agency_key = st_d.agency_key AND s_d.stop_id = st_d.stop_id
+      WHERE st_d.stop_id = ANY($3)
+    ) leg2
+      ON leg2.agency_key = leg1.agency_key
+     AND leg2.mid_stop_id = leg1.mid_stop_id
+     AND leg2.trip2 <> leg1.trip1
+    ORDER BY leg1.mid_arrival ASC
+    `,
+    [
+      Array.from(new Set(fromLinks.map((l) => l.agency_key))),
+      fromLinks.map((l) => l.stop_id),
+      toLinks.map((l) => l.stop_id),
+    ]
+  );
+
+  const candidates = rows
+    .map((r: any) => ({
+      ...r,
+      transfers: 1,
+      departureMin: gtfsTimeToMinutes(r.from_departure),
+      midArrivalMin: gtfsTimeToMinutes(r.mid_arrival),
+      midDepartureMin: gtfsTimeToMinutes(r.mid_departure),
+      arrivalMin: gtfsTimeToMinutes(r.to_arrival),
+    }))
+    .filter(
+      (r: any) =>
+        r.departureMin >= afterMinutes && r.midDepartureMin >= r.midArrivalMin + TRANSFER_MINUTES
+    )
+    .sort((a: any, b: any) => a.arrivalMin - b.arrivalMin);
+
+  return candidates[0] ?? null;
+}
+
+export async function findNextBus(
+  fromTempleNo: number,
+  toTempleNo: number,
+  afterMinutes: number, // 0:00からの経過分。例: 9:15 -> 555
+  weekday: number // 0=日曜 ... 6=土曜 (Date.getDay()の値をそのまま渡せる)
+) {
+  const ds = AppDataSource.isInitialized ? AppDataSource : await AppDataSource.initialize();
+
+  const fromLinks = await ds.getRepository(TempleStopLink).find({ where: { temple_no: fromTempleNo } });
+  const toLinks = await ds.getRepository(TempleStopLink).find({ where: { temple_no: toTempleNo } });
+  if (!fromLinks.length || !toLinks.length) return null;
+
+  const dayColumn = WEEKDAY_COLUMNS[weekday];
+
+  const [direct, withTransfer] = await Promise.all([
+    findDirectBus(fromLinks, toLinks, afterMinutes, dayColumn),
+    findOneTransferBus(fromLinks, toLinks, afterMinutes, dayColumn),
+  ]);
+
+  // 両方見つかった場合は、到着が早い方を採用
+  if (direct && withTransfer) {
+    return direct.arrivalMin <= withTransfer.arrivalMin ? direct : withTransfer;
+  }
+  return direct ?? withTransfer ?? null;
 }
 
 // CLIから直接実行された場合のみ動作確認用に実行
