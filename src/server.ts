@@ -30,6 +30,20 @@ app.get('/temples', (_req, res) => {
   res.json(temples88);
 });
 
+// メインのプランナー画面を配信。Google Maps APIキーはビルド時に埋め込まず、
+// リクエスト時に環境変数から動的に埋め込む(コードにキーを残さないため)。
+const indexTemplatePath = path.join(__dirname, 'public', 'index.html');
+app.get('/', (_req, res) => {
+  try {
+    let html = fs.readFileSync(indexTemplatePath, 'utf-8');
+    html = html.replace('{{GOOGLE_MAPS_API_KEY}}', process.env.GOOGLE_MAPS_API_KEY ?? '');
+    res.type('html').send(html);
+  } catch (e) {
+    console.error('[/] failed to serve index.html:', e);
+    res.status(500).send('internal error');
+  }
+});
+
 app.get('/health', (_req, res) => {
   res.json({ ok: true });
 });

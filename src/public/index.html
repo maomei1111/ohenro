@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>遍路みちしるべ ― 徒歩×公共交通 周遊プランナー</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@500;700&family=Noto+Sans+JP:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script async src="https://maps.googleapis.com/maps/api/js?key={{GOOGLE_MAPS_API_KEY}}&callback=__initGoogleMaps"></script>
+<style>
+  :root{
+    --indigo-deep:#1D2B4F;
+    --indigo-mid:#33507A;
+    --washi:#EFE6D6;
+    --washi-panel:#F7F1E6;
+    --sumi:#2B2825;
+    --vermillion:#A63A2A;
+    --gold:#AD8A50;
+    --line-walk:#5B6B4F;
+    --line-bus:#A63A2A;
+    --warn-bg:#F4E2DA;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--washi);
+    color:var(--sumi);
+    font-family:'Noto Sans JP', sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{ font-family:'JetBrains Mono', monospace; }
+
+  .hero{
+    background:
+      radial-gradient(circle at 85% -10%, rgba(255,255,255,0.06), transparent 55%),
+      var(--indigo-deep);
+    color:var(--washi);
+    padding:48px 24px 40px;
+    position:relative;
+    overflow:hidden;
+  }
+  .hero::after{
+    content:"";
+    position:absolute;
+    right:-40px; bottom:-60px;
+    width:260px; height:260px;
+    border:1px solid rgba(239,230,214,0.15);
+    border-radius:50%;
+  }
+  .hero-eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    letter-spacing:0.18em;
+    color:var(--gold);
+    text-transform:uppercase;
+    margin-bottom:14px;
+  }
+  .hero h1{
+    font-family:'Noto Serif JP', serif;
+    font-weight:700;
+    font-size:clamp(28px, 4vw, 40px);
+    margin:0 0 12px;
+    line-height:1.3;
+  }
+  .hero p{
+    max-width:640px;
+    font-size:15px;
+    line-height:1.9;
+    color:rgba(239,230,214,0.82);
+    margin:0;
+  }
+
+  .wrap{ max-width:920px; margin:0 auto; padding:0 24px; }
+
+  .panel{
+    background:var(--washi-panel);
+    border:1px solid rgba(43,40,37,0.1);
+    border-radius:4px;
+    padding:28px;
+    margin-top:-28px;
+    position:relative;
+    z-index:2;
+    box-shadow:0 12px 30px rgba(29,43,79,0.08);
+  }
+
+  .controls{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr auto;
+    gap:16px;
+    align-items:end;
+  }
+  @media (max-width:720px){ .controls{ grid-template-columns:1fr 1fr; } }
+
+  label{
+    display:block;
+    font-size:11px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--indigo-mid);
+    margin-bottom:6px;
+    font-weight:700;
+  }
+  select, input[type=time]{
+    width:100%;
+    padding:10px 12px;
+    border:1px solid rgba(43,40,37,0.25);
+    border-radius:2px;
+    background:#fff;
+    font-family:'Noto Sans JP', sans-serif;
+    font-size:14px;
+    color:var(--sumi);
+  }
+  .mode-toggle{
+    display:flex;
+    border:1px solid var(--indigo-mid);
+    border-radius:2px;
+    overflow:hidden;
+    height:41px;
+  }
+  .mode-toggle button{
+    flex:1;
+    border:none;
+    background:#fff;
+    color:var(--indigo-mid);
+    font-size:12.5px;
+    font-weight:700;
+    cursor:pointer;
+    font-family:'Noto Sans JP', sans-serif;
+  }
+  .mode-toggle button.active{
+    background:var(--indigo-mid);
+    color:#fff;
+  }
+
+  .run-btn{
+    grid-column:1/-1;
+    margin-top:4px;
+    background:var(--vermillion);
+    color:#fff;
+    border:none;
+    padding:13px 20px;
+    font-size:14px;
+    font-weight:700;
+    letter-spacing:0.03em;
+    border-radius:2px;
+    cursor:pointer;
+    font-family:'Noto Sans JP', sans-serif;
+  }
+  .run-btn:hover{ filter:brightness(1.08); }
+
+  .legend{
+    display:flex;
+    gap:22px;
+    margin:26px 0 6px;
+    font-size:12.5px;
+    color:var(--indigo-mid);
+    flex-wrap:wrap;
+  }
+  .legend span{ display:flex; align-items:center; gap:7px; }
+  .swatch{ width:20px; height:3px; display:inline-block; }
+  .swatch.walk{ background:var(--line-walk); }
+  .swatch.bus{ background:none; border-top:2px dashed var(--line-bus); height:0; width:20px; }
+
+  .timeline{ margin:18px 0 40px; position:relative; }
+  .stop{
+    display:grid;
+    grid-template-columns:64px 1fr;
+    gap:18px;
+    position:relative;
+  }
+  .stop-rail{
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+  }
+  .stop-dot{
+    width:14px; height:14px;
+    border-radius:50%;
+    background:var(--indigo-deep);
+    border:3px solid var(--washi-panel);
+    outline:1px solid rgba(43,40,37,0.2);
+    z-index:2;
+    margin-top:6px;
+  }
+  .stop-connector{
+    flex:1;
+    width:0;
+    border-left:2px solid var(--line-walk);
+    margin:2px 0;
+  }
+  .stop-connector.bus{
+    border-left:2px dashed var(--line-bus);
+  }
+  .stop-time{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    color:var(--indigo-mid);
+    margin-top:4px;
+  }
+
+  .stop-card{
+    padding:14px 0 26px;
+  }
+  .stop-title{
+    font-family:'Noto Serif JP', serif;
+    font-weight:700;
+    font-size:17px;
+    margin:2px 0 4px;
+  }
+  .stop-title .no{
+    color:var(--vermillion);
+    font-family:'JetBrains Mono', monospace;
+    font-size:13px;
+    margin-right:8px;
+  }
+  .stop-meta{ font-size:12.5px; color:#5a564f; margin-bottom:8px; }
+  .nokyo-badge{
+    display:inline-block;
+    font-size:11px;
+    padding:3px 8px;
+    border-radius:2px;
+    font-weight:700;
+    letter-spacing:0.02em;
+  }
+  .nokyo-ok{ background:#E4EBDD; color:#3E5A2C; }
+  .nokyo-warn{ background:var(--warn-bg); color:var(--vermillion); }
+
+  .segment-note{
+    margin-top:8px;
+    font-size:13px;
+    background:#fff;
+    border:1px solid rgba(43,40,37,0.1);
+    border-radius:2px;
+    padding:10px 90px 10px 12px;
+    line-height:1.7;
+    cursor:pointer;
+    transition:border-color 0.15s, box-shadow 0.15s;
+    position:relative;
+    min-height:20px;
+  }
+  .segment-note:hover{
+    border-color:var(--indigo-mid);
+    box-shadow:0 3px 10px rgba(29,43,79,0.1);
+  }
+  .segment-note::after{
+    content:"地図を見る \2192";
+    position:absolute;
+    right:12px; bottom:10px;
+    font-size:11px;
+    color:var(--indigo-mid);
+    font-family:'JetBrains Mono', monospace;
+    white-space:nowrap;
+  }
+  .segment-note b{ color:var(--indigo-deep); }
+  .badge-mode{
+    font-family:'JetBrains Mono', monospace;
+    font-size:10.5px;
+    padding:2px 6px;
+    border-radius:2px;
+    margin-right:6px;
+    font-weight:700;
+  }
+  .badge-mode.walk{ background:#E7EBE0; color:var(--line-walk); }
+  .badge-mode.bus{ background:#F4E2DA; color:var(--line-bus); }
+  .badge-mode.transfer{ background:#EFE3C8; color:var(--gold); margin-left:4px; }
+
+  .summary{
+    background:var(--indigo-deep);
+    color:var(--washi);
+    border-radius:4px;
+    padding:22px 24px;
+    margin-bottom:44px;
+    display:flex;
+    gap:32px;
+    flex-wrap:wrap;
+  }
+  .summary .figure{ min-width:120px; }
+  .summary .figure .num{
+    font-family:'JetBrains Mono', monospace;
+    font-size:26px;
+    font-weight:700;
+    color:#fff;
+  }
+  .summary .figure .lbl{
+    font-size:11px;
+    letter-spacing:0.06em;
+    color:rgba(239,230,214,0.7);
+    text-transform:uppercase;
+    margin-top:2px;
+  }
+
+  .footnote{
+    font-size:12px;
+    color:#8a8578;
+    line-height:1.8;
+    padding-bottom:40px;
+  }
+
+  .map-overlay{
+    display:none;
+    position:fixed; inset:0;
+    background:rgba(29,43,79,0.55);
+    z-index:50;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+  }
+  .map-overlay.open{ display:flex; }
+  .map-modal{
+    background:var(--washi-panel);
+    border-radius:4px;
+    width:100%;
+    max-width:640px;
+    overflow:hidden;
+    box-shadow:0 20px 50px rgba(0,0,0,0.35);
+  }
+  .map-modal-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:14px 18px;
+    background:var(--indigo-deep);
+    color:var(--washi);
+  }
+  .map-modal-head h3{
+    font-family:'Noto Serif JP', serif;
+    font-size:16px;
+    margin:0;
+    font-weight:700;
+  }
+  .map-modal-head .sub{
+    font-size:11px;
+    color:rgba(239,230,214,0.7);
+    font-family:'JetBrains Mono', monospace;
+    margin-top:2px;
+  }
+  .map-close{
+    background:none;
+    border:1px solid rgba(239,230,214,0.4);
+    color:var(--washi);
+    width:28px; height:28px;
+    border-radius:50%;
+    cursor:pointer;
+    font-size:15px;
+    line-height:1;
+  }
+  #mapCanvas{ width:100%; height:360px; }
+  .map-modal-foot{
+    padding:12px 18px 16px;
+    font-size:12px;
+    color:#5a564f;
+    line-height:1.7;
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="wrap">
+    <div class="hero-eyebrow">Ohenro Route Planner</div>
+    <h1>遍路みちしるべ<br>徒歩と公共交通、区間ごとに最適な移動手段を。</h1>
+    <p>四国八十八ヶ所すべてを対象にした周遊プランナーです。区間距離とバスダイヤをもとに、納経所が開いている時間内に次の札所へ着けるかを計算し、徒歩とバスのどちらが良いか区間ごとに提案します。※現在バスの実データが整備済みなのは徳島・高知・香川の一部エリアのみです。それ以外の区間は「バス便が見つかりません」と表示され、徒歩での計算になります。</p>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="panel">
+    <div class="controls">
+      <div>
+        <label>出発する札所</label>
+        <select id="startTemple"></select>
+      </div>
+      <div>
+        <label>到着したい札所</label>
+        <select id="endTemple"></select>
+      </div>
+      <div>
+        <label>出発時刻</label>
+        <input type="time" id="startTime" value="07:30">
+      </div>
+      <div>
+        <label>優先モード</label>
+        <div class="mode-toggle">
+          <button id="modeEfficient" class="active">効率優先</button>
+          <button id="modeWalk">徒歩優先</button>
+        </div>
+      </div>
+      <button class="run-btn" onclick="runPlanner()">ルートを計算する</button>
+    </div>
+
+    <div class="legend">
+      <span><span class="swatch walk"></span>徒歩区間</span>
+      <span><span class="swatch bus"></span>バス区間（実データAPI連携済み）</span>
+      <span class="mono" style="color:#8a8578;">納経所 標準受付 7:00–17:00 として計算</span>
+    </div>
+
+    <div id="summary"></div>
+    <div class="timeline" id="timeline"></div>
+
+    <div class="footnote">
+      ※ バス時刻は徳島バス・四国交通・とさでん交通・ことでんバス等の実GTFSデータに基づいています。区間距離は徒歩時間概算用の目安値、徒歩時間は平均時速4kmで概算しています。祝日特例（calendar_dates.txt）は未対応のため、祝日は実際のダイヤと異なる場合があります。地図・ルート表示にはGoogle Maps Platformを利用しています。
+    </div>
+  </div>
+</div>
+
+<div class="map-overlay" id="mapOverlay">
+  <div class="map-modal">
+    <div class="map-modal-head">
+      <div>
+        <h3 id="mapTitle">区間の地図</h3>
+        <div class="sub" id="mapSub"></div>
+      </div>
+      <button class="map-close" onclick="closeMap()">&times;</button>
+    </div>
+    <div id="mapCanvas"></div>
+    <div class="map-modal-foot" id="mapFoot"></div>
+  </div>
+</div>
+
+<script>
+// ---- 88札所データ（自前サーバーAPI経由。src/data/temples_88.json が単一の情報源）----
+const API_BASE = ''; // 同一オリジンから配信するため空文字（相対パス）でOK
+let temples = [];
+
+const startSel = document.getElementById('startTemple');
+const endSel = document.getElementById('endTemple');
+
+function metersBetween(lat1, lng1, lat2, lng2){
+  const R = 6371000;
+  const dLat = (lat2-lat1) * Math.PI/180;
+  const dLng = (lng2-lng1) * Math.PI/180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+function distToPolyline(lat, lng, coords){
+  let min = Infinity;
+  for(const [clat, clng] of coords){
+    const d = metersBetween(lat, lng, clat, clng);
+    if(d < min) min = d;
+  }
+  return min;
+}
+
+async function loadTemples(){
+  const res = await fetch(`${API_BASE}/temples`);
+  if(!res.ok) throw new Error(`temples API responded ${res.status}`);
+  const raw = await res.json();
+  raw.sort((a,b)=>a.no-b.no);
+  temples = raw.map((t, i) => {
+    const prev = raw[i-1];
+    const distanceKm = prev ? metersBetween(prev.lat, prev.lng, t.lat, t.lng)/1000 : 0;
+    return {
+      no: t.no, name: t.name, kana: '',
+      distanceKm: Math.round(distanceKm*10)/10,
+      lat: t.lat, lng: t.lng,
+    };
+  });
+}
+
+function populateTempleSelects(){
+  temples.forEach(t=>{
+    const label = `${t.no}番 ${t.name}`;
+    startSel.insertAdjacentHTML('beforeend', `<option value="${t.no}">${label}</option>`);
+    endSel.insertAdjacentHTML('beforeend', `<option value="${t.no}">${label}</option>`);
+  });
+  startSel.value = temples[0] ? temples[0].no : 1;
+  endSel.value = temples[9] ? temples[9].no : (temples[temples.length-1] ? temples[temples.length-1].no : 1);
+}
+
+let mode = 'efficient';
+document.getElementById('modeEfficient').onclick = ()=>{ mode='efficient'; setModeBtn(); };
+document.getElementById('modeWalk').onclick = ()=>{ mode='walk'; setModeBtn(); };
+function setModeBtn(){
+  document.getElementById('modeEfficient').classList.toggle('active', mode==='efficient');
+  document.getElementById('modeWalk').classList.toggle('active', mode==='walk');
+}
+
+function toMinutes(hhmm){
+  const [h,m] = hhmm.split(':').map(Number);
+  return h*60+m;
+}
+function toHHMM(mins){
+  mins = Math.round(mins);
+  const h = Math.floor(mins/60)%24;
+  const m = mins%60;
+  return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');
+}
+
+async function fetchNextBus(fromNo, toNo, timeStr, weekday){
+  try{
+    const url = `${API_BASE}/next-bus?from=${fromNo}&to=${toNo}&time=${encodeURIComponent(timeStr)}&weekday=${weekday}`;
+    const res = await fetch(url);
+    if(!res.ok) throw new Error(`API responded ${res.status}`);
+    const data = await res.json();
+    return data.result;
+  }catch(e){
+    console.warn('next-bus API fetch failed', e);
+    return undefined;
+  }
+}
+
+async function runPlanner(){
+  const startNo = Number(startSel.value);
+  const endNo = Number(endSel.value);
+  const startTimeStr = document.getElementById('startTime').value || '07:30';
+
+  if(startNo >= endNo){
+    document.getElementById('timeline').innerHTML =
+      `<div class="segment-note">出発の札所は到着の札所より番号が小さい必要があります（1→88番方向の順打ちのみ対応。逆打ちは今後対応予定）。</div>`;
+    document.getElementById('summary').innerHTML = '';
+    return;
+  }
+
+  document.getElementById('timeline').innerHTML = `<div class="segment-note">実データAPIに問い合わせて計算中…</div>`;
+  document.getElementById('summary').innerHTML = '';
+
+  const route = temples.filter(t=>t.no>=startNo && t.no<=endNo);
+  let currentMin = toMinutes(startTimeStr);
+  let totalWalkKm = 0, busSegments = 0, walkSegments = 0;
+  const NOKYO_CLOSE = toMinutes('17:00');
+  const weekday = new Date().getDay();
+
+  const arrival = [{ no:route[0].no, timeMin: currentMin, mode:null, note:null }];
+
+  for(let i=1;i<route.length;i++){
+    const seg = route[i];
+    const prevNo = route[i-1].no;
+    const walkMin = seg.distanceKm / 4 * 60;
+    let chosen, arriveMin, note, missedBus=false, busResult=null;
+
+    const walkArrive = currentMin + walkMin;
+
+    if(mode==='efficient'){
+      const queryTimeMin = currentMin + 10;
+      busResult = await fetchNextBus(prevNo, seg.no, toHHMM(queryTimeMin), weekday);
+
+      if(busResult === undefined){
+        chosen = 'walk';
+        arriveMin = walkArrive;
+        note = `バス情報の取得に失敗しました（通信エラー） → 徒歩で計算`;
+      } else if(busResult){
+        const busArrive = busResult.arrivalMin;
+        if(busArrive < walkArrive){
+          chosen = 'bus';
+          arriveMin = busArrive;
+          note = busResult.transfers === 1
+            ? `${busResult.agency_key}｜${busResult.from_departure}発 → 「${busResult.mid_stop_name}」で乗り換え(${busResult.mid_arrival}着/${busResult.mid_departure}発) → ${busResult.to_arrival}着`
+            : `${busResult.agency_key}｜${busResult.from_departure}発 → ${busResult.to_arrival}着`;
+        } else {
+          chosen = 'walk';
+          arriveMin = walkArrive;
+          note = `バス(${busResult.from_departure}発)より徒歩の方が早いため徒歩を推奨`;
+        }
+      } else {
+        chosen = 'walk';
+        arriveMin = walkArrive;
+        note = `この時間以降、実データ上でバス便が見つかりません → 徒歩`;
+        missedBus = true;
+      }
+    } else {
+      chosen = 'walk';
+      arriveMin = walkArrive;
+      note = `徒歩優先モード`;
+    }
+
+    if(chosen==='bus') busSegments++; else { walkSegments++; totalWalkKm += seg.distanceKm; }
+
+    currentMin = arriveMin;
+    arrival.push({ no:seg.no, timeMin:currentMin, mode:chosen, note, distanceKm:seg.distanceKm, missedBus, busResult: chosen==='bus' ? busResult : null });
+  }
+
+  lastArrival = arrival;
+
+  const finalMin = arrival[arrival.length-1].timeMin;
+  const overClose = finalMin > NOKYO_CLOSE;
+  document.getElementById('summary').innerHTML = `
+    <div class="summary">
+      <div class="figure"><div class="num">${toHHMM(finalMin)}</div><div class="lbl">最終到着予想</div></div>
+      <div class="figure"><div class="num">${totalWalkKm.toFixed(1)}km</div><div class="lbl">徒歩合計距離</div></div>
+      <div class="figure"><div class="num">${busSegments}区間</div><div class="lbl">バス利用区間</div></div>
+      <div class="figure"><div class="num" style="color:${overClose?'#E39A82':'#fff'}">${overClose? '要注意':'OK'}</div><div class="lbl">最終札所の納経所</div></div>
+    </div>
+  `;
+
+  let html = '';
+  arrival.forEach((a, idx)=>{
+    const temple = temples.find(t=>t.no===a.no);
+    const isLast = idx === arrival.length-1;
+    const nokyoOver = a.timeMin > NOKYO_CLOSE;
+
+    html += `<div class="stop">
+      <div class="stop-rail">
+        <div class="stop-dot"></div>
+        ${!isLast ? `<div class="stop-connector ${arrival[idx+1] && arrival[idx+1].mode==='bus' ? 'bus':''}"></div>` : ''}
+        <div class="stop-time">${toHHMM(a.timeMin)}</div>
+      </div>
+      <div class="stop-card">
+        <div class="stop-title"><span class="no">${String(temple.no).padStart(2,'0')}</span>${temple.name}
+          <span class="nokyo-badge ${nokyoOver?'nokyo-warn':'nokyo-ok'}">${nokyoOver? '納経受付終了後の可能性' : '納経受付時間内'}</span>
+        </div>
+        <div class="stop-meta mono">${temple.kana}</div>
+        ${a.note ? `
+          <div class="segment-note" onclick="openMapForIndex(${idx})">
+            <span class="badge-mode ${a.mode}">${a.mode==='bus'?'BUS':'WALK'}</span>
+            ${a.busResult && a.busResult.transfers === 1 ? `<span class="badge-mode transfer">乗り換え1回</span>` : ''}
+            <b>${temple.name}まで ${a.distanceKm}km</b>：${a.note}
+          </div>` : ''}
+      </div>
+    </div>`;
+  });
+  document.getElementById('timeline').innerHTML = html;
+}
+
+// ---- 起動処理: 札所データを取得 → セレクト構築 → 初回計算 ----
+(async function init(){
+  document.getElementById('timeline').innerHTML = `<div class="segment-note">札所データを読み込み中…</div>`;
+  try{
+    await loadTemples();
+  }catch(e){
+    document.getElementById('timeline').innerHTML =
+      `<div class="segment-note">札所データの取得に失敗しました（サーバーに接続できません）：${e.message}</div>`;
+    return;
+  }
+  populateTempleSelects();
+  runPlanner();
+})();
+
+// ==================================================================
+// ---- 地図モーダル（Google Maps Platform 版）----
+// ==================================================================
+let lastArrival = [];
+let googleMap = null;
+let mapOverlays = []; // 開き直すたびにクリアするマーカー・ポリラインの一覧
+let mapReqToken = 0;
+
+// Google Maps JS APIの読み込み完了を待つための仕組み（script async のため）
+let googleMapsReady = false;
+let googleMapsReadyWaiters = [];
+function __initGoogleMaps(){
+  googleMapsReady = true;
+  googleMapsReadyWaiters.forEach(fn=>fn());
+  googleMapsReadyWaiters = [];
+}
+function waitForGoogleMaps(){
+  if(googleMapsReady) return Promise.resolve();
+  return new Promise(resolve=> googleMapsReadyWaiters.push(resolve));
+}
+
+function clearMapOverlays(){
+  mapOverlays.forEach(o=> o.setMap(null));
+  mapOverlays = [];
+}
+
+// Directions APIで実際の道なりルートを取得
+// mode: 'WALKING'(徒歩) または 'DRIVING'(バス経路の近似。本来はGTFS shapes.txtが理想)
+function fetchRoute(from, to, travelMode){
+  return new Promise((resolve, reject)=>{
+    const service = new google.maps.DirectionsService();
+    service.route({
+      origin: { lat: from.lat, lng: from.lng },
+      destination: { lat: to.lat, lng: to.lng },
+      travelMode: google.maps.TravelMode[travelMode],
+    }, (result, status)=>{
+      if(status === 'OK' && result.routes && result.routes.length){
+        const coords = result.routes[0].overview_path.map(p=>[p.lat(), p.lng()]);
+        resolve({ coords });
+      } else {
+        reject(new Error(`Directions request failed: ${status}`));
+      }
+    });
+  });
+}
+
+// 自前サーバー経由でOverpass(OpenStreetMap)に問い合わせ、沿道の目印を取得
+async function fetchLandmarks(routeCoords, retried=false){
+  const lats = routeCoords.map(c=>c[0]), lngs = routeCoords.map(c=>c[1]);
+  const pad = 0.004;
+  const bbox = [Math.min(...lats)-pad, Math.min(...lngs)-pad, Math.max(...lats)+pad, Math.max(...lngs)+pad].join(',');
+
+  let data;
+  try{
+    const res = await fetch(`${API_BASE}/overpass-proxy?bbox=${encodeURIComponent(bbox)}`);
+    if(!res.ok) throw new Error(`overpass-proxy failed (status ${res.status})`);
+    data = await res.json();
+  }catch(e){
+    if(!retried){
+      await new Promise(r=>setTimeout(r, 1500));
+      return fetchLandmarks(routeCoords, true);
+    }
+    throw e;
+  }
+
+  const candidates = (data.elements||[])
+    .filter(el => el.tags)
+    .map(el => ({ lat:el.lat, lng:el.lon, name: el.tags.name || landmarkLabel(el.tags), tags:el.tags }))
+    .map(p => ({ ...p, dist: distToPolyline(p.lat, p.lng, routeCoords), priority: landmarkPriority(p.tags) }))
+    .filter(p => p.dist <= 180)
+    .sort((a,b)=> (a.priority - b.priority) || (a.dist - b.dist));
+
+  const picked = [];
+  for(const c of candidates){
+    if(picked.length >= 9) break;
+    if(picked.some(p => p.name===c.name && metersBetween(p.lat,p.lng,c.lat,c.lng) < 150)) continue;
+    picked.push(c);
+  }
+  return picked;
+}
+
+// 優先順位: トイレ > 宿泊施設 > 道の駅 > 温泉 > 自動販売機 > その他既存カテゴリ
+function landmarkPriority(tags){
+  if(tags.amenity==='toilets') return 1;
+  if(tags.tourism && /hotel|guest_house|motel|hostel|ryokan/.test(tags.tourism)) return 2;
+  if(tags.name && tags.name.includes('道の駅')) return 3;
+  if(tags.amenity==='public_bath' || tags.natural==='hot_spring' || (tags.name && tags.name.includes('温泉'))) return 4;
+  if(tags.amenity==='vending_machine') return 5;
+  return 9;
+}
+
+function landmarkLabel(tags){
+  if(tags.amenity==='toilets') return 'トイレ';
+  if(tags.tourism && /hotel|guest_house|motel|hostel|ryokan/.test(tags.tourism)) return '宿泊';
+  if(tags.name && tags.name.includes('道の駅')) return '道の駅';
+  if(tags.amenity==='public_bath' || tags.natural==='hot_spring' || (tags.name && tags.name.includes('温泉'))) return '温泉';
+  if(tags.amenity==='vending_machine') return '自販機';
+  if(tags.amenity==='place_of_worship') return '寺社';
+  if(tags.shop) return '商店';
+  if(tags.amenity==='cafe' || tags.amenity==='restaurant') return '飲食';
+  if(tags.railway==='station') return '駅';
+  if(tags.highway==='bus_stop') return 'バス停';
+  if(tags.historic) return '史跡';
+  if(tags.tourism) return '観光';
+  return '目印';
+}
+
+function landmarkColor(tags){
+  const p = landmarkPriority(tags);
+  if(p===1) return '#2E7D32';
+  if(p===2) return '#1D2B4F';
+  if(p===3) return '#AD8A50';
+  if(p===4) return '#C0472C';
+  if(p===5) return '#5B6B4F';
+  return '#8a8578';
+}
+
+function drawPolyline(coords, color, dashed){
+  const path = coords.map(c=>({lat:c[0], lng:c[1]}));
+  const lineSymbol = { path:'M 0,-1 0,1', strokeOpacity:1, scale:3 };
+  const line = new google.maps.Polyline({
+    path,
+    strokeColor: color,
+    strokeOpacity: dashed ? 0 : 0.9,
+    strokeWeight: 4,
+    icons: dashed ? [{ icon: lineSymbol, offset:'0', repeat:'10px' }] : undefined,
+    map: googleMap,
+  });
+  mapOverlays.push(line);
+  return line;
+}
+
+function addPinMarker(position, color, label, title, scale){
+  const marker = new google.maps.Marker({
+    position, map: googleMap, title,
+    label: label ? { text:label, color:'#fff', fontSize:'11px', fontWeight:'700' } : undefined,
+    icon: {
+      path: google.maps.SymbolPath.CIRCLE,
+      scale: scale || 9,
+      fillColor: color,
+      fillOpacity: 1,
+      strokeColor: '#fff',
+      strokeWeight: 2,
+    },
+  });
+  mapOverlays.push(marker);
+  return marker;
+}
+
+function addLandmarkMarker(lm){
+  const color = landmarkColor(lm.tags);
+  const marker = addPinMarker({lat:lm.lat, lng:lm.lng}, color, null, lm.name, 6);
+  marker.addListener('click', ()=>{
+    new google.maps.InfoWindow({
+      content: `<div style="font-family:'Noto Sans JP',sans-serif;font-size:12px;">${lm.name}</div>`
+    }).open(googleMap, marker);
+  });
+}
+
+function fitBoundsToCoords(coords){
+  const bounds = new google.maps.LatLngBounds();
+  coords.forEach(c=> bounds.extend({lat:c[0], lng:c[1]}));
+  googleMap.fitBounds(bounds, 40);
+}
+
+function showCurrentLocation(){
+  if(!navigator.geolocation) return;
+  navigator.geolocation.getCurrentPosition(
+    (pos)=>{
+      const { latitude, longitude } = pos.coords;
+      addPinMarker({lat:latitude, lng:longitude}, '#2F6FED', null, '現在地', 10);
+      const bounds = googleMap.getBounds();
+      if(bounds){
+        bounds.extend({lat:latitude, lng:longitude});
+        googleMap.fitBounds(bounds, 40);
+      }
+    },
+    (err)=> console.warn('現在地の取得に失敗しました（権限が許可されていない可能性があります）', err),
+    { enableHighAccuracy:true, timeout:8000, maximumAge:30000 }
+  );
+}
+
+function openMapForIndex(idx){
+  const a = lastArrival[idx];
+  const prev = lastArrival[idx-1];
+  if(!a || !prev) return;
+  openMap(prev.no, a.no, a.mode, a.note, a.distanceKm, a.busResult);
+}
+
+async function openMap(fromNo, toNo, mode, note, distanceKm, busResult){
+  const from = temples.find(t=>t.no===fromNo);
+  const to = temples.find(t=>t.no===toNo);
+  const myToken = ++mapReqToken;
+
+  document.getElementById('mapTitle').textContent = `${from.name} → ${to.name}`;
+  document.getElementById('mapSub').textContent = `${String(from.no).padStart(2,'0')}番 → ${String(to.no).padStart(2,'0')}番｜${distanceKm}km`;
+  document.getElementById('mapFoot').innerHTML =
+    `<span class="badge-mode ${mode}">${mode==='bus'?'BUS':'WALK'}</span>${note}<br><span style="color:#8a8578;">道なりルートと目印を取得中…</span>`;
+
+  document.getElementById('mapOverlay').classList.add('open');
+
+  await waitForGoogleMaps();
+  if(myToken !== mapReqToken) return;
+
+  setTimeout(async ()=>{
+    clearMapOverlays();
+    googleMap = new google.maps.Map(document.getElementById('mapCanvas'), {
+      center: { lat: from.lat, lng: from.lng },
+      zoom: 13,
+      disableDefaultUI: true,
+      zoomControl: true,
+    });
+
+    addPinMarker({lat:from.lat, lng:from.lng}, '#1D2B4F', String(from.no).padStart(2,'0'), from.name, 13);
+    addPinMarker({lat:to.lat, lng:to.lng}, '#A63A2A', String(to.no).padStart(2,'0'), to.name, 13);
+
+    // 直通バスで、かつ停留所座標が両方揃っている場合だけ「徒歩→バス→徒歩」の3区間で描画。
+    // 乗り換えルートは現状、乗換停留所の座標をAPIが返していないため簡易表示にフォールバック。
+    const useBusStops = mode==='bus' && busResult && busResult.transfers !== 1
+      && busResult.from_stop_lat && busResult.to_stop_lat;
+
+    let allCoords = [];
+    let routeOk = false, routeErr = null;
+
+    if(useBusStops){
+      const fromStop = { lat:Number(busResult.from_stop_lat), lng:Number(busResult.from_stop_lon) };
+      const toStop   = { lat:Number(busResult.to_stop_lat),   lng:Number(busResult.to_stop_lon) };
+      try{
+        const [walk1, busLeg, walk2] = await Promise.all([
+          fetchRoute(from, fromStop, 'WALKING').catch(()=>({coords:[[from.lat,from.lng],[fromStop.lat,fromStop.lng]]})),
+          fetchRoute(fromStop, toStop, 'DRIVING').catch(()=>({coords:[[fromStop.lat,fromStop.lng],[toStop.lat,toStop.lng]]})),
+          fetchRoute(toStop, to, 'WALKING').catch(()=>({coords:[[toStop.lat,toStop.lng],[to.lat,to.lng]]})),
+        ]);
+        if(myToken !== mapReqToken) return;
+        drawPolyline(walk1.coords, '#5B6B4F', false);
+        drawPolyline(busLeg.coords, '#A63A2A', true);
+        drawPolyline(walk2.coords, '#5B6B4F', false);
+        addPinMarker(fromStop, '#A63A2A', null, busResult.from_stop_name || 'バス停', 7);
+        addPinMarker(toStop, '#A63A2A', null, busResult.to_stop_name || 'バス停', 7);
+        allCoords = [...walk1.coords, ...busLeg.coords, ...walk2.coords];
+        routeOk = true;
+      }catch(e){
+        routeErr = e.message;
+        allCoords = [[from.lat,from.lng],[to.lat,to.lng]];
+        drawPolyline(allCoords, '#A63A2A', true);
+      }
+    } else {
+      try{
+        const travelMode = mode==='bus' ? 'DRIVING' : 'WALKING';
+        const r = await fetchRoute(from, to, travelMode);
+        if(myToken !== mapReqToken) return;
+        allCoords = r.coords;
+        routeOk = true;
+      }catch(e){
+        routeErr = e.message;
+        allCoords = [[from.lat,from.lng],[to.lat,to.lng]];
+      }
+      drawPolyline(allCoords, mode==='bus' ? '#A63A2A' : '#5B6B4F', mode==='bus');
+    }
+
+    fitBoundsToCoords(allCoords);
+    showCurrentLocation();
+
+    let landmarksOk = false, landmarks = [], lmErr = null;
+    try{
+      landmarks = await fetchLandmarks(allCoords);
+      if(myToken !== mapReqToken) return;
+      landmarksOk = true;
+      landmarks.forEach(addLandmarkMarker);
+    }catch(e){
+      lmErr = e.message;
+    }
+
+    const routeNote = routeOk
+      ? (useBusStops ? '徒歩→バス→徒歩の3区間で道なりルートを表示（Google Directions）' : '実際の道なりルート（Google Directions）')
+      : `<span style="color:#A63A2A;">ルート取得に失敗 → 直線で仮表示中｜エラー: ${routeErr}</span>`;
+    const lmNote = landmarksOk
+      ? (landmarks.length ? `沿道の目印 ${landmarks.length}件：${landmarks.map(l=>`${l.name}(${landmarkLabel(l.tags)})`).join('、')}`
+                           : '沿道180m以内に名称付きの目印は見つかりませんでした')
+      : `<span style="color:#A63A2A;">目印データの取得に失敗｜エラー: ${lmErr}</span>`;
+
+    document.getElementById('mapFoot').innerHTML =
+      `<span class="badge-mode ${mode}">${mode==='bus'?'BUS':'WALK'}</span>${note}<br>
+       <span style="color:#5a564f;">${routeNote}</span><br>
+       <span style="color:#5a564f;">${lmNote}</span>`;
+  }, 60);
+}
+
+function closeMap(){
+  document.getElementById('mapOverlay').classList.remove('open');
+}
+</script>
+</body>
+</html>
