@@ -43,20 +43,30 @@ function buildQuery(bbox: string): string {
   );out body;`;
 }
 
-async function fetchCell(bbox: string): Promise<any[]> {
-  const res = await fetch('https://overpass-api.de/api/interpreter', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'text/plain',
-      'User-Agent': 'ohenro-route-planner-precompute/1.0 (contact: dev)',
-    },
-    body: buildQuery(bbox),
-  });
-  if (!res.ok) {
-    throw new Error(`Overpass error (status ${res.status})`);
+async function fetchCell(bbox: string, retryCount = 0): Promise<any[]> {
+  try {
+    const res = await fetch('https://overpass-api.de/api/interpreter', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/plain',
+        'User-Agent': 'ohenro-route-planner-precompute/1.0 (contact: dev)',
+      },
+      body: buildQuery(bbox),
+    });
+    if (!res.ok) {
+      throw new Error(`status ${res.status}`);
+    }
+    const data = await res.json();
+    return data.elements ?? [];
+  } catch (e) {
+    if (retryCount < 3) {
+      const waitSec = 5 * (retryCount + 1); // 5秒→10秒→15秒と間隔を広げながら再試行
+      console.log(`  ⚠ 失敗(${(e as Error).message})。${waitSec}秒待って再試行(${retryCount + 1}/3)...`);
+      await sleep(waitSec * 1000);
+      return fetchCell(bbox, retryCount + 1);
+    }
+    throw e;
   }
-  const data = await res.json();
-  return data.elements ?? [];
 }
 
 async function main() {
@@ -108,7 +118,7 @@ async function main() {
     } catch (e) {
       console.log(`→ エラー: ${(e as Error).message}`);
     }
-    await sleep(2000); // Overpassへの負荷軽減のため2秒間隔
+    await sleep(3000); // Overpassへの負荷軽減のため3秒間隔（429対策で少し広めに）
   }
 
   console.log(`\n完了: 合計${totalSaved}件を cached_landmarks に保存しました。`);
