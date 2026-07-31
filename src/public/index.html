@@ -6,7 +6,7 @@
 <title>遍路みちしるべ ― 徒歩×公共交通 周遊プランナー</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@500;700&family=Noto+Sans+JP:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-<script async src="https://maps.googleapis.com/maps/api/js?key={{GOOGLE_MAPS_API_KEY}}&callback=__initGoogleMaps"></script>
+<script async src="https://maps.googleapis.com/maps/api/js?key={{GOOGLE_MAPS_API_KEY}}&language=ja&region=JP&callback=__initGoogleMaps"></script>
 <style>
   :root{
     --indigo-deep:#1D2B4F;
@@ -837,6 +837,7 @@ async function openMap(fromNo, toNo, mode, note, distanceKm, busResult){
       zoom: 13,
       disableDefaultUI: true,
       zoomControl: true,
+      gestureHandling: 'greedy', // 1本指パン・ピンチズーム・2本指回転を全て地図側で処理する
     });
 
     addPinMarker({lat:from.lat, lng:from.lng}, '#1D2B4F', String(from.no).padStart(2,'0'), from.name, 13);
