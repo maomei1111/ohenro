@@ -66,13 +66,20 @@ app.get('/overpass-proxy', async (req, res) => {
       return res.status(400).json({ error: 'bbox は "south,west,north,east" 形式で必須です' });
     }
 
-    const query = `[out:json][timeout:20];(
+    const query = `[out:json][timeout:25];(
       node["name"]["amenity"~"place_of_worship|cafe|restaurant|fuel"](${bbox});
       node["name"]["shop"~"convenience|supermarket"](${bbox});
       node["name"]["tourism"~"attraction|viewpoint|museum"](${bbox});
       node["name"]["historic"](${bbox});
       node["name"]["railway"~"station"](${bbox});
       node["name"]["highway"="bus_stop"](${bbox});
+      node["amenity"="toilets"](${bbox});
+      node["tourism"~"hotel|guest_house|motel|hostel|ryokan"](${bbox});
+      node["name"~"道の駅"](${bbox});
+      node["amenity"="public_bath"](${bbox});
+      node["natural"="hot_spring"](${bbox});
+      node["name"~"温泉"](${bbox});
+      node["amenity"="vending_machine"](${bbox});
     );out body;`;
 
     console.log(`[overpass-proxy] requesting bbox=${bbox}`);
