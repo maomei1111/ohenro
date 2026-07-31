@@ -777,7 +777,7 @@ function addPinMarker(position, color, label, title, scale){
 
 function addLandmarkMarker(lm){
   const color = landmarkColor(lm.tags);
-  const marker = addPinMarker({lat:lm.lat, lng:lm.lng}, color, null, lm.name, 6);
+  const marker = addPinMarker({lat:lm.lat, lng:lm.lng}, color, null, lm.name, 9);
   marker.addListener('click', ()=>{
     new google.maps.InfoWindow({
       content: `<div style="font-family:'Noto Sans JP',sans-serif;font-size:12px;">${lm.name}</div>`
