@@ -743,6 +743,18 @@ function landmarkColor(tags){
   return '#8a8578';
 }
 
+// 優先度の高い5カテゴリだけ絵文字アイコンを割り当て、視覚的に見分けやすくする
+// (それ以外の既存カテゴリは、地図が煩雑になりすぎないよう引き続きシンプルな丸のまま)
+function landmarkGlyph(tags){
+  const p = landmarkPriority(tags);
+  if(p===1) return '🚻';
+  if(p===2) return '🛏️';
+  if(p===3) return '🛣️';
+  if(p===4) return '♨️';
+  if(p===5) return '🥤';
+  return null;
+}
+
 function drawPolyline(coords, color, dashed){
   const path = coords.map(c=>({lat:c[0], lng:c[1]}));
   const lineSymbol = { path:'M 0,-1 0,1', strokeOpacity:1, scale:3 };
@@ -758,10 +770,10 @@ function drawPolyline(coords, color, dashed){
   return line;
 }
 
-function addPinMarker(position, color, label, title, scale){
+function addPinMarker(position, color, label, title, scale, labelFontSize){
   const marker = new google.maps.Marker({
     position, map: googleMap, title,
-    label: label ? { text:label, color:'#fff', fontSize:'11px', fontWeight:'700' } : undefined,
+    label: label ? { text:label, color:'#fff', fontSize: labelFontSize || '11px', fontWeight:'700' } : undefined,
     icon: {
       path: google.maps.SymbolPath.CIRCLE,
       scale: scale || 9,
@@ -777,7 +789,11 @@ function addPinMarker(position, color, label, title, scale){
 
 function addLandmarkMarker(lm){
   const color = landmarkColor(lm.tags);
-  const marker = addPinMarker({lat:lm.lat, lng:lm.lng}, color, null, lm.name, 9);
+  const glyph = landmarkGlyph(lm.tags);
+  // 絵文字アイコンがあるカテゴリは少し大きめの丸に、無いカテゴリ(既存の寺社・商店等)は小さい丸のまま
+  const marker = glyph
+    ? addPinMarker({lat:lm.lat, lng:lm.lng}, color, glyph, lm.name, 10, '12px')
+    : addPinMarker({lat:lm.lat, lng:lm.lng}, color, null, lm.name, 6);
   marker.addListener('click', ()=>{
     new google.maps.InfoWindow({
       content: `<div style="font-family:'Noto Sans JP',sans-serif;font-size:12px;">${lm.name}</div>`
