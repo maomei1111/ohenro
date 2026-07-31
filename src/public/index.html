@@ -6,7 +6,19 @@
 <title>遍路みちしるべ ― 徒歩×公共交通 周遊プランナー</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@500;700&family=Noto+Sans+JP:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-<script async src="https://maps.googleapis.com/maps/api/js?key={{GOOGLE_MAPS_API_KEY}}&language=ja&region=JP&callback=__initGoogleMaps"></script>
+<script>
+  // Google Mapsのスクリプトはasync読み込みのため、下部の本体スクリプトが
+  // 実行される前にコールバックが呼ばれることがある。そのため、この受け皿だけは
+  // ページの一番早い段階（headの中）で先に定義しておく。
+  window.__googleMapsReady = false;
+  window.__googleMapsReadyWaiters = [];
+  function __initGoogleMaps(){
+    window.__googleMapsReady = true;
+    window.__googleMapsReadyWaiters.forEach(function(fn){ fn(); });
+    window.__googleMapsReadyWaiters = [];
+  }
+</script>
+<script async src="https://maps.googleapis.com/maps/api/js?key={{GOOGLE_MAPS_API_KEY}}&language=ja&region=JP&loading=async&callback=__initGoogleMaps"></script>
 <style>
   :root{
     --indigo-deep:#1D2B4F;
@@ -657,17 +669,11 @@ let googleMap = null;
 let mapOverlays = []; // 開き直すたびにクリアするマーカー・ポリラインの一覧
 let mapReqToken = 0;
 
-// Google Maps JS APIの読み込み完了を待つための仕組み（script async のため）
-let googleMapsReady = false;
-let googleMapsReadyWaiters = [];
-function __initGoogleMaps(){
-  googleMapsReady = true;
-  googleMapsReadyWaiters.forEach(fn=>fn());
-  googleMapsReadyWaiters = [];
-}
+// Google Maps JS APIの読み込み完了を待つための仕組み
+// (実体・コールバック関数本体は head 内で定義済み。ここではグローバルの状態を参照するだけ)
 function waitForGoogleMaps(){
-  if(googleMapsReady) return Promise.resolve();
-  return new Promise(resolve=> googleMapsReadyWaiters.push(resolve));
+  if(window.__googleMapsReady) return Promise.resolve();
+  return new Promise(function(resolve){ window.__googleMapsReadyWaiters.push(resolve); });
 }
 
 function clearMapOverlays(){
