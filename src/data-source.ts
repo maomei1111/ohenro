@@ -8,6 +8,9 @@ import {
   GtfsCalendar,
   TempleStopLink,
 } from './entities/gtfs.entities';
+import { CachedLandmark } from './entities/landmark.entities';
+
+const ENTITIES = [GtfsStop, GtfsRoute, GtfsTrip, GtfsStopTime, GtfsCalendar, TempleStopLink, CachedLandmark];
 
 /**
  * ローカル開発時: PGHOST/PGUSER/PGPASSWORD/PGDATABASE の個別環境変数を使用
@@ -18,7 +21,7 @@ export const AppDataSource = process.env.DATABASE_URL
       type: 'postgres',
       url: process.env.DATABASE_URL,
       ssl: { rejectUnauthorized: false }, // Railway等のマネージドPostgresはSSL必須なことが多い
-      entities: [GtfsStop, GtfsRoute, GtfsTrip, GtfsStopTime, GtfsCalendar, TempleStopLink],
+      entities: ENTITIES,
       synchronize: true, // 開発用。本番ではmigrationに置き換える
     })
   : new DataSource({
@@ -28,6 +31,6 @@ export const AppDataSource = process.env.DATABASE_URL
       username: process.env.PGUSER ?? 'postgres',
       password: process.env.PGPASSWORD ?? 'postgres',
       database: process.env.PGDATABASE ?? 'ohenro',
-      entities: [GtfsStop, GtfsRoute, GtfsTrip, GtfsStopTime, GtfsCalendar, TempleStopLink],
+      entities: ENTITIES,
       synchronize: true,
     });

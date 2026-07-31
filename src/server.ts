@@ -10,6 +10,7 @@ import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
 import { findNextBus } from './query-next-bus';
+import { AppDataSource } from './data-source';
 
 const app = express();
 app.use(cors()); // WebView(file://やhttps://)からのアクセスを許可
@@ -73,49 +74,35 @@ app.get('/next-bus', async (req, res) => {
 // WebView(file://)からOverpass APIへ直接fetchするとCORS(Origin: null)で拒否されるため、
 // サーバー側で代理リクエストする。ブラウザ⇔サーバー間はcors()で許可済み、
 // サーバー⇔Overpass間はサーバー同士の通信なのでCORSの制約を受けない。
+// 以前はOverpass APIへ毎回ライブで問い合わせていたが、公開デモサーバーの
+// 混雑・タイムアウトに悩まされたため、事前に precompute-landmarks.ts で
+// 取り込んでおいた自前DB(cached_landmarks)を検索する方式に変更。
+// クライアント側の呼び出し方(GET /overpass-proxy?bbox=...)は変えていない。
 app.get('/overpass-proxy', async (req, res) => {
   try {
     const bbox = String(req.query.bbox ?? ''); // "south,west,north,east"
-    if (!bbox || bbox.split(',').length !== 4) {
+    const parts = bbox.split(',').map(Number);
+    if (parts.length !== 4 || parts.some((n) => Number.isNaN(n))) {
       return res.status(400).json({ error: 'bbox は "south,west,north,east" 形式で必須です' });
     }
+    const [south, west, north, east] = parts;
 
-    const query = `[out:json][timeout:25];(
-      node["name"]["amenity"~"place_of_worship|cafe|restaurant|fuel"](${bbox});
-      node["name"]["shop"~"convenience|supermarket"](${bbox});
-      node["name"]["tourism"~"attraction|viewpoint|museum"](${bbox});
-      node["name"]["historic"](${bbox});
-      node["name"]["railway"~"station"](${bbox});
-      node["name"]["highway"="bus_stop"](${bbox});
-      node["amenity"="toilets"](${bbox});
-      node["tourism"~"hotel|guest_house|motel|hostel|ryokan"](${bbox});
-      node["name"~"道の駅"](${bbox});
-      node["amenity"="public_bath"](${bbox});
-      node["natural"="hot_spring"](${bbox});
-      node["name"~"温泉"](${bbox});
-      node["amenity"="vending_machine"](${bbox});
-    );out body;`;
+    const ds = AppDataSource.isInitialized ? AppDataSource : await AppDataSource.initialize();
+    const rows = await ds.query(
+      `SELECT osm_id, lat, lng, name, tags FROM cached_landmarks
+       WHERE lat BETWEEN $1 AND $2 AND lng BETWEEN $3 AND $4`,
+      [south, north, west, east]
+    );
 
-    console.log(`[overpass-proxy] requesting bbox=${bbox}`);
-    const overpassRes = await fetch('https://overpass-api.de/api/interpreter', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'text/plain',
-        'User-Agent': 'ohenro-route-planner/1.0 (contact: dev)', // 一部APIはUser-Agent必須のため明示
-      },
-      body: query,
-    });
-
-    if (!overpassRes.ok) {
-      const bodyText = await overpassRes.text();
-      console.error(`[overpass-proxy] upstream error status=${overpassRes.status} body=${bodyText.slice(0, 500)}`);
-      return res.status(502).json({
-        error: `overpass upstream error (status ${overpassRes.status})`,
-        upstreamBody: bodyText.slice(0, 300),
-      });
-    }
-    const data = await overpassRes.json();
-    res.json(data);
+    // クライアント側は Overpass由来のelements形式 ({lat, lon, tags}) を期待しているため、
+    // 同じ形に整形して返す（クライアントの実装は変更不要にするため）。
+    const elements = rows.map((r: any) => ({
+      id: r.osm_id,
+      lat: Number(r.lat),
+      lon: Number(r.lng),
+      tags: r.tags,
+    }));
+    res.json({ elements });
   } catch (e) {
     console.error('[overpass-proxy] exception:', e);
     res.status(500).json({ error: 'internal error', detail: (e as Error).message });
