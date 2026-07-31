@@ -2,25 +2,19 @@
  * 各札所の緯度経度と、取り込み済みのGTFS停留所(gtfs_stops)を突き合わせ、
  * 最寄りの停留所を temple_stop_links テーブルに保存する。
  *
- * 使い方: ts-node src/match-temple-stops.ts
+ * 使い方: npx tsx src/match-temple-stops.ts
  */
 import 'reflect-metadata';
+import fs from 'fs';
+import path from 'path';
 import { AppDataSource } from './data-source';
 import { GtfsStop, TempleStopLink } from './entities/gtfs.entities';
 
-// 前回のプロトタイプで使った概算座標。実装時は正式なジオコーディングに置き換え推奨。
-const temples = [
-  { no: 1, lat: 34.1665, lng: 134.5203 },
-  { no: 2, lat: 34.1660, lng: 134.5065 },
-  { no: 3, lat: 34.1590, lng: 134.4870 },
-  { no: 4, lat: 34.1466, lng: 134.4550 },
-  { no: 5, lat: 34.1520, lng: 134.4460 },
-  { no: 6, lat: 34.1270, lng: 134.4110 },
-  { no: 7, lat: 34.1290, lng: 134.4020 },
-  { no: 8, lat: 34.1150, lng: 134.3700 },
-  { no: 9, lat: 34.1030, lng: 134.3660 },
-  { no: 10, lat: 34.0920, lng: 134.3480 },
-];
+// 88札所のマスタデータ（geocode-temples.ts で生成したものを src/data/temples_88.json に配置）
+const templesPath = path.join(__dirname, 'data', 'temples_88.json');
+const temples: { no: number; lat: number; lng: number }[] = JSON.parse(
+  fs.readFileSync(templesPath, 'utf-8')
+);
 
 function metersBetween(lat1: number, lng1: number, lat2: number, lng2: number) {
   const R = 6371000;

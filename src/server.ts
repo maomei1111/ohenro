@@ -7,10 +7,28 @@
 import 'reflect-metadata';
 import express from 'express';
 import cors from 'cors';
+import fs from 'fs';
+import path from 'path';
 import { findNextBus } from './query-next-bus';
 
 const app = express();
 app.use(cors()); // WebView(file://やhttps://)からのアクセスを許可
+
+// 88札所のマスタデータ（番号・名前・都道府県・市区町村・緯度経度）
+// src/data/temples_88.json に配置。アプリ側はこのAPIから取得し、
+// サーバー側の停留所マッチング(match-temple-stops.ts)とも同じデータを共有する。
+const templesPath = path.join(__dirname, 'data', 'temples_88.json');
+let temples88: any[] = [];
+try {
+  temples88 = JSON.parse(fs.readFileSync(templesPath, 'utf-8'));
+  console.log(`[startup] ${temples88.length}件の札所データを読み込みました`);
+} catch (e) {
+  console.error('[startup] temples_88.json の読み込みに失敗しました:', e);
+}
+
+app.get('/temples', (_req, res) => {
+  res.json(temples88);
+});
 
 app.get('/health', (_req, res) => {
   res.json({ ok: true });
