@@ -510,6 +510,11 @@
     <div class="timeline" id="timeline"></div>
 
     <div class="footnote" data-i18n="footnote"></div>
+    <div class="footnote">
+      <a href="/privacy" target="_blank" rel="noopener" style="color:#8a8578;">Privacy Policy</a>
+      　|　
+      <a href="/credits" target="_blank" rel="noopener" style="color:#8a8578;">Credits / データ提供元</a>
+    </div>
   </div>
 </div>
 
@@ -1853,7 +1858,8 @@ async function openMap(fromNo, toNo, mode, note, distanceKm, busResult){
     document.getElementById('mapFoot').innerHTML =
       `<span class="badge-mode ${mode}">${mode==='bus'?'BUS':'WALK'}</span>${note}<br>
        <span style="color:#5a564f;">${routeNote}</span>${elevationNote}<br>
-       <span style="color:#5a564f;">${lmNote}</span>`;
+       <span style="color:#5a564f;">${lmNote}</span><br>
+       <span style="color:#b0aa9c;font-size:10.5px;">Landmark data: &copy; OpenStreetMap contributors (ODbL)</span>`;
   }, 60);
 }
 

@@ -51,6 +51,28 @@ app.get('/health', (_req, res) => {
   res.json({ ok: true });
 });
 
+// プライバシーポリシー（Google Playのストア掲載に必要な公開URL）
+app.get('/privacy', (_req, res) => {
+  try {
+    const html = fs.readFileSync(path.join(__dirname, 'public', 'privacy.html'), 'utf-8');
+    res.type('html').send(html);
+  } catch (e) {
+    console.error('[/privacy] failed to serve privacy.html:', e);
+    res.status(500).send('internal error');
+  }
+});
+
+// データ提供元クレジット（GTFS各社・OpenStreetMap等のライセンス表示義務対応）
+app.get('/credits', (_req, res) => {
+  try {
+    const html = fs.readFileSync(path.join(__dirname, 'public', 'credits.html'), 'utf-8');
+    res.type('html').send(html);
+  } catch (e) {
+    console.error('[/credits] failed to serve credits.html:', e);
+    res.status(500).send('internal error');
+  }
+});
+
 app.get('/next-bus', async (req, res) => {
   try {
     const from = Number(req.query.from);
