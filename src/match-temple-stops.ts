@@ -31,6 +31,10 @@ async function run() {
   const allStops = await ds.getRepository(GtfsStop).find();
 
   for (const temple of temples) {
+    // 再実行のたびに古い候補が蓄積してしまうバグがあったため、
+    // 挿入前にこの札所の既存リンクを一度すべて削除してからやり直す。
+    await ds.getRepository(TempleStopLink).delete({ temple_no: temple.no });
+
     // 直線距離1.5km以内の停留所を候補にする（実際に歩ける距離感でフィルタ）
     const candidates = allStops
       .map((s) => ({ ...s, dist: metersBetween(temple.lat, temple.lng, s.stop_lat, s.stop_lon) }))
