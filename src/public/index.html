@@ -244,25 +244,21 @@
     background:#fff;
     border:1px solid rgba(43,40,37,0.1);
     border-radius:2px;
-    padding:10px 90px 10px 12px;
+    padding:12px 14px;
     line-height:1.7;
     cursor:pointer;
     transition:border-color 0.15s, box-shadow 0.15s;
-    position:relative;
-    min-height:20px;
   }
   .segment-note:hover{
     border-color:var(--indigo-mid);
     box-shadow:0 3px 10px rgba(29,43,79,0.1);
   }
-  .segment-note::after{
-    content:"地図を見る \2192";
-    position:absolute;
-    right:12px; bottom:10px;
+  .segment-note .map-link{
+    margin-top:8px;
     font-size:11px;
     color:var(--indigo-mid);
     font-family:'JetBrains Mono', monospace;
-    white-space:nowrap;
+    text-align:right;
   }
   .segment-note b{ color:var(--indigo-deep); }
   .badge-mode{
@@ -403,7 +399,7 @@
 
     <div class="legend">
       <span><span class="swatch walk"></span>徒歩区間</span>
-      <span><span class="swatch bus"></span>バス区間（実データAPI連携済み）</span>
+      <span><span class="swatch bus"></span>バス区間</span>
       <span class="mono" style="color:#8a8578;">納経所 標準受付 7:00–17:00 として計算</span>
     </div>
 
@@ -411,7 +407,7 @@
     <div class="timeline" id="timeline"></div>
 
     <div class="footnote">
-      ※ バス時刻は徳島バス・四国交通・とさでん交通・ことでんバス等の実GTFSデータに基づいています。区間距離は徒歩時間概算用の目安値、徒歩時間は平均時速4kmで概算しています。祝日特例（calendar_dates.txt）は未対応のため、祝日は実際のダイヤと異なる場合があります。地図・ルート表示にはGoogle Maps Platformを利用しています。
+      ※ バス時刻は各バス会社の公開データに基づいています。徒歩時間は実際の道のりをもとに概算しています。祝日はダイヤが異なる場合があります。
     </div>
   </div>
 </div>
@@ -560,7 +556,7 @@ async function runPlanner(){
     return;
   }
 
-  document.getElementById('timeline').innerHTML = `<div class="segment-note">実データAPIに問い合わせて計算中…</div>`;
+  document.getElementById('timeline').innerHTML = `<div class="segment-note">ルートを取得中…</div>`;
   document.getElementById('summary').innerHTML = '';
 
   // 順打ち(番号が小さい→大きい)・逆打ち(大きい→小さい)の両方に対応
@@ -593,8 +589,9 @@ async function runPlanner(){
     const walkArrive = currentMin + walkMin;
 
     if(mode==='efficient'){
-      const queryTimeMin = currentMin + 10;
-      busResult = await fetchNextBus(prevNo, seg.no, toHHMM(queryTimeMin), weekday);
+      // バス停までの徒歩時間は、停留所ごとの実距離をもとにサーバー側で正確に計算するため、
+      // ここでは現在時刻をそのまま渡すだけでよい。
+      busResult = await fetchNextBus(prevNo, seg.no, toHHMM(currentMin), weekday);
 
       if(busResult === undefined){
         chosen = 'walk';
@@ -666,6 +663,7 @@ async function runPlanner(){
             <span class="badge-mode ${a.mode}">${a.mode==='bus'?'BUS':'WALK'}</span>
             ${a.busResult && a.busResult.transfers === 1 ? `<span class="badge-mode transfer">乗り換え1回</span>` : ''}
             <b>${temple.name}まで ${a.distanceKm}km</b>：${a.note}
+            <div class="map-link">地図を見る →</div>
           </div>` : ''}
       </div>
     </div>`;
@@ -680,7 +678,7 @@ async function runPlanner(){
     await loadTemples();
   }catch(e){
     document.getElementById('timeline').innerHTML =
-      `<div class="segment-note">札所データの取得に失敗しました（サーバーに接続できません）：${e.message}</div>`;
+      `<div class="segment-note">札所データの取得に失敗しました。しばらくしてから、もう一度お試しください。</div>`;
     return;
   }
   populateTempleSelects();
@@ -987,7 +985,7 @@ async function openMap(fromNo, toNo, mode, note, distanceKm, busResult){
     }
 
     const routeNote = routeOk
-      ? (useBusStops ? '徒歩→バス→徒歩の3区間で道なりルートを表示（Google Directions）' : '実際の道なりルート（Google Directions）')
+      ? (useBusStops ? '徒歩→バス→徒歩のルートを表示しています' : '実際の道のりを表示しています')
       : `<span style="color:#A63A2A;">ルート取得に失敗 → 直線で仮表示中｜エラー: ${routeErr}</span>`;
     const lmNote = landmarksOk
       ? (landmarks.length ? `沿道の目印 ${landmarks.length}件：${landmarks.map(l=>`${l.name}(${landmarkLabel(l.tags)})`).join('、')}`

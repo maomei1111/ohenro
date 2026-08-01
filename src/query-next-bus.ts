@@ -10,6 +10,13 @@
  *    祝日の特例は calendar_dates.txt（今回は未実装）で上書きされるので、
  *    本格運用では calendar_dates.txt も取り込むこと。
  *
+ * 重要な設計変更:
+ *  - 以前は「バス停まで歩く時間」を距離に関係なく一律10分と仮定していたため、
+ *    停留所が遠い区間で「実際には徒歩より遅いのにバスが選ばれる」誤判定が起きていた。
+ *    現在は temple_stop_links に保存済みの実際の距離(distance_m)を使って、
+ *    区間ごとに「出発札所→乗車停留所」「降車停留所→到着札所」の徒歩時間を
+ *    個別に計算し、正しい door-to-door の所要時間で比較するようにしている。
+ *
  * 乗り換え機能の割り切り（設計時に合意した制約）:
  *  - 乗り換えは1回まで（2回以上の乗り継ぎは非対応）
  *  - 乗り換えは同一事業者内のみ対象（事業者をまたぐ乗り換えは非対応）
@@ -19,10 +26,15 @@ import { AppDataSource } from './data-source';
 import { TempleStopLink } from './entities/gtfs.entities';
 
 const TRANSFER_MINUTES = 5; // 乗り換えに最低限必要な時間（固定値）
+const WALK_KMH = 4; // 徒歩速度の想定
 
 function gtfsTimeToMinutes(hhmmss: string): number {
   const [h, m] = hhmmss.split(':').map(Number);
   return h * 60 + m;
+}
+
+function walkMinutesForMeters(meters: number): number {
+  return (meters / 1000 / WALK_KMH) * 60;
 }
 
 const WEEKDAY_COLUMNS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
@@ -81,13 +93,25 @@ async function findDirectBus(
   );
 
   const candidates = rows
-    .map((r: any) => ({
-      ...r,
-      transfers: 0,
-      departureMin: gtfsTimeToMinutes(r.from_departure),
-      arrivalMin: gtfsTimeToMinutes(r.to_arrival),
-    }))
-    .filter((r: any) => r.departureMin >= afterMinutes)
+    .map((r: any) => {
+      const fromLink = fromLinks.find((l) => l.agency_key === r.agency_key && l.stop_id === r.from_stop_id);
+      const toLink = toLinks.find((l) => l.agency_key === r.agency_key && l.stop_id === r.to_stop_id);
+      const walkToStopMin = fromLink ? walkMinutesForMeters(fromLink.distance_m) : walkMinutesForMeters(500);
+      const walkFromStopMin = toLink ? walkMinutesForMeters(toLink.distance_m) : walkMinutesForMeters(500);
+      const departureMin = gtfsTimeToMinutes(r.from_departure);
+      const stopArrivalMin = gtfsTimeToMinutes(r.to_arrival);
+      return {
+        ...r,
+        transfers: 0,
+        departureMin,
+        walkToStopMin,
+        walkFromStopMin,
+        // 実際に札所の玄関口に着く時刻（降車後の徒歩を含む）。徒歩ルートとの比較にはこちらを使う。
+        arrivalMin: stopArrivalMin + walkFromStopMin,
+      };
+    })
+    // このバスに乗るには、乗車停留所までの徒歩を終えている必要がある
+    .filter((r: any) => r.departureMin >= afterMinutes + r.walkToStopMin)
     .sort((a: any, b: any) => a.arrivalMin - b.arrivalMin);
 
   return candidates[0] ?? null;
@@ -107,6 +131,7 @@ async function findOneTransferBus(
     `
     SELECT
       leg1.agency_key   AS agency_key,
+      leg1.from_stop_id AS from_stop_id,
       leg1.trip1        AS trip1,
       leg1.from_departure,
       leg1.mid_stop_id,
@@ -122,6 +147,7 @@ async function findOneTransferBus(
     FROM (
       SELECT
         st_a.agency_key   AS agency_key,
+        st_a.stop_id      AS from_stop_id,
         st_a.trip_id      AS trip1,
         st_a.departure_time AS from_departure,
         st_b.stop_id      AS mid_stop_id,
@@ -182,17 +208,30 @@ async function findOneTransferBus(
   );
 
   const candidates = rows
-    .map((r: any) => ({
-      ...r,
-      transfers: 1,
-      departureMin: gtfsTimeToMinutes(r.from_departure),
-      midArrivalMin: gtfsTimeToMinutes(r.mid_arrival),
-      midDepartureMin: gtfsTimeToMinutes(r.mid_departure),
-      arrivalMin: gtfsTimeToMinutes(r.to_arrival),
-    }))
+    .map((r: any) => {
+      const fromLink = fromLinks.find((l) => l.agency_key === r.agency_key && l.stop_id === r.from_stop_id);
+      const toLink = toLinks.find((l) => l.agency_key === r.agency_key && l.stop_id === r.to_stop_id);
+      const walkToStopMin = fromLink ? walkMinutesForMeters(fromLink.distance_m) : walkMinutesForMeters(500);
+      const walkFromStopMin = toLink ? walkMinutesForMeters(toLink.distance_m) : walkMinutesForMeters(500);
+      const departureMin = gtfsTimeToMinutes(r.from_departure);
+      const midArrivalMin = gtfsTimeToMinutes(r.mid_arrival);
+      const midDepartureMin = gtfsTimeToMinutes(r.mid_departure);
+      const stopArrivalMin = gtfsTimeToMinutes(r.to_arrival);
+      return {
+        ...r,
+        transfers: 1,
+        departureMin,
+        midArrivalMin,
+        midDepartureMin,
+        walkToStopMin,
+        walkFromStopMin,
+        arrivalMin: stopArrivalMin + walkFromStopMin,
+      };
+    })
     .filter(
       (r: any) =>
-        r.departureMin >= afterMinutes && r.midDepartureMin >= r.midArrivalMin + TRANSFER_MINUTES
+        r.departureMin >= afterMinutes + r.walkToStopMin &&
+        r.midDepartureMin >= r.midArrivalMin + TRANSFER_MINUTES
     )
     .sort((a: any, b: any) => a.arrivalMin - b.arrivalMin);
 
@@ -218,7 +257,7 @@ export async function findNextBus(
     findOneTransferBus(fromLinks, toLinks, afterMinutes, dayColumn),
   ]);
 
-  // 両方見つかった場合は、到着が早い方を採用
+  // 両方見つかった場合は、実際の到着(徒歩込み)が早い方を採用
   if (direct && withTransfer) {
     return direct.arrivalMin <= withTransfer.arrivalMin ? direct : withTransfer;
   }
