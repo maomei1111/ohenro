@@ -27,8 +27,23 @@ try {
   console.error('[startup] temples_88.json の読み込みに失敗しました:', e);
 }
 
+// Google Places由来の写真・紹介文（fetch-temple-places-info.ts で事前取得したもの）。
+// 無くてもアプリ自体は動くよう、読み込み失敗は握りつぶす。
+const templesPlacesPath = path.join(__dirname, 'data', 'temples_88_places.json');
+let templesPlacesInfo: Record<string, any> = {};
+try {
+  templesPlacesInfo = JSON.parse(fs.readFileSync(templesPlacesPath, 'utf-8'));
+  console.log(`[startup] ${Object.keys(templesPlacesInfo).length}件の札所Places情報を読み込みました`);
+} catch (e) {
+  console.log('[startup] temples_88_places.json は未生成です（紹介文・写真は非表示になります）');
+}
+
 app.get('/temples', (_req, res) => {
   res.json(temples88);
+});
+
+app.get('/temple-places', (_req, res) => {
+  res.json(templesPlacesInfo);
 });
 
 // メインのプランナー画面を配信。Google Maps APIキーはビルド時に埋め込まず、
@@ -37,7 +52,7 @@ const indexTemplatePath = path.join(__dirname, 'public', 'index.html');
 app.get('/', (_req, res) => {
   try {
     let html = fs.readFileSync(indexTemplatePath, 'utf-8');
-    html = html.replace('{{GOOGLE_MAPS_API_KEY}}', process.env.GOOGLE_MAPS_API_KEY ?? '');
+    html = html.replaceAll('{{GOOGLE_MAPS_API_KEY}}', process.env.GOOGLE_MAPS_API_KEY ?? '');
     // WebView/ブラウザによる古いバージョンのキャッシュを防ぐ
     res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
     res.type('html').send(html);

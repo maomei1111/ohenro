@@ -307,6 +307,28 @@
     margin-top:4px;
   }
   .honzon-info.open{ display:block; }
+  .temple-photo{
+    display:block;
+    width:100%;
+    max-width:280px;
+    border-radius:2px;
+    margin-bottom:2px;
+  }
+  .photo-credit{
+    font-size:9.5px;
+    color:#b0aa9c;
+    margin-bottom:6px;
+  }
+  .places-summary{
+    margin-top:6px;
+    font-size:12px;
+    line-height:1.7;
+    color:#5a564f;
+  }
+  .google-credit{
+    color:#b0aa9c;
+    font-size:10px;
+  }
   .official-link{
     display:inline-block;
     font-size:11px;
@@ -1211,8 +1233,13 @@ function distToPolyline(lat, lng, coords){
   return min;
 }
 
+let templePlacesInfo = {}; // 写真・紹介文（Google Places由来）。取得できなければ空のまま
+
 async function loadTemples(){
-  const res = await fetch(`${API_BASE}/temples`);
+  const [res, placesRes] = await Promise.all([
+    fetch(`${API_BASE}/temples`),
+    fetch(`${API_BASE}/temple-places`).catch(()=>null), // 無くても致命的ではないので握りつぶす
+  ]);
   if(!res.ok) throw new Error(`temples API responded ${res.status}`);
   const raw = await res.json();
   raw.sort((a,b)=>a.no-b.no);
@@ -1229,6 +1256,17 @@ async function loadTemples(){
       lat: t.lat, lng: t.lng,
     };
   });
+
+  if(placesRes && placesRes.ok){
+    try{ templePlacesInfo = await placesRes.json(); }catch(e){ templePlacesInfo = {}; }
+  }
+}
+
+// Google Places写真のURL（帰属表示ルールに従い、寄稿者名も別途表示する）
+function templePhotoUrl(no){
+  const info = templePlacesInfo[no];
+  if(!info || !info.photoName) return null;
+  return `https://places.googleapis.com/v1/${info.photoName}/media?maxHeightPx=280&key={{GOOGLE_MAPS_API_KEY}}`;
 }
 
 // 区間の徒歩時間(分)を返す。実測値があればそれを、無ければ距離÷時速4kmで概算する。
@@ -1740,7 +1778,12 @@ async function runPlanner(){
         <div class="stop-meta mono">${temple.kana}</div>
         ${TEMPLE_HONZON[temple.no] ? `
           <div class="honzon-toggle" onclick="this.nextElementSibling.classList.toggle('open')">${t('temple_info_toggle')}</div>
-          <div class="honzon-info">${t('label_honzon')}：${honzonDisplay(temple.no)}</div>` : ''}
+          <div class="honzon-info">
+            ${templePhotoUrl(temple.no) ? `<img class="temple-photo" src="${templePhotoUrl(temple.no)}" alt="${displayName}">
+            <div class="photo-credit">Photo: ${templePlacesInfo[temple.no]?.photoAttribution || 'Google'}</div>` : ''}
+            ${t('label_honzon')}：${honzonDisplay(temple.no)}
+            ${templePlacesInfo[temple.no]?.summary ? `<div class="places-summary">${templePlacesInfo[temple.no].summary}<span class="google-credit"> — Google</span></div>` : ''}
+          </div>` : ''}
         ${officialTempleUrl(temple.no) ? `
           <a class="official-link" href="${officialTempleUrl(temple.no)}" target="_blank" rel="noopener">${t('official_site_link')}</a>` : ''}
         ${a.note ? `
