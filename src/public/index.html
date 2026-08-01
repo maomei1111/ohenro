@@ -67,12 +67,15 @@
     width:260px; height:260px;
     border:1px solid rgba(239,230,214,0.15);
     border-radius:50%;
+    pointer-events:none;
   }
   .hero-top-row{
     display:flex;
     justify-content:space-between;
     align-items:center;
     margin-bottom:14px;
+    position:relative;
+    z-index:1;
   }
   .hero-eyebrow{
     font-family:'JetBrains Mono', monospace;
@@ -97,6 +100,7 @@
     align-items:center;
     gap:10px;
     position:relative;
+    z-index:1;
   }
   .hero h1{
     font-family:'Noto Serif JP', serif;
@@ -1089,16 +1093,31 @@ function monthLabel(m, locale){
   return new Intl.DateTimeFormat(locale, { month:'long' }).format(new Date(2000, m-1, 1));
 }
 
+// 端末のタイムゾーン設定（インバウンド利用者は母国のタイムゾーンのままのことが多い）に
+// 関わらず、常に日本時間(JST, UTC+9)を基準にするための関数。
+function getJSTNow(){
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Tokyo', hour12: false,
+    year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit',
+  }).formatToParts(new Date());
+  const get = (type) => Number(parts.find(p => p.type === type).value);
+  return {
+    year: get('year'), month: get('month'), day: get('day'),
+    hour: get('hour') % 24, minute: get('minute'), // 'hour'が"24"を返す実装対策でmod
+  };
+}
+
 function buildDateFields(presetDate){
   const container = document.getElementById('dateFields');
   if(!container) return;
-  const preset = presetDate || new Date();
+  const jstNow = getJSTNow();
+  const preset = presetDate || new Date(jstNow.year, jstNow.month-1, jstNow.day);
   const order = DATE_FIELD_ORDER[currentLang] || DATE_FIELD_ORDER.ja;
   const locale = INTL_LOCALES[currentLang] || 'ja';
 
   const yearSel = document.createElement('select');
   yearSel.className = 'df-year';
-  const thisYear = new Date().getFullYear();
+  const thisYear = jstNow.year;
   for(let y=thisYear; y<=thisYear+1; y++){
     yearSel.insertAdjacentHTML('beforeend', `<option value="${y}">${yearLabel(y)}</option>`);
   }
@@ -1151,8 +1170,8 @@ function getSelectedDateStr(){
 function buildTimeFields(presetHHMM){
   const container = document.getElementById('timeFields');
   if(!container) return;
-  const now = new Date();
-  const currentHHMM = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  const jstNow = getJSTNow();
+  const currentHHMM = `${String(jstNow.hour).padStart(2,'0')}:${String(jstNow.minute).padStart(2,'0')}`;
   const [presetH, presetM] = (presetHHMM || currentHHMM).split(':').map(Number);
 
   const hourSel = document.createElement('select');
