@@ -883,7 +883,15 @@ async function fetchElevationProfile(coords){
   const samples = Math.min(60, Math.max(2, coords.length));
   const response = await elevator.getElevationAlongPath({ path, samples });
   if(!response || !response.results) throw new Error('Elevation request returned no results');
-  return response.results.map(r=>r.elevation);
+  const elevations = response.results.map(r=>r.elevation);
+
+  // サンプルは経路全体に等間隔に取られるため、経路の総距離から各点の距離を逆算する
+  let totalDist = 0;
+  for(let i=1;i<coords.length;i++){
+    totalDist += metersBetween(coords[i-1][0], coords[i-1][1], coords[i][0], coords[i][1]);
+  }
+  const distances = elevations.map((_, i)=> totalDist * i/(elevations.length-1));
+  return { elevations, distances, totalDist };
 }
 function elevationGainLoss(elevations){
   let gain=0, loss=0;
@@ -892,6 +900,42 @@ function elevationGainLoss(elevations){
     if(diff>0) gain+=diff; else loss += -diff;
   }
   return { gain: Math.round(gain), loss: Math.round(loss) };
+}
+
+// 一番大きな「連続した上り」区間を探す（横ばい・微小な上りは1つの区間としてまとめる）
+function findBiggestClimb(elevations, distances){
+  let best = { gain:0, startIdx:0, endIdx:0 };
+  let i = 0;
+  while(i < elevations.length-1){
+    if(elevations[i+1] > elevations[i]){
+      let j = i;
+      while(j < elevations.length-1 && elevations[j+1] >= elevations[j]) j++;
+      const gain = elevations[j] - elevations[i];
+      if(gain > best.gain) best = { gain, startIdx:i, endIdx:j };
+      i = j;
+    } else {
+      i++;
+    }
+  }
+  return best;
+}
+
+// 標高プロファイルをシンプルな折れ線グラフ(SVG)として描画する
+function buildElevationSvg(elevations, distances){
+  const w=280, h=64, padX=6, padY=6;
+  const minE = Math.min(...elevations), maxE = Math.max(...elevations);
+  const range = Math.max(1, maxE-minE);
+  const totalDist = distances[distances.length-1] || 1;
+  const pts = elevations.map((e,i)=>{
+    const x = padX + (distances[i]/totalDist) * (w-2*padX);
+    const y = (h-padY) - ((e-minE)/range) * (h-2*padY);
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  });
+  const area = `${padX},${h-padY} ${pts.join(' ')} ${w-padX},${h-padY}`;
+  return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="64" style="display:block;margin-top:6px;">
+    <polygon points="${area}" fill="rgba(91,107,79,0.22)"></polygon>
+    <polyline points="${pts.join(' ')}" fill="none" stroke="#5B6B4F" stroke-width="1.6"></polyline>
+  </svg>`;
 }
 
 function showCurrentLocation(){
@@ -999,10 +1043,20 @@ async function openMap(fromNo, toNo, mode, note, distanceKm, busResult){
     let elevationNote = '';
     if(walkOnlyCoords.length >= 2){
       try{
-        const elevations = await fetchElevationProfile(walkOnlyCoords);
+        const { elevations, distances } = await fetchElevationProfile(walkOnlyCoords);
         if(myToken !== mapReqToken) return;
         const { gain, loss } = elevationGainLoss(elevations);
-        elevationNote = `<br><span style="color:#5a564f;">徒歩区間の高低差：⬆️獲得標高 ${gain}m／⬇️下り ${loss}m</span>`;
+        const climb = findBiggestClimb(elevations, distances);
+
+        let climbText = '';
+        if(climb.gain >= 20){ // 20m未満の小さな起伏は「最大の上り」として案内しない
+          const startKm = (distances[climb.startIdx]/1000).toFixed(1);
+          const lengthKm = ((distances[climb.endIdx]-distances[climb.startIdx])/1000).toFixed(1);
+          climbText = `最大の上り：${startKm}km地点から${lengthKm}kmの間で${Math.round(climb.gain)}m上ります。`;
+        }
+        const svg = buildElevationSvg(elevations, distances);
+
+        elevationNote = `<br><span style="color:#5a564f;">徒歩区間の高低差：⬆️獲得標高 ${gain}m／⬇️下り ${loss}m　${climbText}</span>${svg}`;
       }catch(e){
         console.warn('elevation fetch failed', e);
       }
