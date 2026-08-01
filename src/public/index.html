@@ -876,19 +876,14 @@ function fitBoundsToCoords(coords){
 }
 
 // 徒歩区間の標高プロファイルを取得し、獲得標高(上り)・下り標高を計算する
-function fetchElevationProfile(coords){
-  return new Promise((resolve, reject)=>{
-    const elevator = new google.maps.ElevationService();
-    const path = coords.map(c=>({lat:c[0], lng:c[1]}));
-    const samples = Math.min(60, Math.max(2, coords.length));
-    elevator.getElevationForPath({ path, samples }, (results, status)=>{
-      if(status === 'OK' && results){
-        resolve(results.map(r=>r.elevation));
-      } else {
-        reject(new Error(`Elevation request failed: ${status}`));
-      }
-    });
-  });
+async function fetchElevationProfile(coords){
+  const { ElevationService } = await google.maps.importLibrary('elevation');
+  const elevator = new ElevationService();
+  const path = coords.map(c=>({lat:c[0], lng:c[1]}));
+  const samples = Math.min(60, Math.max(2, coords.length));
+  const response = await elevator.getElevationAlongPath({ path, samples });
+  if(!response || !response.results) throw new Error('Elevation request returned no results');
+  return response.results.map(r=>r.elevation);
 }
 function elevationGainLoss(elevations){
   let gain=0, loss=0;
