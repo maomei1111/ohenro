@@ -38,6 +38,8 @@ app.get('/', (_req, res) => {
   try {
     let html = fs.readFileSync(indexTemplatePath, 'utf-8');
     html = html.replace('{{GOOGLE_MAPS_API_KEY}}', process.env.GOOGLE_MAPS_API_KEY ?? '');
+    // WebView/ブラウザによる古いバージョンのキャッシュを防ぐ
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
     res.type('html').send(html);
   } catch (e) {
     console.error('[/] failed to serve index.html:', e);

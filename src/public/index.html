@@ -1614,44 +1614,67 @@ function findBiggestClimb(elevations, distances){
 
 // 標高プロファイルをシンプルな折れ線グラフ(SVG)として描画する
 function buildElevationSvg(elevations, distances){
-  const w=280, h=78, padX=6, padY=6, labelH=14; // labelH分は距離目盛り表示用に下に確保
+  const w=280, h=88, padX=6, padY=6, labelH=14, padLeft=30; // padLeft: 左側に標高目盛り表示用のスペースを確保
   const chartH = h - labelH;
   const minE = Math.min(...elevations), maxE = Math.max(...elevations);
   const range = Math.max(1, maxE-minE);
   const totalDist = distances[distances.length-1] || 1;
-  const pts = elevations.map((e,i)=>{
-    const x = padX + (distances[i]/totalDist) * (w-2*padX);
-    const y = (chartH-padY) - ((e-minE)/range) * (chartH-2*padY);
-    return `${x.toFixed(1)},${y.toFixed(1)}`;
-  });
-  const area = `${padX},${chartH-padY} ${pts.join(' ')} ${w-padX},${chartH-padY}`;
+  const chartLeft = padX + padLeft;
 
-  // 距離目盛り: 基本は1km刻み。区間が長い場合はラベルが重ならないよう間隔を自動で広げる(2/5/10/20km)
+  const xForIdx = (i)=> chartLeft + (distances[i]/totalDist) * (w-padLeft-padX*2);
+  const yForE = (e)=> (chartH-padY) - ((e-minE)/range) * (chartH-2*padY);
+
+  const pts = elevations.map((e,i)=> `${xForIdx(i).toFixed(1)},${yForE(e).toFixed(1)}`);
+  const area = `${chartLeft},${chartH-padY} ${pts.join(' ')} ${w-padX},${chartH-padY}`;
+
+  // 標高(Y軸)の目盛り: 最低・中間・最高の3段階
+  const midE = (minE+maxE)/2;
+  const yTicks = [minE, midE, maxE];
+  let yGrid = '', yLabels = '';
+  yTicks.forEach(e=>{
+    const y = yForE(e);
+    yGrid += `<line x1="${chartLeft}" y1="${y.toFixed(1)}" x2="${w-padX}" y2="${y.toFixed(1)}" stroke="rgba(43,40,37,0.08)" stroke-width="1"></line>`;
+    yLabels += `<text x="${(chartLeft-4).toFixed(1)}" y="${(y+3).toFixed(1)}" font-size="8.5" fill="#8a8578" font-family="JetBrains Mono, monospace" text-anchor="end">${Math.round(e)}m</text>`;
+  });
+
+  // 距離(X軸)目盛り: 基本は1km刻み。区間が長い場合はラベルが重ならないよう間隔を自動で広げる(2/5/10/20km)
   const totalKm = totalDist/1000;
   const stepCandidates = [1,2,5,10,20,50];
-  const stepKm = stepCandidates.find(s => totalKm/s <= 8) ?? 50;
+  const stepKm = stepCandidates.find(s => totalKm/s <= 6) ?? 50;
 
-  const xForKm = (km)=> padX + ((km*1000)/totalDist) * (w-2*padX);
-  let gridLines = '';
-  let labels = '';
+  const xForKm = (km)=> chartLeft + ((km*1000)/totalDist) * (w-padLeft-padX*2);
+  let xGrid = '', xLabels = '';
   for(let km=0; km<=totalKm + 0.001; km+=stepKm){
     const x = xForKm(km);
-    gridLines += `<line x1="${x.toFixed(1)}" y1="${padY}" x2="${x.toFixed(1)}" y2="${chartH}" stroke="rgba(43,40,37,0.08)" stroke-width="1"></line>`;
+    xGrid += `<line x1="${x.toFixed(1)}" y1="${padY}" x2="${x.toFixed(1)}" y2="${chartH}" stroke="rgba(43,40,37,0.08)" stroke-width="1"></line>`;
     const anchor = km===0 ? 'start' : (km>=totalKm-0.001 ? 'end' : 'middle');
-    labels += `<text x="${x.toFixed(1)}" y="${h-2}" font-size="9" fill="#8a8578" font-family="JetBrains Mono, monospace" text-anchor="${anchor}">${km}km</text>`;
+    xLabels += `<text x="${x.toFixed(1)}" y="${h-2}" font-size="9" fill="#8a8578" font-family="JetBrains Mono, monospace" text-anchor="${anchor}">${km}km</text>`;
   }
-  // 終端(合計距離)が最後の目盛りと近すぎない場合のみ、合計距離のラベルも追加しておく
   if(totalKm - Math.floor(totalKm/stepKm)*stepKm > stepKm*0.3){
     const x = xForKm(totalKm);
-    labels += `<text x="${x.toFixed(1)}" y="${h-2}" font-size="9" fill="#8a8578" font-family="JetBrains Mono, monospace" text-anchor="end">${totalKm.toFixed(1)}km</text>`;
+    xLabels += `<text x="${x.toFixed(1)}" y="${h-2}" font-size="9" fill="#8a8578" font-family="JetBrains Mono, monospace" text-anchor="end">${totalKm.toFixed(1)}km</text>`;
+  }
+
+  // このアプリらしい演出: 最高地点に金色のマーカーと標高ラベルを表示する
+  let peakMark = '';
+  const peakIdx = elevations.indexOf(maxE);
+  if(range > 5){ // ほぼ平坦な区間ではわざわざ強調しない
+    const px = xForIdx(peakIdx), py = yForE(maxE);
+    const labelAbove = py > 16; // 上端に近い場合はラベルを下に出す
+    peakMark = `
+      <circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="3.2" fill="#AD8A50" stroke="#fff" stroke-width="1.2"></circle>
+      <text x="${px.toFixed(1)}" y="${(labelAbove ? py-7 : py+13).toFixed(1)}" font-size="9" fill="#AD8A50" font-family="JetBrains Mono, monospace" font-weight="700" text-anchor="middle">${Math.round(maxE)}m</text>`;
   }
 
   return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" style="display:block;margin-top:6px;">
     <polygon points="${area}" fill="rgba(91,107,79,0.22)"></polygon>
     <polyline points="${pts.join(' ')}" fill="none" stroke="#5B6B4F" stroke-width="1.6"></polyline>
-    <line x1="${padX}" y1="${chartH}" x2="${w-padX}" y2="${chartH}" stroke="rgba(43,40,37,0.15)" stroke-width="1"></line>
-    ${gridLines}
-    ${labels}
+    <line x1="${chartLeft}" y1="${chartH}" x2="${w-padX}" y2="${chartH}" stroke="rgba(43,40,37,0.15)" stroke-width="1"></line>
+    ${yGrid}
+    ${xGrid}
+    ${yLabels}
+    ${xLabels}
+    ${peakMark}
   </svg>`;
 }
 
