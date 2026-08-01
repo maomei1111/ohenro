@@ -122,11 +122,14 @@
 
   .controls{
     display:grid;
-    grid-template-columns:1fr 1fr 1fr 1fr auto;
+    grid-template-columns:1fr;
     gap:16px;
-    align-items:end;
   }
-  @media (max-width:900px){ .controls{ grid-template-columns:1fr 1fr; } }
+  /* 出発する札所・到着したい札所だけは横幅に余裕があるので2列で並べる */
+  @media (min-width:640px){
+    .controls{ grid-template-columns:1fr 1fr; }
+    .controls .field-full{ grid-column:1/-1; }
+  }
 
   label{
     display:block;
@@ -159,9 +162,9 @@
     white-space:nowrap;
     min-width:0;
   }
-  .date-fields select.df-year{ flex:1; }
-  .date-fields select.df-month{ flex:2.4; }
-  .date-fields select.df-day{ flex:0.8; }
+  .date-fields select.df-year{ flex:0 0 62px; }
+  .date-fields select.df-month{ flex:1 1 auto; min-width:0; }
+  .date-fields select.df-day{ flex:0 0 50px; }
   .time-fields select.tf-hour, .time-fields select.tf-minute{ flex:1; text-align:center; }
   .time-fields .tf-colon{
     display:flex;
@@ -452,7 +455,7 @@
         <label data-i18n="label_time"></label>
         <div class="time-fields" id="timeFields"></div>
       </div>
-      <div>
+      <div class="field-full">
         <label data-i18n="label_mode"></label>
         <div class="mode-toggle">
           <button id="modeEfficient" class="active" data-i18n="mode_efficient"></button>
