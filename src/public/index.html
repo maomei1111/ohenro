@@ -147,17 +147,29 @@
     font-size:14px;
     color:var(--sumi);
   }
-  .date-fields{
+  .date-fields, .time-fields{
     display:flex;
-    gap:6px;
+    gap:4px;
   }
-  .date-fields select{
-    padding:10px 6px;
-    font-size:13px;
+  .date-fields select, .time-fields select{
+    padding:8px 4px;
+    font-size:12px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    min-width:0;
   }
-  .date-fields select.df-year{ flex:1.3; }
-  .date-fields select.df-month{ flex:1.6; }
-  .date-fields select.df-day{ flex:1; }
+  .date-fields select.df-year{ flex:1; }
+  .date-fields select.df-month{ flex:2.4; }
+  .date-fields select.df-day{ flex:0.8; }
+  .time-fields select.tf-hour, .time-fields select.tf-minute{ flex:1; text-align:center; }
+  .time-fields .tf-colon{
+    display:flex;
+    align-items:center;
+    font-family:'JetBrains Mono', monospace;
+    font-weight:700;
+    color:var(--indigo-mid);
+  }
   .mode-toggle{
     display:flex;
     border:1px solid var(--indigo-mid);
@@ -438,7 +450,7 @@
       </div>
       <div>
         <label data-i18n="label_time"></label>
-        <input type="time" id="startTime" value="07:30">
+        <div class="time-fields" id="timeFields"></div>
       </div>
       <div>
         <label data-i18n="label_mode"></label>
@@ -898,11 +910,12 @@ function setLanguage(lang){
   if(lang === currentLang) return;
   localStorage.setItem('ohenro_lang', lang);
   // Google Maps自体の表示言語は再読み込みしないと切り替わらないため、
-  // ページごと再読み込みする（選択中の出発・到着札所・日付は保持する）
+  // ページごと再読み込みする（選択中の出発・到着札所・日付・時刻は保持する）
   const params = new URLSearchParams(location.search);
   if(startSel.value) params.set('from', startSel.value);
   if(endSel.value) params.set('to', endSel.value);
   params.set('date', getSelectedDateStr());
+  params.set('time', getSelectedTimeStr());
   location.search = params.toString();
 }
 
@@ -1066,6 +1079,37 @@ function getSelectedDateStr(){
   return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
 }
 
+// 時刻選択（24時間制の数字表記に統一。数字なので翻訳・AM/PM表記の言語差を気にしなくてよい）
+function buildTimeFields(presetHHMM){
+  const container = document.getElementById('timeFields');
+  if(!container) return;
+  const [presetH, presetM] = (presetHHMM || '07:30').split(':').map(Number);
+
+  const hourSel = document.createElement('select');
+  hourSel.className = 'tf-hour';
+  for(let h=0; h<24; h++){
+    hourSel.insertAdjacentHTML('beforeend', `<option value="${h}">${String(h).padStart(2,'0')}</option>`);
+  }
+  hourSel.value = presetH;
+
+  const minuteSel = document.createElement('select');
+  minuteSel.className = 'tf-minute';
+  for(let m=0; m<60; m++){
+    minuteSel.insertAdjacentHTML('beforeend', `<option value="${m}">${String(m).padStart(2,'0')}</option>`);
+  }
+  minuteSel.value = presetM;
+
+  container.innerHTML = '';
+  container.appendChild(hourSel);
+  container.insertAdjacentHTML('beforeend', '<span class="tf-colon">:</span>');
+  container.appendChild(minuteSel);
+}
+function getSelectedTimeStr(){
+  const h = document.querySelector('#timeFields .tf-hour')?.value ?? '7';
+  const m = document.querySelector('#timeFields .tf-minute')?.value ?? '30';
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+}
+
 async function fetchNextBus(fromNo, toNo, timeStr, dateStr){
   try{
     const url = `${API_BASE}/next-bus?from=${fromNo}&to=${toNo}&time=${encodeURIComponent(timeStr)}&date=${dateStr}`;
@@ -1115,7 +1159,7 @@ function hhmm(timeStr){
 async function runPlanner(){
   const startNo = Number(startSel.value);
   const endNo = Number(endSel.value);
-  const startTimeStr = document.getElementById('startTime').value || '07:30';
+  const startTimeStr = getSelectedTimeStr();
   const startDateStr = getSelectedDateStr();
 
   if(startNo === endNo){
@@ -1252,17 +1296,19 @@ async function runPlanner(){
     return;
   }
   populateTempleSelects();
-  // 言語切り替え時のページ再読み込みで、選択中だった出発・到着札所・日付をURLパラメータから復元
+  // 言語切り替え時のページ再読み込みで、選択中だった出発・到着札所・日付・時刻をURLパラメータから復元
   const params = new URLSearchParams(location.search);
   const restoredFrom = params.get('from');
   const restoredTo = params.get('to');
   const restoredDate = params.get('date');
+  const restoredTime = params.get('time');
   if(restoredFrom && temples.some(t=>String(t.no)===restoredFrom)) startSel.value = restoredFrom;
   if(restoredTo && temples.some(t=>String(t.no)===restoredTo)) endSel.value = restoredTo;
   if(restoredDate){
     const [ry,rm,rd] = restoredDate.split('-').map(Number);
     if(ry && rm && rd) buildDateFields(new Date(ry, rm-1, rd));
   }
+  buildTimeFields(restoredTime || '07:30');
   runPlanner();
 })();
 
