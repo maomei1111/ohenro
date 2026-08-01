@@ -82,25 +82,15 @@
     text-transform:uppercase;
     margin-bottom:0;
   }
-  .lang-switch{
-    display:flex;
+  .lang-switch select{
+    background:var(--indigo-deep);
+    color:var(--washi);
     border:1px solid rgba(239,230,214,0.35);
     border-radius:2px;
-    overflow:hidden;
-  }
-  .lang-btn{
-    border:none;
-    background:transparent;
-    color:rgba(239,230,214,0.7);
-    font-size:11px;
+    padding:5px 10px;
+    font-size:12px;
     font-family:'Noto Sans JP', sans-serif;
-    padding:5px 12px;
     cursor:pointer;
-  }
-  .lang-btn.active{
-    background:var(--gold);
-    color:var(--indigo-deep);
-    font-weight:700;
   }
   .hero h1{
     font-family:'Noto Serif JP', serif;
@@ -404,8 +394,15 @@
     <div class="hero-top-row">
       <div class="hero-eyebrow">Ohenro Route Planner</div>
       <div class="lang-switch">
-        <button class="lang-btn active" data-lang="ja" onclick="setLanguage('ja')">日本語</button>
-        <button class="lang-btn" data-lang="en" onclick="setLanguage('en')">English</button>
+        <select onchange="setLanguage(this.value)" id="langSelect">
+          <option value="ja">日本語</option>
+          <option value="en">English</option>
+          <option value="ko">한국어</option>
+          <option value="zh-CN">简体中文</option>
+          <option value="zh-TW">繁體中文</option>
+          <option value="de">Deutsch</option>
+          <option value="pt">Português</option>
+        </select>
       </div>
     </div>
     <h1 data-i18n="hero_title"></h1>
@@ -574,6 +571,261 @@ const I18N = {
     landmark_shop: 'Shop', landmark_dining: 'Food', landmark_station: 'Station',
     landmark_busstop: 'Bus stop', landmark_historic: 'Historic site', landmark_tourism: 'Sightseeing', landmark_other: 'Landmark',
   },
+  ko: {
+    hero_title: '오헨로 길잡이<br>도보와 대중교통, 구간마다 최적의 이동 수단을.',
+    hero_desc: '시코쿠 88개 사찰 순례 전체를 대상으로 한 경로 플래너입니다. 구간 거리와 버스 시간표를 바탕으로, 납경소(주인장) 접수 시간 내에 다음 사찰에 도착할 수 있는지 계산하고, 구간별로 도보와 버스 중 더 나은 방법을 제안합니다. 정순(1→88번)·역순(88→1번) 모두 지원합니다. 도보 시간은 사전 계산된 구간은 실제 경로 데이터, 미계산 구간은 직선거리로 추정한 값입니다. ※ 현재 실제 버스 데이터가 준비된 곳은 도쿠시마·고치·가가와의 일부 지역뿐입니다. 그 외 구간은 "버스 편을 찾을 수 없습니다"로 표시되며 도보로 계산됩니다.',
+    label_start: '출발 사찰',
+    label_end: '도착 사찰',
+    label_time: '출발 시각',
+    label_mode: '우선 모드',
+    mode_efficient: '최단 시간',
+    mode_walk: '도보 우선',
+    btn_run: '경로 계산하기',
+    legend_walk: '도보 구간',
+    legend_bus: '버스 구간',
+    legend_nokyo: '납경소 접수시간 7:00–17:00으로 계산',
+    footnote: '※ 버스 시각은 각 버스 회사의 공개 데이터를 기반으로 합니다. 도보 시간은 실제 경로를 바탕으로 추정한 값입니다. 공휴일에는 시간표가 다를 수 있습니다.',
+    map_title: '구간 지도',
+    summary_arrival: '예상 도착 시각',
+    summary_walk_total: '총 도보 거리',
+    summary_bus_segments: '구간',
+    summary_bus_label: '버스 이용 구간',
+    summary_nokyo_label: '마지막 사찰 납경소',
+    summary_ok: 'OK',
+    summary_warn: '주의',
+    nokyo_ok: '납경 접수 가능 시간',
+    nokyo_warn: '납경 접수 마감 이후일 수 있음',
+    err_same_temple: '출발과 도착이 같은 사찰입니다. 다른 사찰을 선택해 주세요.',
+    loading_route: '경로를 불러오는 중…',
+    loading_temples: '사찰 데이터를 불러오는 중…',
+    err_temples: '사찰 데이터를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.',
+    walk_mode_note: '도보 우선 모드',
+    bus_no_service: '이 시간 이후 실제 데이터상 버스 편이 없습니다 → 도보',
+    bus_fetch_error: '버스 정보를 가져오지 못했습니다 (통신 오류) → 도보로 계산',
+    walk_faster: (dep)=>`버스(${dep} 출발)보다 도보가 더 빨라 도보를 권장합니다`,
+    bus_direct: (agency,dep,arr)=>`${agency} | ${dep} 출발 → ${arr} 도착`,
+    bus_transfer: (agency,dep,mid,midArr,midDep,arr)=>`${agency} | ${dep} 출발 → 「${mid}」에서 환승(${midArr} 도착/${midDep} 출발) → ${arr} 도착`,
+    to_temple_km: (name,km)=>`${name}까지 ${km}km`,
+    transfer_badge: '환승 1회',
+    map_link: '지도 보기 →',
+    route_shown_direct: '실제 이동 경로를 표시하고 있습니다',
+    route_shown_bus: '도보→버스→도보 경로를 표시하고 있습니다',
+    route_fail: (err)=>`경로를 가져오지 못해 직선으로 임시 표시 중입니다｜오류: ${err}`,
+    landmarks_found: (n,list)=>`주변 명소 ${n}건: ${list}`,
+    landmarks_none: '경로에서 180m 이내에 이름이 있는 명소가 없습니다',
+    landmarks_fail: (err)=>`명소 데이터를 가져오지 못했습니다｜오류: ${err}`,
+    elevation_stats: (gain,loss)=>`도보 구간 고저차: ⬆️상승고도 ${gain}m／⬇️하강 ${loss}m`,
+    elevation_climb: (s,e,len,gain)=>`최대 오르막: ${s}km 지점부터 ${e}km 지점까지(${len}km 구간)에서 ${gain}m 상승합니다.`,
+    current_location: '현재 위치',
+    landmark_toilet: '화장실', landmark_lodging: '숙박시설', landmark_roadside: '미치노에키(휴게소)',
+    landmark_onsen: '온천', landmark_vending: '자판기', landmark_temple: '사찰/신사',
+    landmark_shop: '상점', landmark_dining: '음식점', landmark_station: '역',
+    landmark_busstop: '버스 정류장', landmark_historic: '사적', landmark_tourism: '관광명소', landmark_other: '명소',
+  },
+  'zh-CN': {
+    hero_title: '遍路指南<br>徒步与公共交通，每个路段的最佳出行方式。',
+    hero_desc: '这是一款覆盖四国八十八所寺庙巡礼全程的路线规划工具。根据路段距离和公交时刻表，计算是否能在纳经所（御朱印受理处）开放时间内抵达下一座寺庙，并针对每个路段给出徒步或乘车的建议。支持顺打（1→88番）和逆打（88→1番）两种方向。徒步时间：已预先计算的路段采用实际路线数据，未计算的路段则采用直线距离估算。※ 目前只有德岛、高知、香川部分地区有真实公交数据，其余路段会显示"未找到公交班次"，并按徒步计算。',
+    label_start: '出发寺庙',
+    label_end: '目的地寺庙',
+    label_time: '出发时间',
+    label_mode: '优先模式',
+    mode_efficient: '最快优先',
+    mode_walk: '仅徒步',
+    btn_run: '计算路线',
+    legend_walk: '徒步路段',
+    legend_bus: '公交路段',
+    legend_nokyo: '按纳经所受理时间 7:00–17:00 计算',
+    footnote: '※ 公交时刻基于各公交公司公开的数据。徒步时间根据实际路线估算。节假日的班次可能有所不同。',
+    map_title: '路段地图',
+    summary_arrival: '预计到达时间',
+    summary_walk_total: '徒步总距离',
+    summary_bus_segments: '段',
+    summary_bus_label: '使用公交的路段',
+    summary_nokyo_label: '终点寺庙纳经所',
+    summary_ok: 'OK',
+    summary_warn: '请注意',
+    nokyo_ok: '在纳经受理时间内',
+    nokyo_warn: '可能已过纳经受理时间',
+    err_same_temple: '出发地和目的地是同一座寺庙，请选择两座不同的寺庙。',
+    loading_route: '正在获取路线…',
+    loading_temples: '正在加载寺庙数据…',
+    err_temples: '寺庙数据加载失败，请稍后重试。',
+    walk_mode_note: '仅徒步模式',
+    bus_no_service: '此时间之后的数据中未找到公交班次 → 按徒步计算',
+    bus_fetch_error: '获取公交信息失败（通信错误）→ 按徒步计算',
+    walk_faster: (dep)=>`徒步比公交（${dep}发车）更快，建议徒步`,
+    bus_direct: (agency,dep,arr)=>`${agency}｜${dep}发车 → ${arr}到达`,
+    bus_transfer: (agency,dep,mid,midArr,midDep,arr)=>`${agency}｜${dep}发车 → 在「${mid}」换乘(到达${midArr}/发车${midDep}) → ${arr}到达`,
+    to_temple_km: (name,km)=>`距${name} ${km}公里`,
+    transfer_badge: '换乘1次',
+    map_link: '查看地图 →',
+    route_shown_direct: '正在显示实际路线',
+    route_shown_bus: '正在显示 徒步→公交→徒步 路线',
+    route_fail: (err)=>`路线获取失败 → 暂以直线显示｜错误：${err}`,
+    landmarks_found: (n,list)=>`沿途景点 ${n} 处：${list}`,
+    landmarks_none: '路线180米范围内未找到有名称的景点',
+    landmarks_fail: (err)=>`景点数据获取失败｜错误：${err}`,
+    elevation_stats: (gain,loss)=>`徒步路段高低差：⬆️爬升 ${gain}m／⬇️下降 ${loss}m`,
+    elevation_climb: (s,e,len,gain)=>`最大爬坡路段：从${s}公里处到${e}公里处（共${len}公里），爬升${gain}米。`,
+    current_location: '当前位置',
+    landmark_toilet: '厕所', landmark_lodging: '住宿', landmark_roadside: '道之驿(公路休息站)',
+    landmark_onsen: '温泉', landmark_vending: '自动售货机', landmark_temple: '寺庙/神社',
+    landmark_shop: '商店', landmark_dining: '餐饮', landmark_station: '车站',
+    landmark_busstop: '公交站', landmark_historic: '历史遗迹', landmark_tourism: '观光景点', landmark_other: '景点',
+  },
+  'zh-TW': {
+    hero_title: '遍路指南<br>徒步與大眾運輸，每個路段的最佳移動方式。',
+    hero_desc: '這是一款涵蓋四國八十八所寺廟巡禮全程的路線規劃工具。根據路段距離和公車時刻表，計算能否在納經所（御朱印受理處）開放時間內抵達下一座寺廟，並針對每個路段提供徒步或搭車的建議。支援順打（1→88番）與逆打（88→1番）兩種方向。徒步時間：已預先計算的路段採用實際路線資料，未計算的路段則以直線距離估算。※ 目前僅德島、高知、香川部分地區備有實際公車資料，其餘路段會顯示「找不到公車班次」，並以徒步計算。',
+    label_start: '出發寺廟',
+    label_end: '目的地寺廟',
+    label_time: '出發時間',
+    label_mode: '優先模式',
+    mode_efficient: '最快優先',
+    mode_walk: '僅徒步',
+    btn_run: '計算路線',
+    legend_walk: '徒步路段',
+    legend_bus: '公車路段',
+    legend_nokyo: '依納經所受理時間 7:00–17:00 計算',
+    footnote: '※ 公車時刻依各公車公司公開資料為準。徒步時間依實際路線估算。國定假日班次可能有所不同。',
+    map_title: '路段地圖',
+    summary_arrival: '預計抵達時間',
+    summary_walk_total: '徒步總距離',
+    summary_bus_segments: '段',
+    summary_bus_label: '使用公車的路段',
+    summary_nokyo_label: '終點寺廟納經所',
+    summary_ok: 'OK',
+    summary_warn: '請注意',
+    nokyo_ok: '在納經受理時間內',
+    nokyo_warn: '可能已過納經受理時間',
+    err_same_temple: '出發地與目的地為同一座寺廟，請選擇兩座不同的寺廟。',
+    loading_route: '正在取得路線…',
+    loading_temples: '正在載入寺廟資料…',
+    err_temples: '寺廟資料載入失敗，請稍後再試。',
+    walk_mode_note: '僅徒步模式',
+    bus_no_service: '此時間之後的資料中找不到公車班次 → 以徒步計算',
+    bus_fetch_error: '取得公車資訊失敗（通訊錯誤）→ 以徒步計算',
+    walk_faster: (dep)=>`徒步比公車（${dep}發車）更快，建議徒步`,
+    bus_direct: (agency,dep,arr)=>`${agency}｜${dep}發車 → ${arr}抵達`,
+    bus_transfer: (agency,dep,mid,midArr,midDep,arr)=>`${agency}｜${dep}發車 → 在「${mid}」轉乘(抵達${midArr}/發車${midDep}) → ${arr}抵達`,
+    to_temple_km: (name,km)=>`距${name} ${km}公里`,
+    transfer_badge: '轉乘1次',
+    map_link: '查看地圖 →',
+    route_shown_direct: '正在顯示實際路線',
+    route_shown_bus: '正在顯示 徒步→公車→徒步 路線',
+    route_fail: (err)=>`路線取得失敗 → 暫以直線顯示｜錯誤：${err}`,
+    landmarks_found: (n,list)=>`沿途景點 ${n} 處：${list}`,
+    landmarks_none: '路線180公尺範圍內找不到有名稱的景點',
+    landmarks_fail: (err)=>`景點資料取得失敗｜錯誤：${err}`,
+    elevation_stats: (gain,loss)=>`徒步路段高低差：⬆️爬升 ${gain}m／⬇️下降 ${loss}m`,
+    elevation_climb: (s,e,len,gain)=>`最大爬坡路段：從${s}公里處到${e}公里處（共${len}公里），爬升${gain}公尺。`,
+    current_location: '目前位置',
+    landmark_toilet: '廁所', landmark_lodging: '住宿', landmark_roadside: '道之驛(公路休息站)',
+    landmark_onsen: '溫泉', landmark_vending: '自動販賣機', landmark_temple: '寺廟/神社',
+    landmark_shop: '商店', landmark_dining: '餐飲', landmark_station: '車站',
+    landmark_busstop: '公車站', landmark_historic: '古蹟', landmark_tourism: '觀光景點', landmark_other: '景點',
+  },
+  de: {
+    hero_title: 'Ohenro-Wegweiser<br>Zu Fuß oder mit dem Bus – die beste Option für jede Etappe.',
+    hero_desc: 'Ein Routenplaner für alle 88 Tempel der Shikoku-Pilgerfahrt. Anhand von Streckenlängen und Busfahrplänen wird berechnet, ob der nächste Tempel erreicht werden kann, während das Stempelbüro (Nōkyōsho) noch geöffnet ist, und für jede Etappe wird die bessere Option vorgeschlagen – zu Fuß oder mit dem Bus. Sowohl die reguläre Reihenfolge (1→88) als auch die umgekehrte Reihenfolge (88→1) werden unterstützt. Die Gehzeiten basieren, wo verfügbar, auf tatsächlichen Routendaten, sonst auf einer Luftlinien-Schätzung. Hinweis: Echte Busdaten liegen derzeit nur für Teile von Tokushima, Kochi und Kagawa vor. Für andere Etappen wird „keine Busverbindung gefunden" angezeigt und standardmäßig zu Fuß gerechnet.',
+    label_start: 'Starttempel',
+    label_end: 'Zieltempel',
+    label_time: 'Abfahrtszeit',
+    label_mode: 'Priorität',
+    mode_efficient: 'Am schnellsten',
+    mode_walk: 'Nur zu Fuß',
+    btn_run: 'Route berechnen',
+    legend_walk: 'Fußweg-Abschnitt',
+    legend_bus: 'Bus-Abschnitt',
+    legend_nokyo: 'Annahme: Stempelbüro geöffnet 7:00–17:00 Uhr',
+    footnote: '※ Busfahrpläne basieren auf den veröffentlichten Daten der jeweiligen Betreiber. Gehzeiten sind anhand der tatsächlichen Route geschätzt. An Feiertagen können abweichende Fahrpläne gelten.',
+    map_title: 'Kartenansicht der Etappe',
+    summary_arrival: 'Voraussichtliche Ankunft',
+    summary_walk_total: 'Gesamte Gehstrecke',
+    summary_bus_segments: 'Abschnitt(e)',
+    summary_bus_label: 'Genutzte Busabschnitte',
+    summary_nokyo_label: 'Stempelbüro am Zieltempel',
+    summary_ok: 'OK',
+    summary_warn: 'Achtung',
+    nokyo_ok: 'Innerhalb der Öffnungszeiten',
+    nokyo_warn: 'Möglicherweise nach Schließung',
+    err_same_temple: 'Start und Ziel sind derselbe Tempel. Bitte zwei unterschiedliche Tempel wählen.',
+    loading_route: 'Route wird geladen…',
+    loading_temples: 'Tempeldaten werden geladen…',
+    err_temples: 'Tempeldaten konnten nicht geladen werden. Bitte später erneut versuchen.',
+    walk_mode_note: 'Modus „Nur zu Fuß"',
+    bus_no_service: 'Ab diesem Zeitpunkt keine Busverbindung in den Daten gefunden → zu Fuß',
+    bus_fetch_error: 'Busdaten konnten nicht abgerufen werden (Verbindungsfehler) → Berechnung zu Fuß',
+    walk_faster: (dep)=>`Zu Fuß schneller als der Bus (Abfahrt ${dep}) — zu Fuß gehen empfohlen`,
+    bus_direct: (agency,dep,arr)=>`${agency} | Abfahrt ${dep} → Ankunft ${arr}`,
+    bus_transfer: (agency,dep,mid,midArr,midDep,arr)=>`${agency} | Abfahrt ${dep} → Umstieg in „${mid}" (an ${midArr} / ab ${midDep}) → Ankunft ${arr}`,
+    to_temple_km: (name,km)=>`Bis ${name}: ${km}km`,
+    transfer_badge: '1 Umstieg',
+    map_link: 'Karte ansehen →',
+    route_shown_direct: 'Die tatsächliche Route wird angezeigt',
+    route_shown_bus: 'Route zu Fuß → Bus → zu Fuß wird angezeigt',
+    route_fail: (err)=>`Routenabruf fehlgeschlagen → Gerade Linie als Behelf angezeigt | Fehler: ${err}`,
+    landmarks_found: (n,list)=>`${n} Sehenswürdigkeit(en) in der Nähe: ${list}`,
+    landmarks_none: 'Keine benannten Sehenswürdigkeiten innerhalb von 180m der Route gefunden',
+    landmarks_fail: (err)=>`Sehenswürdigkeiten konnten nicht geladen werden | Fehler: ${err}`,
+    elevation_stats: (gain,loss)=>`Höhenunterschied zu Fuß: ⬆️ ${gain}m Anstieg / ⬇️ ${loss}m Abstieg`,
+    elevation_climb: (s,e,len,gain)=>`Größter Anstieg: ${gain}m auf ${len}km, vom ${s}km- bis zum ${e}km-Punkt.`,
+    current_location: 'Ihr Standort',
+    landmark_toilet: 'Toilette', landmark_lodging: 'Unterkunft', landmark_roadside: 'Raststätte (Michi-no-Eki)',
+    landmark_onsen: 'Onsen (heiße Quelle)', landmark_vending: 'Verkaufsautomat', landmark_temple: 'Tempel/Schrein',
+    landmark_shop: 'Geschäft', landmark_dining: 'Essen', landmark_station: 'Bahnhof',
+    landmark_busstop: 'Bushaltestelle', landmark_historic: 'Historische Stätte', landmark_tourism: 'Sehenswürdigkeit', landmark_other: 'Ort',
+  },
+  pt: {
+    hero_title: 'Guia da Rota Ohenro<br>A pé ou de ônibus — a melhor opção para cada trecho.',
+    hero_desc: 'Um planejador de rotas para os 88 templos da Peregrinação de Shikoku. Com base na distância de cada trecho e nos horários dos ônibus, calcula se é possível chegar ao próximo templo enquanto o escritório de carimbos (Nokyosho) ainda está aberto, e sugere a melhor opção para cada trecho — a pé ou de ônibus. Suporta tanto a ordem padrão (1→88) quanto a ordem inversa (88→1). Os tempos de caminhada usam dados reais de rota quando disponíveis, e estimativas em linha reta nos demais casos. Nota: dados reais de ônibus atualmente cobrem apenas partes de Tokushima, Kochi e Kagawa. Os demais trechos mostrarão "nenhum ônibus encontrado" e serão calculados a pé.',
+    label_start: 'Templo de partida',
+    label_end: 'Templo de destino',
+    label_time: 'Horário de partida',
+    label_mode: 'Modo de prioridade',
+    mode_efficient: 'Mais rápido',
+    mode_walk: 'Só a pé',
+    btn_run: 'Calcular rota',
+    legend_walk: 'Trecho a pé',
+    legend_bus: 'Trecho de ônibus',
+    legend_nokyo: 'Considera horário do escritório de carimbos 7:00–17:00',
+    footnote: '※ Os horários de ônibus são baseados em dados publicados por cada operadora. Os tempos de caminhada são estimados a partir da rota real. Os horários podem ser diferentes em feriados.',
+    map_title: 'Mapa do trecho',
+    summary_arrival: 'Chegada estimada',
+    summary_walk_total: 'Distância total a pé',
+    summary_bus_segments: 'trecho(s)',
+    summary_bus_label: 'Trechos de ônibus usados',
+    summary_nokyo_label: 'Escritório de carimbos no templo final',
+    summary_ok: 'OK',
+    summary_warn: 'Atenção',
+    nokyo_ok: 'Dentro do horário de atendimento',
+    nokyo_warn: 'Pode ser após o fechamento',
+    err_same_temple: 'A partida e o destino são o mesmo templo. Escolha dois templos diferentes.',
+    loading_route: 'Buscando rota…',
+    loading_temples: 'Carregando dados dos templos…',
+    err_temples: 'Falha ao carregar os dados dos templos. Tente novamente em instantes.',
+    walk_mode_note: 'Modo só a pé',
+    bus_no_service: 'Nenhum ônibus encontrado nos dados após este horário → a pé',
+    bus_fetch_error: 'Falha ao obter dados do ônibus (erro de conexão) → calculado a pé',
+    walk_faster: (dep)=>`A pé é mais rápido que o ônibus (parte às ${dep}) — recomenda-se ir a pé`,
+    bus_direct: (agency,dep,arr)=>`${agency} | parte às ${dep} → chega às ${arr}`,
+    bus_transfer: (agency,dep,mid,midArr,midDep,arr)=>`${agency} | parte às ${dep} → baldeação em "${mid}" (chega ${midArr} / parte ${midDep}) → chega às ${arr}`,
+    to_temple_km: (name,km)=>`Até ${name}: ${km}km`,
+    transfer_badge: '1 baldeação',
+    map_link: 'Ver mapa →',
+    route_shown_direct: 'Mostrando a rota real',
+    route_shown_bus: 'Mostrando rota a pé → ônibus → a pé',
+    route_fail: (err)=>`Falha ao buscar rota → mostrando linha reta temporariamente | erro: ${err}`,
+    landmarks_found: (n,list)=>`${n} ponto(s) de interesse próximo(s): ${list}`,
+    landmarks_none: 'Nenhum ponto de interesse com nome encontrado em até 180m da rota',
+    landmarks_fail: (err)=>`Falha ao carregar pontos de interesse | erro: ${err}`,
+    elevation_stats: (gain,loss)=>`Desnível a pé: ⬆️ ${gain}m de subida / ⬇️ ${loss}m de descida`,
+    elevation_climb: (s,e,len,gain)=>`Maior subida: ${gain}m ao longo de ${len}km, do ponto ${s}km ao ponto ${e}km.`,
+    current_location: 'Sua localização',
+    landmark_toilet: 'Banheiro', landmark_lodging: 'Hospedagem', landmark_roadside: 'Posto de parada (Michi-no-eki)',
+    landmark_onsen: 'Fonte termal (Onsen)', landmark_vending: 'Máquina de venda automática', landmark_temple: 'Templo/Santuário',
+    landmark_shop: 'Loja', landmark_dining: 'Restaurante', landmark_station: 'Estação',
+    landmark_busstop: 'Ponto de ônibus', landmark_historic: 'Sítio histórico', landmark_tourism: 'Ponto turístico', landmark_other: 'Local',
+  },
 };
 
 function t(key, ...args){
@@ -600,19 +852,21 @@ const TEMPLE_NAMES_EN = {
   85:'Yakuriji', 86:'Shidoji', 87:'Nagaoji', 88:'Okuboji',
 };
 
+// ラテン文字圏(英・独・葡)はローマ字表記、CJK圏(韓国語・中国語)と日本語は
+// 元の漢字表記のまま表示する（固有名詞の漢字は中国語・韓国語話者にも読み取りやすいため）。
+const ROMANIZED_LANGS = ['en', 'de', 'pt'];
 function templeDisplayName(temple){
-  if(currentLang === 'en') return TEMPLE_NAMES_EN[temple.no] || temple.name;
+  if(ROMANIZED_LANGS.includes(currentLang)) return TEMPLE_NAMES_EN[temple.no] || temple.name;
   return temple.name;
 }
 
 function applyStaticTranslations(){
-  document.documentElement.lang = currentLang === 'en' ? 'en' : 'ja';
+  document.documentElement.lang = currentLang;
   document.querySelectorAll('[data-i18n]').forEach(el=>{
     el.innerHTML = t(el.getAttribute('data-i18n'));
   });
-  document.querySelectorAll('.lang-btn').forEach(btn=>{
-    btn.classList.toggle('active', btn.getAttribute('data-lang') === currentLang);
-  });
+  const langSelect = document.getElementById('langSelect');
+  if(langSelect) langSelect.value = currentLang;
 }
 
 function setLanguage(lang){
@@ -742,7 +996,7 @@ const AGENCY_NAMES = {
 function agencyDisplayName(key){
   const entry = AGENCY_NAMES[key];
   if(!entry) return key;
-  return entry[currentLang] || entry.ja;
+  return entry[currentLang] || entry.en || entry.ja;
 }
 
 // GTFSの時刻文字列("07:57:00")から秒を除いて表示用に整形する
