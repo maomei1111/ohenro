@@ -1,17 +1,53 @@
 {
   "1": {
-    "history": "霊山寺は、四国八十八ヶ所の第一番札所であり、多くの遍路がここから旅を始めることから「一番さん」の名で親しまれています。寺伝によれば、奈良時代に行基菩薩がこの地を訪れて開いたのが始まりとされ、後に弘法大師（空海）がこの地で修行した際、釈迦がインドの霊鷲山で説法する様子を感得したことから「竺和山 霊山寺」と名付けたと伝えられています。本尊は釈迦如来です。",
-    "spots": [
-      {
-        "name": "多宝塔",
-        "image": "/temple-images/1/tahoto.jpg",
-        "description": "応永年間（1394〜1428年）に建立されたと伝わる、600年近い歴史を持つ塔。内部には五智如来が祀られています。天正年間の長宗我部元親による兵火や、明治24年（1891年）の火災も免れ、創建当時から残る数少ない建物のひとつです。"
-      },
-      {
-        "name": "縁結び観音",
-        "image": "/temple-images/1/enmusubi-kannon.jpg",
-        "description": "男女の縁だけでなく、健康・仕事・幸せなど、様々な「縁」にご利益があるとされる観音像です。お賽銭に加えて、水でお清めをしながら祈ることで、より功徳が得られると伝えられています。"
-      }
-    ]
+    "ja": {
+      "history": "霊山寺は、四国八十八ヶ所の第一番札所であり、多くの遍路がここから旅を始めることから「一番さん」の名で親しまれています。寺伝によれば、奈良時代に行基菩薩がこの地を訪れて開いたのが始まりとされ、後に弘法大師（空海）がこの地で修行した際、釈迦がインドの霊鷲山で説法する様子を感得したことから「竺和山 霊山寺」と名付けたと伝えられています。本尊は釈迦如来です。",
+      "spots": [
+        { "name": "多宝塔", "description": "応永年間（1394〜1428年）に建立されたと伝わる、600年近い歴史を持つ塔。内部には五智如来が祀られています。天正年間の長宗我部元親による兵火や、明治24年（1891年）の火災も免れ、創建当時から残る数少ない建物のひとつです。" },
+        { "name": "縁結び観音", "description": "男女の縁だけでなく、健康・仕事・幸せなど、様々な「縁」にご利益があるとされる観音像です。お賽銭に加えて、水でお清めをしながら祈ることで、より功徳が得られると伝えられています。" }
+      ]
+    },
+    "en": {
+      "history": "Ryozenji is the first temple of the Shikoku 88 Temple Pilgrimage, affectionately known as 'Ichiban-san' (Temple Number One) since so many pilgrims begin their journey here. According to temple tradition, it was founded in the Nara period by the priest Gyoki. Later, Kobo Daishi (Kukai) practiced at this site and, sensing a scene reminiscent of Shakyamuni Buddha preaching on Vulture Peak in India, named it 'Jikuwazan Ryozenji.' Its principal image is Shaka Nyorai (Shakyamuni Buddha).",
+      "spots": [
+        { "name": "Tahoto Pagoda", "description": "Said to have been built during the Oei era (1394-1428), this pagoda is nearly 600 years old. It enshrines the Five Wisdom Buddhas. Having survived both wartime fires set by Chosokabe Motochika in the Tensho era and a fire in 1891, it remains one of the few structures still standing from the temple's founding period." },
+        { "name": "Enmusubi Kannon", "description": "This statue of Kannon is said to bring good fortune not only in romantic relationships, but in many kinds of connections - health, work, and happiness. Tradition holds that praying while purifying the statue with water, in addition to making an offering, brings even greater blessings." }
+      ]
+    },
+    "ko": {
+      "history": "영산지(霊山寺)는 시코쿠 88개 사찰 순례의 첫 번째 사찰로, 많은 순례자가 이곳에서 여정을 시작하기 때문에 '이치반상(1번 사찰)'이라는 애칭으로 불립니다. 사찰에 전해지는 이야기에 따르면 나라 시대에 교키 스님이 이 땅을 찾아 창건했다고 하며, 이후 고보 다이시(구카이)가 이곳에서 수행하던 중 석가모니가 인도 영취산에서 설법하는 모습을 감득하여 '지쿠와잔 영산지'라 이름 붙였다고 전해집니다. 본존불은 석가여래입니다.",
+      "spots": [
+        { "name": "다보탑", "description": "오에이 시대(1394~1428년)에 건립되었다고 전해지는, 약 600년의 역사를 지닌 탑입니다. 내부에는 오지여래가 모셔져 있습니다. 덴쇼 시대 조소카베 모토치카의 병화와 1891년의 화재도 피해, 창건 당시부터 남아있는 몇 안 되는 건물 중 하나입니다." },
+        { "name": "인연 관음", "description": "남녀의 인연뿐만 아니라 건강・일・행복 등 다양한 '인연'에 이로움이 있다고 전해지는 관음상입니다. 시주뿐만 아니라 물로 정화하며 기도하면 더 큰 공덕을 얻을 수 있다고 전해집니다." }
+      ]
+    },
+    "zh-CN": {
+      "history": "灵山寺是四国八十八所寺庙巡礼的第一号寺庙，因众多遍路者从此地开始旅程而被亲切地称为“一号寺”。据寺院传说，奈良时代由行基菩萨在此地开创，后来弘法大师（空海）在此修行时，感应到释迦在印度灵鹫山说法的景象，因而将寺名定为“竺和山灵山寺”。本尊为释迦如来。",
+      "spots": [
+        { "name": "多宝塔", "description": "相传建于应永年间（1394-1428年），已有近600年历史的塔。内部供奉着五智如来。历经天正年间长宗我部元亲的兵火及1891年的火灾都幸免于难，是创建之初遗留至今为数不多的建筑之一。" },
+        { "name": "结缘观音", "description": "这尊观音像不仅在男女姻缘方面，也被认为在健康、工作、幸福等各种“缘分”上都能带来庇佑。据说除了投香油钱外，用水净身祈祷更能获得功德。" }
+      ]
+    },
+    "zh-TW": {
+      "history": "靈山寺是四國八十八所寺廟巡禮的第一號寺廟，因眾多遍路者從此地開始旅程而被親切地稱為「一號寺」。據寺院傳說，奈良時代由行基菩薩在此地開創，後來弘法大師（空海）在此修行時，感應到釋迦在印度靈鷲山說法的景象，因而將寺名定為「竺和山靈山寺」。本尊為釋迦如來。",
+      "spots": [
+        { "name": "多寶塔", "description": "相傳建於應永年間（1394-1428年），已有近600年歷史的塔。內部供奉著五智如來。歷經天正年間長宗我部元親的兵火及1891年的火災都倖免於難，是創建之初遺留至今為數不多的建築之一。" },
+        { "name": "結緣觀音", "description": "這尊觀音像不僅在男女姻緣方面，也被認為在健康、工作、幸福等各種「緣分」上都能帶來庇佑。據說除了投香油錢外，用水淨身祈禱更能獲得功德。" }
+      ]
+    },
+    "de": {
+      "history": "Ryozenji ist der erste Tempel der Shikoku-88-Tempel-Pilgerfahrt und wird liebevoll 'Ichiban-san' (Tempel Nummer Eins) genannt, da so viele Pilger hier ihre Reise beginnen. Der Tempelüberlieferung zufolge wurde er in der Nara-Zeit vom Mönch Gyoki gegründet. Später praktizierte Kobo Daishi (Kukai) an diesem Ort und benannte ihn, als er eine Vision hatte, die an Shakyamuni Buddhas Predigt auf dem Geierberg in Indien erinnerte, 'Jikuwazan Ryozenji'. Die Hauptgottheit ist Shaka Nyorai (Shakyamuni Buddha).",
+      "spots": [
+        { "name": "Tahoto-Pagode", "description": "Diese Pagode, die der Überlieferung nach in der Oei-Ära (1394-1428) erbaut wurde, ist fast 600 Jahre alt. In ihrem Inneren werden die Fünf Weisheitsbuddhas verehrt. Sie überstand sowohl die Kriegsbrände durch Chosokabe Motochika in der Tensho-Ära als auch einen Brand im Jahr 1891 und ist eines der wenigen noch erhaltenen Gebäude aus der Gründungszeit des Tempels." },
+        { "name": "Enmusubi-Kannon", "description": "Dieser Kannon-Statue wird nachgesagt, Glück nicht nur in der Liebe, sondern in vielen Arten von Verbindungen zu bringen - Gesundheit, Arbeit und Glück. Der Überlieferung nach bringt es noch größeren Segen, beim Gebet die Statue zusätzlich zur Opfergabe mit Wasser zu reinigen." }
+      ]
+    },
+    "pt": {
+      "history": "Ryozenji é o primeiro templo da Peregrinação dos 88 Templos de Shikoku, carinhosamente chamado de 'Ichiban-san' (Templo Número Um), já que muitos peregrinos iniciam sua jornada aqui. Segundo a tradição do templo, foi fundado no período Nara pelo monge Gyoki. Mais tarde, Kobo Daishi (Kukai) praticou neste local e, sentindo uma cena semelhante à pregação de Buda Shakyamuni no Pico do Abutre, na Índia, batizou-o de 'Jikuwazan Ryozenji'. Sua imagem principal é Shaka Nyorai (Buda Shakyamuni).",
+      "spots": [
+        { "name": "Pagode Tahoto", "description": "Este pagode, construído segundo a tradição durante a era Oei (1394-1428), tem quase 600 anos de história. Em seu interior estão consagrados os Cinco Budas da Sabedoria. Tendo sobrevivido tanto aos incêndios de guerra causados por Chosokabe Motochika na era Tensho quanto a um incêndio em 1891, é uma das poucas estruturas remanescentes da época da fundação do templo." },
+        { "name": "Kannon do Enlace (Enmusubi Kannon)", "description": "Esta estátua de Kannon é conhecida por trazer boa sorte não apenas nos relacionamentos amorosos, mas em muitos tipos de conexões - saúde, trabalho e felicidade. Reza a tradição que orar enquanto purifica a estátua com água, além de fazer uma oferenda, traz bênçãos ainda maiores." }
+      ]
+    }
   }
 }

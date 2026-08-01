@@ -60,12 +60,26 @@ try {
   console.log('[startup] temple_descriptions.json は未生成です');
 }
 
+// 詳細ページのUI文言（由来・見どころ・戻る 等）。7言語分。
+const TEMPLE_PAGE_UI: Record<string, { history: string; highlights: string; back: string; empty: string; title: string }> = {
+  ja: { history: '由来', highlights: '見どころ', back: '← 戻る', empty: 'この札所の紹介文は準備中です。', title: '番' },
+  en: { history: 'History', highlights: 'Highlights', back: '← Back', empty: 'A description for this temple is coming soon.', title: '' },
+  ko: { history: '유래', highlights: '볼거리', back: '← 뒤로', empty: '이 사찰의 소개 글은 준비 중입니다.', title: '번' },
+  'zh-CN': { history: '由来', highlights: '看点', back: '← 返回', empty: '该寺庙的介绍正在准备中。', title: '番' },
+  'zh-TW': { history: '由來', highlights: '看點', back: '← 返回', empty: '該寺廟的介紹正在準備中。', title: '番' },
+  de: { history: 'Geschichte', highlights: 'Highlights', back: '← Zurück', empty: 'Eine Beschreibung für diesen Tempel folgt in Kürze.', title: '' },
+  pt: { history: 'História', highlights: 'Destaques', back: '← Voltar', empty: 'A descrição deste templo será adicionada em breve.', title: '' },
+};
+
 app.get('/temple/:no', (req, res) => {
   const no = Number(req.params.no);
   const temple = temples88.find((t) => t.no === no);
   if (!temple) return res.status(404).send('Not found');
 
-  const desc = templeDescriptions[String(no)];
+  const lang = TEMPLE_PAGE_UI[String(req.query.lang)] ? String(req.query.lang) : 'ja';
+  const ui = TEMPLE_PAGE_UI[lang];
+  const desc = templeDescriptions[String(no)]?.[lang] ?? templeDescriptions[String(no)]?.ja;
+
   const placeInfo = templesPlacesInfo[String(no)];
   const photoUrl = placeInfo?.photoName
     ? `https://places.googleapis.com/v1/${placeInfo.photoName}/media?maxHeightPx=500&key=${process.env.GOOGLE_MAPS_API_KEY ?? ''}`
@@ -77,7 +91,6 @@ app.get('/temple/:no', (req, res) => {
           .map(
             (spot: any) => `
       <div class="spot-card">
-        <img src="${spot.image}" alt="${spot.name}">
         <h3>${spot.name}</h3>
         <p>${spot.description}</p>
       </div>`
@@ -86,11 +99,11 @@ app.get('/temple/:no', (req, res) => {
       : '';
 
   const html = `<!DOCTYPE html>
-<html lang="ja">
+<html lang="${lang}">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>${no}番 ${temple.name} - 遍路みちしるべ</title>
+<title>${no}${ui.title} ${temple.name} - Ohenro</title>
 <style>
   body{ font-family:'Noto Sans JP', sans-serif; max-width:640px; margin:0 auto; padding:24px; background:#F7F1E6; color:#2B2825; line-height:1.9; }
   h1{ font-family:'Noto Serif JP', serif; font-size:26px; color:#1D2B4F; margin-bottom:4px; }
@@ -103,19 +116,18 @@ app.get('/temple/:no', (req, res) => {
   .empty{ color:#8a8578; font-size:14px; }
   .spots-grid{ display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:12px; }
   @media (max-width:520px){ .spots-grid{ grid-template-columns:1fr; } }
-  .spot-card img{ margin-top:0; aspect-ratio:4/3; object-fit:cover; }
   .spot-card p{ font-size:13.5px; }
 </style>
 </head>
 <body>
-  <h1><span class="no">${no}番</span> ${temple.name}</h1>
+  <h1><span class="no">${no}${ui.title}</span> ${temple.name}</h1>
   ${photoUrl ? `<img src="${photoUrl}" alt="${temple.name}"><div class="credit">Photo: ${placeInfo.photoAttribution || 'Google'}</div>` : ''}
   ${desc ? `
-    <h2>由来</h2>
+    <h2>${ui.history}</h2>
     <p>${desc.history}</p>
-    ${spotsHtml ? `<h2>見どころ</h2><div class="spots-grid">${spotsHtml}</div>` : ''}
-  ` : `<p class="empty">この札所の紹介文は準備中です。</p>`}
-  <a class="back" href="javascript:history.back()">← 戻る</a>
+    ${spotsHtml ? `<h2>${ui.highlights}</h2><div class="spots-grid">${spotsHtml}</div>` : ''}
+  ` : `<p class="empty">${ui.empty}</p>`}
+  <a class="back" href="javascript:history.back()">${ui.back}</a>
 </body>
 </html>`;
   res.type('html').send(html);

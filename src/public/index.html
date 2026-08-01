@@ -703,6 +703,7 @@ const I18N = {
     nokyo_over: (min)=>`納経受付終了時刻を${min}分超過`,
     temple_info_toggle: '御本尊を見る',
     label_honzon: '御本尊',
+    temple_detail_link: '由来・見どころを見る →',
     official_site_link: '公式サイトで詳しく見る →',
     landmark_toilet: 'トイレ', landmark_lodging: '宿泊', landmark_roadside: '道の駅',
     landmark_onsen: '温泉', landmark_vending: '自販機', landmark_temple: '寺社',
@@ -771,6 +772,7 @@ const I18N = {
     nokyo_over: (min)=>`${min} min past stamp office closing time`,
     temple_info_toggle: 'View principal deity',
     label_honzon: 'Principal image',
+    temple_detail_link: 'History & highlights →',
     official_site_link: 'View on official site →',
     landmark_toilet: 'Restroom', landmark_lodging: 'Lodging', landmark_roadside: 'Roadside station',
     landmark_onsen: 'Hot spring', landmark_vending: 'Vending machine', landmark_temple: 'Temple/Shrine',
@@ -839,6 +841,7 @@ const I18N = {
     nokyo_over: (min)=>`납경소 마감 시간 ${min}분 초과`,
     temple_info_toggle: '본존불 보기',
     label_honzon: '본존불',
+    temple_detail_link: '유래・볼거리 보기 →',
     official_site_link: '공식 사이트에서 보기 →',
     landmark_toilet: '화장실', landmark_lodging: '숙박시설', landmark_roadside: '미치노에키(휴게소)',
     landmark_onsen: '온천', landmark_vending: '자판기', landmark_temple: '사찰/신사',
@@ -907,6 +910,7 @@ const I18N = {
     nokyo_over: (min)=>`已超过纳经所关闭时间${min}分钟`,
     temple_info_toggle: '查看本尊',
     label_honzon: '本尊',
+    temple_detail_link: '查看历史与看点 →',
     official_site_link: '在官方网站查看详情 →',
     landmark_toilet: '厕所', landmark_lodging: '住宿', landmark_roadside: '道之驿(公路休息站)',
     landmark_onsen: '温泉', landmark_vending: '自动售货机', landmark_temple: '寺庙/神社',
@@ -975,6 +979,7 @@ const I18N = {
     nokyo_over: (min)=>`已超過納經所關閉時間${min}分鐘`,
     temple_info_toggle: '查看本尊',
     label_honzon: '本尊',
+    temple_detail_link: '查看歷史與看點 →',
     official_site_link: '在官方網站查看詳情 →',
     landmark_toilet: '廁所', landmark_lodging: '住宿', landmark_roadside: '道之驛(公路休息站)',
     landmark_onsen: '溫泉', landmark_vending: '自動販賣機', landmark_temple: '寺廟/神社',
@@ -1043,6 +1048,7 @@ const I18N = {
     nokyo_over: (min)=>`${min} Min. nach Schließung des Stempelbüros`,
     temple_info_toggle: 'Hauptgottheit anzeigen',
     label_honzon: 'Hauptgottheit',
+    temple_detail_link: 'Geschichte & Highlights →',
     official_site_link: 'Auf der offiziellen Website ansehen →',
     landmark_toilet: 'Toilette', landmark_lodging: 'Unterkunft', landmark_roadside: 'Raststätte (Michi-no-Eki)',
     landmark_onsen: 'Onsen (heiße Quelle)', landmark_vending: 'Verkaufsautomat', landmark_temple: 'Tempel/Schrein',
@@ -1111,6 +1117,7 @@ const I18N = {
     nokyo_over: (min)=>`${min} min após o fechamento do escritório de carimbos`,
     temple_info_toggle: 'Ver divindade principal',
     label_honzon: 'Divindade principal',
+    temple_detail_link: 'História e destaques →',
     official_site_link: 'Ver no site oficial →',
     landmark_toilet: 'Banheiro', landmark_lodging: 'Hospedagem', landmark_roadside: 'Posto de parada (Michi-no-eki)',
     landmark_onsen: 'Fonte termal (Onsen)', landmark_vending: 'Máquina de venda automática', landmark_temple: 'Templo/Santuário',
@@ -1784,8 +1791,7 @@ async function runPlanner(){
             ${t('label_honzon')}：${honzonDisplay(temple.no)}
             ${templePlacesInfo[temple.no]?.summary ? `<div class="places-summary">${templePlacesInfo[temple.no].summary}<span class="google-credit"> — Google</span></div>` : ''}
           </div>` : ''}
-        ${officialTempleUrl(temple.no) ? `
-          <a class="official-link" href="${officialTempleUrl(temple.no)}" target="_blank" rel="noopener">${t('official_site_link')}</a>` : ''}
+        <a class="official-link" href="/temple/${temple.no}?lang=${currentLang}" target="_blank" rel="noopener">${t('temple_detail_link')}</a>
         ${a.note ? `
           <div class="segment-note" onclick="openMapForIndex(${idx})">
             <span class="badge-mode ${a.mode}">${a.mode==='bus'?'BUS':'WALK'}</span>
