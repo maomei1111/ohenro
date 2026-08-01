@@ -544,6 +544,11 @@ function agencyDisplayName(key){
   return AGENCY_NAMES[key] || key;
 }
 
+// GTFSの時刻文字列("07:57:00")から秒を除いて表示用に整形する
+function hhmm(timeStr){
+  return timeStr ? timeStr.slice(0,5) : timeStr;
+}
+
 async function runPlanner(){
   const startNo = Number(startSel.value);
   const endNo = Number(endSel.value);
@@ -603,12 +608,12 @@ async function runPlanner(){
           chosen = 'bus';
           arriveMin = busArrive;
           note = busResult.transfers === 1
-            ? `${agencyDisplayName(busResult.agency_key)}｜${busResult.from_departure}発 → 「${busResult.mid_stop_name}」で乗り換え(${busResult.mid_arrival}着/${busResult.mid_departure}発) → ${busResult.to_arrival}着`
-            : `${agencyDisplayName(busResult.agency_key)}｜${busResult.from_departure}発 → ${busResult.to_arrival}着`;
+            ? `${agencyDisplayName(busResult.agency_key)}｜${hhmm(busResult.from_departure)}発 → 「${busResult.mid_stop_name}」で乗り換え(${hhmm(busResult.mid_arrival)}着/${hhmm(busResult.mid_departure)}発) → ${hhmm(busResult.to_arrival)}着`
+            : `${agencyDisplayName(busResult.agency_key)}｜${hhmm(busResult.from_departure)}発 → ${hhmm(busResult.to_arrival)}着`;
         } else {
           chosen = 'walk';
           arriveMin = walkArrive;
-          note = `バス(${busResult.from_departure}発)より徒歩の方が早いため徒歩を推奨`;
+          note = `バス(${hhmm(busResult.from_departure)}発)より徒歩の方が早いため徒歩を推奨`;
         }
       } else {
         chosen = 'walk';
