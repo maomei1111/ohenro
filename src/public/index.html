@@ -875,6 +875,30 @@ function fitBoundsToCoords(coords){
   googleMap.fitBounds(bounds, 40);
 }
 
+// 徒歩区間の標高プロファイルを取得し、獲得標高(上り)・下り標高を計算する
+function fetchElevationProfile(coords){
+  return new Promise((resolve, reject)=>{
+    const elevator = new google.maps.ElevationService();
+    const path = coords.map(c=>({lat:c[0], lng:c[1]}));
+    const samples = Math.min(60, Math.max(2, coords.length));
+    elevator.getElevationForPath({ path, samples }, (results, status)=>{
+      if(status === 'OK' && results){
+        resolve(results.map(r=>r.elevation));
+      } else {
+        reject(new Error(`Elevation request failed: ${status}`));
+      }
+    });
+  });
+}
+function elevationGainLoss(elevations){
+  let gain=0, loss=0;
+  for(let i=1;i<elevations.length;i++){
+    const diff = elevations[i]-elevations[i-1];
+    if(diff>0) gain+=diff; else loss += -diff;
+  }
+  return { gain: Math.round(gain), loss: Math.round(loss) };
+}
+
 function showCurrentLocation(){
   if(!navigator.geolocation) return;
   navigator.geolocation.getCurrentPosition(
@@ -933,6 +957,7 @@ async function openMap(fromNo, toNo, mode, note, distanceKm, busResult){
       && busResult.from_stop_lat && busResult.to_stop_lat;
 
     let allCoords = [];
+    let walkOnlyCoords = []; // 標高計算の対象（徒歩区間のみ。バス乗車中の区間は対象外）
     let routeOk = false, routeErr = null;
 
     if(useBusStops){
@@ -951,6 +976,7 @@ async function openMap(fromNo, toNo, mode, note, distanceKm, busResult){
         addPinMarker(fromStop, '#A63A2A', null, busResult.from_stop_name || 'バス停', 7);
         addPinMarker(toStop, '#A63A2A', null, busResult.to_stop_name || 'バス停', 7);
         allCoords = [...walk1.coords, ...busLeg.coords, ...walk2.coords];
+        walkOnlyCoords = [...walk1.coords, ...walk2.coords];
         routeOk = true;
       }catch(e){
         routeErr = e.message;
@@ -963,6 +989,7 @@ async function openMap(fromNo, toNo, mode, note, distanceKm, busResult){
         const r = await fetchRoute(from, to, travelMode);
         if(myToken !== mapReqToken) return;
         allCoords = r.coords;
+        if(mode!=='bus') walkOnlyCoords = allCoords; // バス(driving)区間は標高計算の対象外
         routeOk = true;
       }catch(e){
         routeErr = e.message;
@@ -973,6 +1000,18 @@ async function openMap(fromNo, toNo, mode, note, distanceKm, busResult){
 
     fitBoundsToCoords(allCoords);
     showCurrentLocation();
+
+    let elevationNote = '';
+    if(walkOnlyCoords.length >= 2){
+      try{
+        const elevations = await fetchElevationProfile(walkOnlyCoords);
+        if(myToken !== mapReqToken) return;
+        const { gain, loss } = elevationGainLoss(elevations);
+        elevationNote = `<br><span style="color:#5a564f;">徒歩区間の高低差：⬆️獲得標高 ${gain}m／⬇️下り ${loss}m</span>`;
+      }catch(e){
+        console.warn('elevation fetch failed', e);
+      }
+    }
 
     let landmarksOk = false, landmarks = [], lmErr = null;
     try{
@@ -999,7 +1038,7 @@ async function openMap(fromNo, toNo, mode, note, distanceKm, busResult){
 
     document.getElementById('mapFoot').innerHTML =
       `<span class="badge-mode ${mode}">${mode==='bus'?'BUS':'WALK'}</span>${note}<br>
-       <span style="color:#5a564f;">${routeNote}</span><br>
+       <span style="color:#5a564f;">${routeNote}</span>${elevationNote}<br>
        <span style="color:#5a564f;">${lmNote}</span>`;
   }, 60);
 }
