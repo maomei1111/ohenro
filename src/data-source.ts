@@ -6,11 +6,12 @@ import {
   GtfsTrip,
   GtfsStopTime,
   GtfsCalendar,
+  GtfsCalendarDate,
   TempleStopLink,
 } from './entities/gtfs.entities';
 import { CachedLandmark } from './entities/landmark.entities';
 
-const ENTITIES = [GtfsStop, GtfsRoute, GtfsTrip, GtfsStopTime, GtfsCalendar, TempleStopLink, CachedLandmark];
+const ENTITIES = [GtfsStop, GtfsRoute, GtfsTrip, GtfsStopTime, GtfsCalendar, GtfsCalendarDate, TempleStopLink, CachedLandmark];
 
 /**
  * ローカル開発時: PGHOST/PGUSER/PGPASSWORD/PGDATABASE の個別環境変数を使用

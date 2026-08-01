@@ -63,6 +63,17 @@ export class GtfsCalendar {
   @Column('varchar') end_date!: string;
 }
 
+// calendar_dates.txt: 祝日・年末年始など「その日だけ特別な運行」を表す例外データ。
+// exception_type: 1=その日だけ追加で運行, 2=その日だけ運休（通常の曜日パターンを上書きする）
+@Entity('gtfs_calendar_dates')
+export class GtfsCalendarDate {
+  @PrimaryColumn('varchar') agency_key!: string;
+  @PrimaryColumn('varchar') service_id!: string;
+  @PrimaryColumn('varchar') date!: string; // YYYYMMDD
+
+  @Column('int') exception_type!: number;
+}
+
 // 札所⇔最寄り停留所のマッピングは、GTFS由来ではなく自前で管理するテーブル
 @Entity('temple_stop_links')
 export class TempleStopLink {

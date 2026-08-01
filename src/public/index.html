@@ -122,11 +122,11 @@
 
   .controls{
     display:grid;
-    grid-template-columns:1fr 1fr 1fr auto;
+    grid-template-columns:1fr 1fr 1fr 1fr auto;
     gap:16px;
     align-items:end;
   }
-  @media (max-width:720px){ .controls{ grid-template-columns:1fr 1fr; } }
+  @media (max-width:900px){ .controls{ grid-template-columns:1fr 1fr; } }
 
   label{
     display:block;
@@ -422,6 +422,10 @@
         <select id="endTemple"></select>
       </div>
       <div>
+        <label data-i18n="label_date"></label>
+        <input type="date" id="startDate">
+      </div>
+      <div>
         <label data-i18n="label_time"></label>
         <input type="time" id="startTime" value="07:30">
       </div>
@@ -474,6 +478,7 @@ const I18N = {
     hero_desc: '四国八十八ヶ所すべてを対象にした周遊プランナーです。区間距離とバスダイヤをもとに、納経所が開いている時間内に次の札所へ着けるかを計算し、徒歩とバスのどちらが良いか区間ごとに提案します。順打ち（1→88番）・逆打ち（88→1番）のどちらにも対応しています。徒歩時間は、事前計算済みの区間は実際の道のり、未計算の区間は直線距離からの概算です。※現在バスの実データが整備済みなのは徳島・高知・香川の一部エリアのみです。それ以外の区間は「バス便が見つかりません」と表示され、徒歩での計算になります。',
     label_start: '出発する札所',
     label_end: '到着したい札所',
+    label_date: '出発日',
     label_time: '出発時刻',
     label_mode: '優先モード',
     mode_efficient: '効率優先',
@@ -525,6 +530,7 @@ const I18N = {
     hero_desc: 'A route planner covering all 88 temples of the Shikoku Pilgrimage. Using segment distances and bus timetables, it works out whether you can reach the next temple while its stamp office is still open, and suggests the better option for each leg — walking or bus. Both the standard order (1→88) and reverse order (88→1) are supported. Walking times use real route data where available, and straight-line estimates elsewhere. Note: real bus data currently only covers parts of Tokushima, Kochi, and Kagawa. Other legs will show "no bus service found" and default to walking.',
     label_start: 'Starting temple',
     label_end: 'Destination temple',
+    label_date: 'Date',
     label_time: 'Departure time',
     label_mode: 'Priority mode',
     mode_efficient: 'Fastest',
@@ -576,6 +582,7 @@ const I18N = {
     hero_desc: '시코쿠 88개 사찰 순례 전체를 대상으로 한 경로 플래너입니다. 구간 거리와 버스 시간표를 바탕으로, 납경소(주인장) 접수 시간 내에 다음 사찰에 도착할 수 있는지 계산하고, 구간별로 도보와 버스 중 더 나은 방법을 제안합니다. 정순(1→88번)·역순(88→1번) 모두 지원합니다. 도보 시간은 사전 계산된 구간은 실제 경로 데이터, 미계산 구간은 직선거리로 추정한 값입니다. ※ 현재 실제 버스 데이터가 준비된 곳은 도쿠시마·고치·가가와의 일부 지역뿐입니다. 그 외 구간은 "버스 편을 찾을 수 없습니다"로 표시되며 도보로 계산됩니다.',
     label_start: '출발 사찰',
     label_end: '도착 사찰',
+    label_date: '출발 날짜',
     label_time: '출발 시각',
     label_mode: '우선 모드',
     mode_efficient: '최단 시간',
@@ -627,6 +634,7 @@ const I18N = {
     hero_desc: '这是一款覆盖四国八十八所寺庙巡礼全程的路线规划工具。根据路段距离和公交时刻表，计算是否能在纳经所（御朱印受理处）开放时间内抵达下一座寺庙，并针对每个路段给出徒步或乘车的建议。支持顺打（1→88番）和逆打（88→1番）两种方向。徒步时间：已预先计算的路段采用实际路线数据，未计算的路段则采用直线距离估算。※ 目前只有德岛、高知、香川部分地区有真实公交数据，其余路段会显示"未找到公交班次"，并按徒步计算。',
     label_start: '出发寺庙',
     label_end: '目的地寺庙',
+    label_date: '出发日期',
     label_time: '出发时间',
     label_mode: '优先模式',
     mode_efficient: '最快优先',
@@ -678,6 +686,7 @@ const I18N = {
     hero_desc: '這是一款涵蓋四國八十八所寺廟巡禮全程的路線規劃工具。根據路段距離和公車時刻表，計算能否在納經所（御朱印受理處）開放時間內抵達下一座寺廟，並針對每個路段提供徒步或搭車的建議。支援順打（1→88番）與逆打（88→1番）兩種方向。徒步時間：已預先計算的路段採用實際路線資料，未計算的路段則以直線距離估算。※ 目前僅德島、高知、香川部分地區備有實際公車資料，其餘路段會顯示「找不到公車班次」，並以徒步計算。',
     label_start: '出發寺廟',
     label_end: '目的地寺廟',
+    label_date: '出發日期',
     label_time: '出發時間',
     label_mode: '優先模式',
     mode_efficient: '最快優先',
@@ -729,6 +738,7 @@ const I18N = {
     hero_desc: 'Ein Routenplaner für alle 88 Tempel der Shikoku-Pilgerfahrt. Anhand von Streckenlängen und Busfahrplänen wird berechnet, ob der nächste Tempel erreicht werden kann, während das Stempelbüro (Nōkyōsho) noch geöffnet ist, und für jede Etappe wird die bessere Option vorgeschlagen – zu Fuß oder mit dem Bus. Sowohl die reguläre Reihenfolge (1→88) als auch die umgekehrte Reihenfolge (88→1) werden unterstützt. Die Gehzeiten basieren, wo verfügbar, auf tatsächlichen Routendaten, sonst auf einer Luftlinien-Schätzung. Hinweis: Echte Busdaten liegen derzeit nur für Teile von Tokushima, Kochi und Kagawa vor. Für andere Etappen wird „keine Busverbindung gefunden" angezeigt und standardmäßig zu Fuß gerechnet.',
     label_start: 'Starttempel',
     label_end: 'Zieltempel',
+    label_date: 'Datum',
     label_time: 'Abfahrtszeit',
     label_mode: 'Priorität',
     mode_efficient: 'Am schnellsten',
@@ -780,6 +790,7 @@ const I18N = {
     hero_desc: 'Um planejador de rotas para os 88 templos da Peregrinação de Shikoku. Com base na distância de cada trecho e nos horários dos ônibus, calcula se é possível chegar ao próximo templo enquanto o escritório de carimbos (Nokyosho) ainda está aberto, e sugere a melhor opção para cada trecho — a pé ou de ônibus. Suporta tanto a ordem padrão (1→88) quanto a ordem inversa (88→1). Os tempos de caminhada usam dados reais de rota quando disponíveis, e estimativas em linha reta nos demais casos. Nota: dados reais de ônibus atualmente cobrem apenas partes de Tokushima, Kochi e Kagawa. Os demais trechos mostrarão "nenhum ônibus encontrado" e serão calculados a pé.',
     label_start: 'Templo de partida',
     label_end: 'Templo de destino',
+    label_date: 'Data',
     label_time: 'Horário de partida',
     label_mode: 'Modo de prioridade',
     mode_efficient: 'Mais rápido',
@@ -957,10 +968,14 @@ function toHHMM(mins){
   const m = mins%60;
   return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');
 }
+function todayDateStr(){
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
 
-async function fetchNextBus(fromNo, toNo, timeStr, weekday){
+async function fetchNextBus(fromNo, toNo, timeStr, dateStr){
   try{
-    const url = `${API_BASE}/next-bus?from=${fromNo}&to=${toNo}&time=${encodeURIComponent(timeStr)}&weekday=${weekday}`;
+    const url = `${API_BASE}/next-bus?from=${fromNo}&to=${toNo}&time=${encodeURIComponent(timeStr)}&date=${dateStr}`;
     const res = await fetch(url);
     if(!res.ok) throw new Error(`API responded ${res.status}`);
     const data = await res.json();
@@ -1008,6 +1023,7 @@ async function runPlanner(){
   const startNo = Number(startSel.value);
   const endNo = Number(endSel.value);
   const startTimeStr = document.getElementById('startTime').value || '07:30';
+  const startDateStr = document.getElementById('startDate').value || todayDateStr();
 
   if(startNo === endNo){
     document.getElementById('timeline').innerHTML =
@@ -1036,7 +1052,6 @@ async function runPlanner(){
   let currentMin = toMinutes(startTimeStr);
   let totalWalkKm = 0, busSegments = 0, walkSegments = 0;
   const NOKYO_CLOSE = toMinutes('17:00');
-  const weekday = new Date().getDay();
 
   const arrival = [{ no:route[0].no, timeMin: currentMin, mode:null, note:null }];
 
@@ -1051,7 +1066,7 @@ async function runPlanner(){
     if(mode==='efficient'){
       // バス停までの徒歩時間は、停留所ごとの実距離をもとにサーバー側で正確に計算するため、
       // ここでは現在時刻をそのまま渡すだけでよい。
-      busResult = await fetchNextBus(prevNo, seg.no, toHHMM(currentMin), weekday);
+      busResult = await fetchNextBus(prevNo, seg.no, toHHMM(currentMin), startDateStr);
 
       if(busResult === undefined){
         chosen = 'walk';
@@ -1135,6 +1150,8 @@ async function runPlanner(){
 // ---- 起動処理: 札所データを取得 → セレクト構築 → 初回計算 ----
 (async function init(){
   applyStaticTranslations();
+  const startDateEl = document.getElementById('startDate');
+  if(startDateEl && !startDateEl.value) startDateEl.value = todayDateStr();
   document.getElementById('timeline').innerHTML = `<div class="segment-note">${t('loading_temples')}</div>`;
   try{
     await loadTemples();

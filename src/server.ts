@@ -54,17 +54,28 @@ app.get('/next-bus', async (req, res) => {
     const from = Number(req.query.from);
     const to = Number(req.query.to);
     const time = String(req.query.time ?? '09:00'); // "HH:MM"
-    const weekday = req.query.weekday !== undefined ? Number(req.query.weekday) : new Date().getDay();
 
     if (!from || !to) {
       return res.status(400).json({ error: 'from, to は必須です（札所番号）' });
     }
 
+    // date: "YYYY-MM-DD" 形式で受け取る。省略時はサーバーの「今日」を使う。
+    const dateParam = req.query.date ? String(req.query.date) : null;
+    const targetDate = dateParam ? new Date(`${dateParam}T00:00:00`) : new Date();
+    if (Number.isNaN(targetDate.getTime())) {
+      return res.status(400).json({ error: 'date は YYYY-MM-DD 形式で指定してください' });
+    }
+    const weekday = targetDate.getDay();
+    const dateStr =
+      targetDate.getFullYear().toString() +
+      String(targetDate.getMonth() + 1).padStart(2, '0') +
+      String(targetDate.getDate()).padStart(2, '0');
+
     const [h, m] = time.split(':').map(Number);
     const afterMinutes = h * 60 + m;
 
-    const result = await findNextBus(from, to, afterMinutes, weekday);
-    res.json({ from, to, time, weekday, result });
+    const result = await findNextBus(from, to, afterMinutes, weekday, dateStr);
+    res.json({ from, to, time, date: dateStr, weekday, result });
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: 'internal error' });

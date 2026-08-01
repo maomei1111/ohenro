@@ -21,6 +21,7 @@ import {
   GtfsTrip,
   GtfsStopTime,
   GtfsCalendar,
+  GtfsCalendarDate,
 } from './entities/gtfs.entities';
 
 function readCsvFromZip(zip: AdmZip, fileName: string): Record<string, string>[] {
@@ -130,6 +131,18 @@ async function importGtfs(zipPath: string, agencyKey: string) {
   calendar = dedupeByKey(calendar, ['agency_key', 'service_id']);
   if (calendar.length) await chunkedUpsert(ds.getRepository(GtfsCalendar), calendar, ['agency_key', 'service_id']);
   console.log(`  → ${calendar.length}件`);
+
+  console.log(`[${agencyKey}] calendar_dates.txt を取り込み中（祝日・特例日。無いフィードもあります）...`);
+  let calendarDates = readCsvFromZip(zip, 'calendar_dates.txt').map((cd) => ({
+    agency_key: agencyKey,
+    service_id: cd.service_id,
+    date: cd.date,
+    exception_type: Number(cd.exception_type),
+  }));
+  calendarDates = dedupeByKey(calendarDates, ['agency_key', 'service_id', 'date']);
+  if (calendarDates.length)
+    await chunkedUpsert(ds.getRepository(GtfsCalendarDate), calendarDates, ['agency_key', 'service_id', 'date']);
+  console.log(`  → ${calendarDates.length}件`);
 
   await ds.destroy();
   console.log(`[${agencyKey}] 取り込み完了`);

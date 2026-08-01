@@ -1,21 +1,22 @@
 /**
- * 「札所Aから札所Bへ、指定時刻以降で最初に乗れる便」を検索するクエリ。
+ * 「札所Aから札所Bへ、指定日時以降で最初に乗れる便」を検索するクエリ。
  * 直通便に加えて、同一事業者内での「乗り換え1回まで」の経路も探索し、
  * 早く着く方を返す。
  *
  * 実務上の注意:
  *  - GTFSの時刻は "25:30:00" のように24時を超える表記がある（深夜便対応のため）。
  *    単純な文字列比較ではなく、分に正規化してから比較する。
- *  - 曜日（平日/土日祝）は calendar.txt の service_id で絞り込む。
- *    祝日の特例は calendar_dates.txt（今回は未実装）で上書きされるので、
- *    本格運用では calendar_dates.txt も取り込むこと。
+ *  - 運行日の判定は、単純な曜日ではなく、GTFS仕様に正しく沿った以下の3条件をすべて満たすかで行う:
+ *      1. calendar.txt の該当曜日がtrue
+ *      2. 指定日が calendar.txt の start_date〜end_date の範囲内
+ *      3. calendar_dates.txt に「その日だけ運休(exception_type=2)」の指定があれば除外、
+ *         逆に「その日だけ追加運行(exception_type=1)」があれば曜日パターンに関わらず追加
+ *    これにより、祝日ダイヤ（平日パターンだが祝日は運休、または祝日だけの特別ダイヤ等）を
+ *    実際の事業者の公開データ通りに反映できる。
  *
- * 重要な設計変更:
- *  - 以前は「バス停まで歩く時間」を距離に関係なく一律10分と仮定していたため、
- *    停留所が遠い区間で「実際には徒歩より遅いのにバスが選ばれる」誤判定が起きていた。
- *    現在は temple_stop_links に保存済みの実際の距離(distance_m)を使って、
- *    区間ごとに「出発札所→乗車停留所」「降車停留所→到着札所」の徒歩時間を
- *    個別に計算し、正しい door-to-door の所要時間で比較するようにしている。
+ * 重要な設計変更（徒歩時間の正確化。以前の版からの引き継ぎ）:
+ *  - 「バス停まで歩く時間」は temple_stop_links の実距離(distance_m)を使って区間ごとに計算し、
+ *    door-to-door の所要時間で徒歩ルートと比較する。
  *
  * 乗り換え機能の割り切り（設計時に合意した制約）:
  *  - 乗り換えは1回まで（2回以上の乗り継ぎは非対応）
@@ -39,16 +40,44 @@ function walkMinutesForMeters(meters: number): number {
 
 const WEEKDAY_COLUMNS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
 
+// 「そのtrip(=service_id)が指定日に運行しているか」を判定するSQL条件のひな形。
+// gtfs_trips trip を参照している前提で使う（agency_key・service_idのカラムが必要）。
+function serviceRunsOnDateClause(tripAlias: string, dayColumn: string): string {
+  return `
+    (
+      EXISTS (
+        SELECT 1 FROM gtfs_calendar cal
+        WHERE cal.agency_key = ${tripAlias}.agency_key
+          AND cal.service_id = ${tripAlias}.service_id
+          AND cal.start_date <= $DATE AND cal.end_date >= $DATE
+          AND cal."${dayColumn}" = true
+      )
+      AND NOT EXISTS (
+        SELECT 1 FROM gtfs_calendar_dates cdr
+        WHERE cdr.agency_key = ${tripAlias}.agency_key
+          AND cdr.service_id = ${tripAlias}.service_id
+          AND cdr.date = $DATE AND cdr.exception_type = 2
+      )
+    )
+    OR EXISTS (
+      SELECT 1 FROM gtfs_calendar_dates cda
+      WHERE cda.agency_key = ${tripAlias}.agency_key
+        AND cda.service_id = ${tripAlias}.service_id
+        AND cda.date = $DATE AND cda.exception_type = 1
+    )
+  `;
+}
+
 async function findDirectBus(
   fromLinks: TempleStopLink[],
   toLinks: TempleStopLink[],
   afterMinutes: number,
-  dayColumn: string
+  dayColumn: string,
+  dateStr: string
 ) {
   const ds = AppDataSource;
 
-  const rows = await ds.query(
-    `
+  const sql = `
     SELECT
       st_from.departure_time AS from_departure,
       st_to.arrival_time     AS to_arrival,
@@ -70,10 +99,6 @@ async function findDirectBus(
     JOIN gtfs_trips trip
       ON trip.agency_key = st_from.agency_key
      AND trip.trip_id    = st_from.trip_id
-    JOIN gtfs_calendar cal
-      ON cal.agency_key = trip.agency_key
-     AND cal.service_id = trip.service_id
-     AND cal."${dayColumn}" = true
     JOIN gtfs_stops s_from
       ON s_from.agency_key = st_from.agency_key
      AND s_from.stop_id    = st_from.stop_id
@@ -83,14 +108,16 @@ async function findDirectBus(
     WHERE st_from.agency_key = ANY($1)
       AND st_from.stop_id = ANY($2)
       AND st_to.stop_id   = ANY($3)
+      AND (${serviceRunsOnDateClause('trip', dayColumn).replace(/\$DATE/g, '$4')})
     ORDER BY st_from.departure_time ASC
-    `,
-    [
-      Array.from(new Set(fromLinks.map((l) => l.agency_key))),
-      fromLinks.map((l) => l.stop_id),
-      toLinks.map((l) => l.stop_id),
-    ]
-  );
+  `;
+
+  const rows = await ds.query(sql, [
+    Array.from(new Set(fromLinks.map((l) => l.agency_key))),
+    fromLinks.map((l) => l.stop_id),
+    toLinks.map((l) => l.stop_id),
+    dateStr,
+  ]);
 
   const candidates = rows
     .map((r: any) => {
@@ -121,14 +148,14 @@ async function findOneTransferBus(
   fromLinks: TempleStopLink[],
   toLinks: TempleStopLink[],
   afterMinutes: number,
-  dayColumn: string
+  dayColumn: string,
+  dateStr: string
 ) {
   const ds = AppDataSource;
 
   // leg1: 出発停留所 → 中継停留所（乗換候補地点） / leg2: 中継停留所 → 到着停留所
   // 同一事業者内の乗り換えのみを対象とする（JOIN条件の agency_key 一致で担保）
-  const rows = await ds.query(
-    `
+  const sql = `
     SELECT
       leg1.agency_key   AS agency_key,
       leg1.from_stop_id AS from_stop_id,
@@ -160,14 +187,11 @@ async function findOneTransferBus(
        AND st_b.stop_sequence > st_a.stop_sequence
       JOIN gtfs_trips trip1
         ON trip1.agency_key = st_a.agency_key AND trip1.trip_id = st_a.trip_id
-      JOIN gtfs_calendar cal1
-        ON cal1.agency_key = trip1.agency_key
-       AND cal1.service_id = trip1.service_id
-       AND cal1."${dayColumn}" = true
       JOIN gtfs_stops s_b
         ON s_b.agency_key = st_b.agency_key AND s_b.stop_id = st_b.stop_id
       WHERE st_a.agency_key = ANY($1)
         AND st_a.stop_id = ANY($2)
+        AND (${serviceRunsOnDateClause('trip1', dayColumn).replace(/\$DATE/g, '$4')})
     ) leg1
     JOIN (
       SELECT
@@ -187,25 +211,23 @@ async function findOneTransferBus(
        AND st_d.stop_sequence > st_c.stop_sequence
       JOIN gtfs_trips trip2
         ON trip2.agency_key = st_c.agency_key AND trip2.trip_id = st_c.trip_id
-      JOIN gtfs_calendar cal2
-        ON cal2.agency_key = trip2.agency_key
-       AND cal2.service_id = trip2.service_id
-       AND cal2."${dayColumn}" = true
       JOIN gtfs_stops s_d
         ON s_d.agency_key = st_d.agency_key AND s_d.stop_id = st_d.stop_id
       WHERE st_d.stop_id = ANY($3)
+        AND (${serviceRunsOnDateClause('trip2', dayColumn).replace(/\$DATE/g, '$4')})
     ) leg2
       ON leg2.agency_key = leg1.agency_key
      AND leg2.mid_stop_id = leg1.mid_stop_id
      AND leg2.trip2 <> leg1.trip1
     ORDER BY leg1.mid_arrival ASC
-    `,
-    [
-      Array.from(new Set(fromLinks.map((l) => l.agency_key))),
-      fromLinks.map((l) => l.stop_id),
-      toLinks.map((l) => l.stop_id),
-    ]
-  );
+  `;
+
+  const rows = await ds.query(sql, [
+    Array.from(new Set(fromLinks.map((l) => l.agency_key))),
+    fromLinks.map((l) => l.stop_id),
+    toLinks.map((l) => l.stop_id),
+    dateStr,
+  ]);
 
   const candidates = rows
     .map((r: any) => {
@@ -242,7 +264,8 @@ export async function findNextBus(
   fromTempleNo: number,
   toTempleNo: number,
   afterMinutes: number, // 0:00からの経過分。例: 9:15 -> 555
-  weekday: number // 0=日曜 ... 6=土曜 (Date.getDay()の値をそのまま渡せる)
+  weekday: number, // 0=日曜 ... 6=土曜 (指定日から算出したもの)
+  dateStr: string // "YYYYMMDD" 形式。calendar/calendar_datesとの突き合わせに使う
 ) {
   const ds = AppDataSource.isInitialized ? AppDataSource : await AppDataSource.initialize();
 
@@ -253,8 +276,8 @@ export async function findNextBus(
   const dayColumn = WEEKDAY_COLUMNS[weekday];
 
   const [direct, withTransfer] = await Promise.all([
-    findDirectBus(fromLinks, toLinks, afterMinutes, dayColumn),
-    findOneTransferBus(fromLinks, toLinks, afterMinutes, dayColumn),
+    findDirectBus(fromLinks, toLinks, afterMinutes, dayColumn, dateStr),
+    findOneTransferBus(fromLinks, toLinks, afterMinutes, dayColumn, dateStr),
   ]);
 
   // 両方見つかった場合は、実際の到着(徒歩込み)が早い方を採用
@@ -266,9 +289,14 @@ export async function findNextBus(
 
 // CLIから直接実行された場合のみ動作確認用に実行
 if (require.main === module) {
-  const [, , fromNo, toNo, afterHHMM] = process.argv;
+  const [, , fromNo, toNo, afterHHMM, dateArg] = process.argv;
   const [h, m] = (afterHHMM ?? '09:00').split(':').map(Number);
-  findNextBus(Number(fromNo), Number(toNo), h * 60 + m, new Date().getDay())
+  const targetDate = dateArg ? new Date(dateArg) : new Date();
+  const dateStr =
+    targetDate.getFullYear().toString() +
+    String(targetDate.getMonth() + 1).padStart(2, '0') +
+    String(targetDate.getDate()).padStart(2, '0');
+  findNextBus(Number(fromNo), Number(toNo), h * 60 + m, targetDate.getDay(), dateStr)
     .then((r) => {
       console.log(r ?? '該当便なし');
       process.exit(0);
