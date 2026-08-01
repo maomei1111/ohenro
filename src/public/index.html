@@ -147,6 +147,17 @@
     font-size:14px;
     color:var(--sumi);
   }
+  .date-fields{
+    display:flex;
+    gap:6px;
+  }
+  .date-fields select{
+    padding:10px 6px;
+    font-size:13px;
+  }
+  .date-fields select.df-year{ flex:1.3; }
+  .date-fields select.df-month{ flex:1.6; }
+  .date-fields select.df-day{ flex:1; }
   .mode-toggle{
     display:flex;
     border:1px solid var(--indigo-mid);
@@ -423,7 +434,7 @@
       </div>
       <div>
         <label data-i18n="label_date"></label>
-        <input type="date" id="startDate">
+        <div class="date-fields" id="dateFields"></div>
       </div>
       <div>
         <label data-i18n="label_time"></label>
@@ -878,16 +889,20 @@ function applyStaticTranslations(){
   });
   const langSelect = document.getElementById('langSelect');
   if(langSelect) langSelect.value = currentLang;
+  // 既に日付が選択されていればその値を保持したまま、表示言語(月名・並び順)だけ作り直す
+  const existing = document.getElementById('dateFields')?.childElementCount ? getSelectedDateObj() : null;
+  buildDateFields(existing);
 }
 
 function setLanguage(lang){
   if(lang === currentLang) return;
   localStorage.setItem('ohenro_lang', lang);
   // Google Maps自体の表示言語は再読み込みしないと切り替わらないため、
-  // ページごと再読み込みする（選択中の出発・到着札所は保持する）
+  // ページごと再読み込みする（選択中の出発・到着札所・日付は保持する）
   const params = new URLSearchParams(location.search);
   if(startSel.value) params.set('from', startSel.value);
   if(endSel.value) params.set('to', endSel.value);
+  params.set('date', getSelectedDateStr());
   location.search = params.toString();
 }
 
@@ -973,6 +988,84 @@ function todayDateStr(){
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 
+// ==================================================================
+// ---- カスタム日付選択（年・月・日をそれぞれ選ぶ形式） ----
+// ブラウザ標準の<input type="date">は、カレンダーの表示言語がOS/ブラウザの
+// システム言語に依存してしまい、アプリ内で選んだ言語と一致させられないため、
+// 独自実装に置き換えている。月名の翻訳はIntl.DateTimeFormatを使い、
+// ブラウザ内蔵のロケールデータから正確な表記を取得する。
+// ==================================================================
+
+// 言語ごとの年・月・日の並び順（東アジア圏は年→月→日、それ以外は日→月→年が一般的）
+const DATE_FIELD_ORDER = {
+  ja: ['year','month','day'], ko: ['year','month','day'],
+  'zh-CN': ['year','month','day'], 'zh-TW': ['year','month','day'],
+  en: ['month','day','year'], de: ['day','month','year'], pt: ['day','month','year'],
+};
+// Intl.DateTimeFormat用のロケールコード（currentLangの内部表記とほぼ同じだが明示しておく）
+const INTL_LOCALES = { ja:'ja', en:'en', ko:'ko', 'zh-CN':'zh-CN', 'zh-TW':'zh-TW', de:'de', pt:'pt' };
+
+function daysInMonth(year, month){ return new Date(year, month, 0).getDate(); } // month:1-12
+
+function buildDateFields(presetDate){
+  const container = document.getElementById('dateFields');
+  if(!container) return;
+  const preset = presetDate || new Date();
+  const order = DATE_FIELD_ORDER[currentLang] || DATE_FIELD_ORDER.ja;
+  const locale = INTL_LOCALES[currentLang] || 'ja';
+
+  const yearSel = document.createElement('select');
+  yearSel.className = 'df-year';
+  const thisYear = new Date().getFullYear();
+  for(let y=thisYear; y<=thisYear+1; y++){
+    yearSel.insertAdjacentHTML('beforeend', `<option value="${y}">${y}</option>`);
+  }
+
+  const monthSel = document.createElement('select');
+  monthSel.className = 'df-month';
+  for(let m=1; m<=12; m++){
+    const label = new Intl.DateTimeFormat(locale, { month:'long' }).format(new Date(2000, m-1, 1));
+    monthSel.insertAdjacentHTML('beforeend', `<option value="${m}">${label}</option>`);
+  }
+
+  const daySel = document.createElement('select');
+  daySel.className = 'df-day';
+  function rebuildDayOptions(){
+    const y = Number(yearSel.value), m = Number(monthSel.value);
+    const maxDay = daysInMonth(y, m);
+    const prevSelected = Number(daySel.value) || preset.getDate();
+    daySel.innerHTML = '';
+    for(let d=1; d<=maxDay; d++){
+      daySel.insertAdjacentHTML('beforeend', `<option value="${d}">${d}</option>`);
+    }
+    daySel.value = Math.min(prevSelected, maxDay);
+  }
+
+  yearSel.value = preset.getFullYear();
+  monthSel.value = preset.getMonth()+1;
+  rebuildDayOptions();
+  daySel.value = preset.getDate();
+
+  yearSel.onchange = rebuildDayOptions;
+  monthSel.onchange = rebuildDayOptions;
+
+  container.innerHTML = '';
+  const fields = { year: yearSel, month: monthSel, day: daySel };
+  order.forEach(key => container.appendChild(fields[key]));
+}
+
+function getSelectedDateObj(){
+  const y = Number(document.querySelector('#dateFields .df-year')?.value);
+  const m = Number(document.querySelector('#dateFields .df-month')?.value);
+  const d = Number(document.querySelector('#dateFields .df-day')?.value);
+  if(!y || !m || !d) return new Date();
+  return new Date(y, m-1, d);
+}
+function getSelectedDateStr(){
+  const dt = getSelectedDateObj();
+  return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+}
+
 async function fetchNextBus(fromNo, toNo, timeStr, dateStr){
   try{
     const url = `${API_BASE}/next-bus?from=${fromNo}&to=${toNo}&time=${encodeURIComponent(timeStr)}&date=${dateStr}`;
@@ -1023,7 +1116,7 @@ async function runPlanner(){
   const startNo = Number(startSel.value);
   const endNo = Number(endSel.value);
   const startTimeStr = document.getElementById('startTime').value || '07:30';
-  const startDateStr = document.getElementById('startDate').value || todayDateStr();
+  const startDateStr = getSelectedDateStr();
 
   if(startNo === endNo){
     document.getElementById('timeline').innerHTML =
@@ -1150,8 +1243,6 @@ async function runPlanner(){
 // ---- 起動処理: 札所データを取得 → セレクト構築 → 初回計算 ----
 (async function init(){
   applyStaticTranslations();
-  const startDateEl = document.getElementById('startDate');
-  if(startDateEl && !startDateEl.value) startDateEl.value = todayDateStr();
   document.getElementById('timeline').innerHTML = `<div class="segment-note">${t('loading_temples')}</div>`;
   try{
     await loadTemples();
@@ -1161,12 +1252,17 @@ async function runPlanner(){
     return;
   }
   populateTempleSelects();
-  // 言語切り替え時のページ再読み込みで、選択中だった出発・到着札所をURLパラメータから復元
+  // 言語切り替え時のページ再読み込みで、選択中だった出発・到着札所・日付をURLパラメータから復元
   const params = new URLSearchParams(location.search);
   const restoredFrom = params.get('from');
   const restoredTo = params.get('to');
+  const restoredDate = params.get('date');
   if(restoredFrom && temples.some(t=>String(t.no)===restoredFrom)) startSel.value = restoredFrom;
   if(restoredTo && temples.some(t=>String(t.no)===restoredTo)) endSel.value = restoredTo;
+  if(restoredDate){
+    const [ry,rm,rd] = restoredDate.split('-').map(Number);
+    if(ry && rm && rd) buildDateFields(new Date(ry, rm-1, rd));
+  }
   runPlanner();
 })();
 
