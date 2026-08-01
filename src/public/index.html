@@ -922,19 +922,44 @@ function findBiggestClimb(elevations, distances){
 
 // 標高プロファイルをシンプルな折れ線グラフ(SVG)として描画する
 function buildElevationSvg(elevations, distances){
-  const w=280, h=64, padX=6, padY=6;
+  const w=280, h=78, padX=6, padY=6, labelH=14; // labelH分は距離目盛り表示用に下に確保
+  const chartH = h - labelH;
   const minE = Math.min(...elevations), maxE = Math.max(...elevations);
   const range = Math.max(1, maxE-minE);
   const totalDist = distances[distances.length-1] || 1;
   const pts = elevations.map((e,i)=>{
     const x = padX + (distances[i]/totalDist) * (w-2*padX);
-    const y = (h-padY) - ((e-minE)/range) * (h-2*padY);
+    const y = (chartH-padY) - ((e-minE)/range) * (chartH-2*padY);
     return `${x.toFixed(1)},${y.toFixed(1)}`;
   });
-  const area = `${padX},${h-padY} ${pts.join(' ')} ${w-padX},${h-padY}`;
-  return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="64" style="display:block;margin-top:6px;">
+  const area = `${padX},${chartH-padY} ${pts.join(' ')} ${w-padX},${chartH-padY}`;
+
+  // 距離目盛り: 基本は1km刻み。区間が長い場合はラベルが重ならないよう間隔を自動で広げる(2/5/10/20km)
+  const totalKm = totalDist/1000;
+  const stepCandidates = [1,2,5,10,20,50];
+  const stepKm = stepCandidates.find(s => totalKm/s <= 8) ?? 50;
+
+  const xForKm = (km)=> padX + ((km*1000)/totalDist) * (w-2*padX);
+  let gridLines = '';
+  let labels = '';
+  for(let km=0; km<=totalKm + 0.001; km+=stepKm){
+    const x = xForKm(km);
+    gridLines += `<line x1="${x.toFixed(1)}" y1="${padY}" x2="${x.toFixed(1)}" y2="${chartH}" stroke="rgba(43,40,37,0.08)" stroke-width="1"></line>`;
+    const anchor = km===0 ? 'start' : (km>=totalKm-0.001 ? 'end' : 'middle');
+    labels += `<text x="${x.toFixed(1)}" y="${h-2}" font-size="9" fill="#8a8578" font-family="JetBrains Mono, monospace" text-anchor="${anchor}">${km}km</text>`;
+  }
+  // 終端(合計距離)が最後の目盛りと近すぎない場合のみ、合計距離のラベルも追加しておく
+  if(totalKm - Math.floor(totalKm/stepKm)*stepKm > stepKm*0.3){
+    const x = xForKm(totalKm);
+    labels += `<text x="${x.toFixed(1)}" y="${h-2}" font-size="9" fill="#8a8578" font-family="JetBrains Mono, monospace" text-anchor="end">${totalKm.toFixed(1)}km</text>`;
+  }
+
+  return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" style="display:block;margin-top:6px;">
     <polygon points="${area}" fill="rgba(91,107,79,0.22)"></polygon>
     <polyline points="${pts.join(' ')}" fill="none" stroke="#5B6B4F" stroke-width="1.6"></polyline>
+    <line x1="${padX}" y1="${chartH}" x2="${w-padX}" y2="${chartH}" stroke="rgba(43,40,37,0.15)" stroke-width="1"></line>
+    ${gridLines}
+    ${labels}
   </svg>`;
 }
 
@@ -1051,8 +1076,9 @@ async function openMap(fromNo, toNo, mode, note, distanceKm, busResult){
         let climbText = '';
         if(climb.gain >= 20){ // 20m未満の小さな起伏は「最大の上り」として案内しない
           const startKm = (distances[climb.startIdx]/1000).toFixed(1);
+          const endKm = (distances[climb.endIdx]/1000).toFixed(1);
           const lengthKm = ((distances[climb.endIdx]-distances[climb.startIdx])/1000).toFixed(1);
-          climbText = `最大の上り：${startKm}km地点から${lengthKm}kmの間で${Math.round(climb.gain)}m上ります。`;
+          climbText = `最大の上り：${startKm}km地点から${endKm}km地点まで（${lengthKm}km区間）で${Math.round(climb.gain)}m上ります。`;
         }
         const svg = buildElevationSvg(elevations, distances);
 
@@ -1081,7 +1107,11 @@ async function openMap(fromNo, toNo, mode, note, distanceKm, busResult){
       ? (useBusStops ? '徒歩→バス→徒歩のルートを表示しています' : '実際の道のりを表示しています')
       : `<span style="color:#A63A2A;">ルート取得に失敗 → 直線で仮表示中｜エラー: ${routeErr}</span>`;
     const lmNote = landmarksOk
-      ? (landmarks.length ? `沿道の目印 ${landmarks.length}件：${landmarks.map(l=>`${l.name}(${landmarkLabel(l.tags)})`).join('、')}`
+      ? (landmarks.length ? `沿道の目印 ${landmarks.length}件：${landmarks.map(l=>{
+          const label = landmarkLabel(l.tags);
+          // トイレ・自販機など固有名称が無いものは name===label になるため、括弧書きの重複を避ける
+          return l.name === label ? l.name : `${l.name}(${label})`;
+        }).join('、')}`
                            : '沿道180m以内に名称付きの目印は見つかりませんでした')
       : `<span style="color:#A63A2A;">目印データの取得に失敗｜エラー: ${lmErr}</span>`;
 
