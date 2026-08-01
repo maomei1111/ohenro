@@ -17,8 +17,17 @@
     window.__googleMapsReadyWaiters.forEach(function(fn){ fn(); });
     window.__googleMapsReadyWaiters = [];
   }
+
+  // Google Maps自体の表示言語(地名・コントロール等)は読み込み時のパラメータでしか
+  // 指定できないため、保存済みの言語設定をここで読み取ってスクリプトタグを動的に生成する。
+  (function(){
+    var savedLang = localStorage.getItem('ohenro_lang') || 'ja';
+    var mapsScript = document.createElement('script');
+    mapsScript.async = true;
+    mapsScript.src = 'https://maps.googleapis.com/maps/api/js?key={{GOOGLE_MAPS_API_KEY}}&language=' + savedLang + '&region=JP&loading=async&callback=__initGoogleMaps';
+    document.head.appendChild(mapsScript);
+  })();
 </script>
-<script async src="https://maps.googleapis.com/maps/api/js?key={{GOOGLE_MAPS_API_KEY}}&language=ja&region=JP&loading=async&callback=__initGoogleMaps"></script>
 <style>
   :root{
     --indigo-deep:#1D2B4F;
@@ -607,17 +616,14 @@ function applyStaticTranslations(){
 }
 
 function setLanguage(lang){
-  currentLang = lang;
+  if(lang === currentLang) return;
   localStorage.setItem('ohenro_lang', lang);
-  applyStaticTranslations();
-  // セレクトボックスの選択中の値は保持したまま、表示ラベルだけ言語切り替え後の名前で作り直す
-  const prevStart = startSel.value, prevEnd = endSel.value;
-  startSel.innerHTML = '';
-  endSel.innerHTML = '';
-  populateTempleSelects();
-  if(prevStart) startSel.value = prevStart;
-  if(prevEnd) endSel.value = prevEnd;
-  runPlanner();
+  // Google Maps自体の表示言語は再読み込みしないと切り替わらないため、
+  // ページごと再読み込みする（選択中の出発・到着札所は保持する）
+  const params = new URLSearchParams(location.search);
+  if(startSel.value) params.set('from', startSel.value);
+  if(endSel.value) params.set('to', endSel.value);
+  location.search = params.toString();
 }
 
 // ---- 88札所データ（自前サーバーAPI経由。src/data/temples_88.json が単一の情報源）----
@@ -884,6 +890,12 @@ async function runPlanner(){
     return;
   }
   populateTempleSelects();
+  // 言語切り替え時のページ再読み込みで、選択中だった出発・到着札所をURLパラメータから復元
+  const params = new URLSearchParams(location.search);
+  const restoredFrom = params.get('from');
+  const restoredTo = params.get('to');
+  if(restoredFrom && temples.some(t=>String(t.no)===restoredFrom)) startSel.value = restoredFrom;
+  if(restoredTo && temples.some(t=>String(t.no)===restoredTo)) endSel.value = restoredTo;
   runPlanner();
 })();
 
