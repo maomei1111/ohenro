@@ -162,7 +162,7 @@
     white-space:nowrap;
     min-width:0;
   }
-  .date-fields select.df-year{ flex:0 0 62px; }
+  .date-fields select.df-year{ flex:0 0 78px; }
   .date-fields select.df-month{ flex:0 0 auto; width:auto; }
   .date-fields select.df-day{ flex:0 0 58px; }
   .time-fields select.tf-hour, .time-fields select.tf-minute{ flex:0 0 52px; text-align:center; }
@@ -1039,6 +1039,20 @@ function dayLabel(day){
     default: return String(day); // pt等: 数字そのまま
   }
 }
+function yearLabel(year){
+  switch(currentLang){
+    case 'ja': return `${year}年`;
+    case 'ko': return `${year}년`;
+    case 'zh-CN': case 'zh-TW': return `${year}年`;
+    default: return String(year); // en/de/pt: 数字そのまま
+  }
+}
+// 中国語(簡体字/繁体字)は「八月」のような漢数字表記でなく「8月」の数字表記にする。
+// 日本語・韓国語はIntlの'long'指定でも数字表記(8月/8월)になるためそのままIntlを使う。
+function monthLabel(m, locale){
+  if(currentLang === 'zh-CN' || currentLang === 'zh-TW') return `${m}月`;
+  return new Intl.DateTimeFormat(locale, { month:'long' }).format(new Date(2000, m-1, 1));
+}
 
 function buildDateFields(presetDate){
   const container = document.getElementById('dateFields');
@@ -1051,14 +1065,13 @@ function buildDateFields(presetDate){
   yearSel.className = 'df-year';
   const thisYear = new Date().getFullYear();
   for(let y=thisYear; y<=thisYear+1; y++){
-    yearSel.insertAdjacentHTML('beforeend', `<option value="${y}">${y}</option>`);
+    yearSel.insertAdjacentHTML('beforeend', `<option value="${y}">${yearLabel(y)}</option>`);
   }
 
   const monthSel = document.createElement('select');
   monthSel.className = 'df-month';
   for(let m=1; m<=12; m++){
-    const label = new Intl.DateTimeFormat(locale, { month:'long' }).format(new Date(2000, m-1, 1));
-    monthSel.insertAdjacentHTML('beforeend', `<option value="${m}">${label}</option>`);
+    monthSel.insertAdjacentHTML('beforeend', `<option value="${m}">${monthLabel(m, locale)}</option>`);
   }
 
   const daySel = document.createElement('select');
