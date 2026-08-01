@@ -164,7 +164,7 @@
   }
   .date-fields select.df-year{ flex:0 0 62px; }
   .date-fields select.df-month{ flex:0 0 auto; width:auto; }
-  .date-fields select.df-day{ flex:0 0 50px; }
+  .date-fields select.df-day{ flex:0 0 58px; }
   .time-fields select.tf-hour, .time-fields select.tf-minute{ flex:0 0 52px; text-align:center; }
   .time-fields .tf-colon{
     display:flex;
@@ -1023,6 +1023,23 @@ const INTL_LOCALES = { ja:'ja', en:'en', ko:'ko', 'zh-CN':'zh-CN', 'zh-TW':'zh-T
 
 function daysInMonth(year, month){ return new Date(year, month, 0).getDate(); } // month:1-12
 
+// 「2日」「2nd」「2.」のような、言語ごとの日付の言い回しに合わせたラベルを返す
+function ordinalEn(n){
+  const suffixes = ['th','st','nd','rd'];
+  const v = n % 100;
+  return n + (suffixes[(v-20)%10] || suffixes[v] || suffixes[0]);
+}
+function dayLabel(day){
+  switch(currentLang){
+    case 'ja': return `${day}日`;
+    case 'ko': return `${day}일`;
+    case 'zh-CN': case 'zh-TW': return `${day}日`;
+    case 'de': return `${day}.`;
+    case 'en': return ordinalEn(day);
+    default: return String(day); // pt等: 数字そのまま
+  }
+}
+
 function buildDateFields(presetDate){
   const container = document.getElementById('dateFields');
   if(!container) return;
@@ -1052,7 +1069,7 @@ function buildDateFields(presetDate){
     const prevSelected = Number(daySel.value) || preset.getDate();
     daySel.innerHTML = '';
     for(let d=1; d<=maxDay; d++){
-      daySel.insertAdjacentHTML('beforeend', `<option value="${d}">${d}</option>`);
+      daySel.insertAdjacentHTML('beforeend', `<option value="${d}">${dayLabel(d)}</option>`);
     }
     daySel.value = Math.min(prevSelected, maxDay);
   }
