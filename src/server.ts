@@ -15,6 +15,9 @@ import { AppDataSource } from './data-source';
 const app = express();
 app.use(cors()); // WebView(file://やhttps://)からのアクセスを許可
 
+// 札所の見どころ画像（src/public/temple-images/ 配下）を配信
+app.use('/temple-images', express.static(path.join(__dirname, 'public', 'temple-images')));
+
 // 88札所のマスタデータ（番号・名前・都道府県・市区町村・緯度経度）
 // src/data/temples_88.json に配置。アプリ側はこのAPIから取得し、
 // サーバー側の停留所マッチング(match-temple-stops.ts)とも同じデータを共有する。
@@ -44,6 +47,78 @@ app.get('/temples', (_req, res) => {
 
 app.get('/temple-places', (_req, res) => {
   res.json(templesPlacesInfo);
+});
+
+// 札所ごとのオリジナル紹介ページ（由来・見どころ）。
+// 外部サイトの文章を複製せず、事実ベースで新規に書き起こしたもの。
+// まずは試作として1番のみ用意している。
+const templeDescriptionsPath = path.join(__dirname, 'data', 'temple_descriptions.json');
+let templeDescriptions: Record<string, any> = {};
+try {
+  templeDescriptions = JSON.parse(fs.readFileSync(templeDescriptionsPath, 'utf-8'));
+} catch (e) {
+  console.log('[startup] temple_descriptions.json は未生成です');
+}
+
+app.get('/temple/:no', (req, res) => {
+  const no = Number(req.params.no);
+  const temple = temples88.find((t) => t.no === no);
+  if (!temple) return res.status(404).send('Not found');
+
+  const desc = templeDescriptions[String(no)];
+  const placeInfo = templesPlacesInfo[String(no)];
+  const photoUrl = placeInfo?.photoName
+    ? `https://places.googleapis.com/v1/${placeInfo.photoName}/media?maxHeightPx=500&key=${process.env.GOOGLE_MAPS_API_KEY ?? ''}`
+    : null;
+
+  const spotsHtml =
+    desc?.spots && desc.spots.length
+      ? desc.spots
+          .map(
+            (spot: any) => `
+      <div class="spot-card">
+        <img src="${spot.image}" alt="${spot.name}">
+        <h3>${spot.name}</h3>
+        <p>${spot.description}</p>
+      </div>`
+          )
+          .join('')
+      : '';
+
+  const html = `<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${no}番 ${temple.name} - 遍路みちしるべ</title>
+<style>
+  body{ font-family:'Noto Sans JP', sans-serif; max-width:640px; margin:0 auto; padding:24px; background:#F7F1E6; color:#2B2825; line-height:1.9; }
+  h1{ font-family:'Noto Serif JP', serif; font-size:26px; color:#1D2B4F; margin-bottom:4px; }
+  .no{ color:#A63A2A; font-family:monospace; }
+  img{ width:100%; border-radius:4px; margin:16px 0 4px; display:block; }
+  .credit{ font-size:11px; color:#8a8578; margin-bottom:20px; }
+  h2{ font-size:16px; border-left:4px solid #A63A2A; padding-left:10px; margin-top:32px; }
+  h3{ font-family:'Noto Serif JP', serif; font-size:17px; color:#1D2B4F; margin:10px 0 6px; }
+  a.back{ display:inline-block; margin-top:32px; color:#33507A; }
+  .empty{ color:#8a8578; font-size:14px; }
+  .spots-grid{ display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:12px; }
+  @media (max-width:520px){ .spots-grid{ grid-template-columns:1fr; } }
+  .spot-card img{ margin-top:0; aspect-ratio:4/3; object-fit:cover; }
+  .spot-card p{ font-size:13.5px; }
+</style>
+</head>
+<body>
+  <h1><span class="no">${no}番</span> ${temple.name}</h1>
+  ${photoUrl ? `<img src="${photoUrl}" alt="${temple.name}"><div class="credit">Photo: ${placeInfo.photoAttribution || 'Google'}</div>` : ''}
+  ${desc ? `
+    <h2>由来</h2>
+    <p>${desc.history}</p>
+    ${spotsHtml ? `<h2>見どころ</h2><div class="spots-grid">${spotsHtml}</div>` : ''}
+  ` : `<p class="empty">この札所の紹介文は準備中です。</p>`}
+  <a class="back" href="javascript:history.back()">← 戻る</a>
+</body>
+</html>`;
+  res.type('html').send(html);
 });
 
 // メインのプランナー画面を配信。Google Maps APIキーはビルド時に埋め込まず、
