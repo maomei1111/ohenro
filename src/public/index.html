@@ -307,6 +307,14 @@
     margin-top:4px;
   }
   .honzon-info.open{ display:block; }
+  .official-link{
+    display:inline-block;
+    font-size:11px;
+    color:var(--vermillion);
+    text-decoration:underline;
+    margin-top:4px;
+    margin-left:10px;
+  }
 
   .legend{
     display:flex;
@@ -673,6 +681,7 @@ const I18N = {
     nokyo_over: (min)=>`納経受付終了時刻を${min}分超過`,
     temple_info_toggle: '御本尊を見る',
     label_honzon: '御本尊',
+    official_site_link: '公式サイトで詳しく見る →',
     landmark_toilet: 'トイレ', landmark_lodging: '宿泊', landmark_roadside: '道の駅',
     landmark_onsen: '温泉', landmark_vending: '自販機', landmark_temple: '寺社',
     landmark_shop: '商店', landmark_dining: '飲食', landmark_station: '駅',
@@ -740,6 +749,7 @@ const I18N = {
     nokyo_over: (min)=>`${min} min past stamp office closing time`,
     temple_info_toggle: 'View principal deity',
     label_honzon: 'Principal image',
+    official_site_link: 'View on official site →',
     landmark_toilet: 'Restroom', landmark_lodging: 'Lodging', landmark_roadside: 'Roadside station',
     landmark_onsen: 'Hot spring', landmark_vending: 'Vending machine', landmark_temple: 'Temple/Shrine',
     landmark_shop: 'Shop', landmark_dining: 'Food', landmark_station: 'Station',
@@ -807,6 +817,7 @@ const I18N = {
     nokyo_over: (min)=>`납경소 마감 시간 ${min}분 초과`,
     temple_info_toggle: '본존불 보기',
     label_honzon: '본존불',
+    official_site_link: '공식 사이트에서 보기 →',
     landmark_toilet: '화장실', landmark_lodging: '숙박시설', landmark_roadside: '미치노에키(휴게소)',
     landmark_onsen: '온천', landmark_vending: '자판기', landmark_temple: '사찰/신사',
     landmark_shop: '상점', landmark_dining: '음식점', landmark_station: '역',
@@ -874,6 +885,7 @@ const I18N = {
     nokyo_over: (min)=>`已超过纳经所关闭时间${min}分钟`,
     temple_info_toggle: '查看本尊',
     label_honzon: '本尊',
+    official_site_link: '在官方网站查看详情 →',
     landmark_toilet: '厕所', landmark_lodging: '住宿', landmark_roadside: '道之驿(公路休息站)',
     landmark_onsen: '温泉', landmark_vending: '自动售货机', landmark_temple: '寺庙/神社',
     landmark_shop: '商店', landmark_dining: '餐饮', landmark_station: '车站',
@@ -941,6 +953,7 @@ const I18N = {
     nokyo_over: (min)=>`已超過納經所關閉時間${min}分鐘`,
     temple_info_toggle: '查看本尊',
     label_honzon: '本尊',
+    official_site_link: '在官方網站查看詳情 →',
     landmark_toilet: '廁所', landmark_lodging: '住宿', landmark_roadside: '道之驛(公路休息站)',
     landmark_onsen: '溫泉', landmark_vending: '自動販賣機', landmark_temple: '寺廟/神社',
     landmark_shop: '商店', landmark_dining: '餐飲', landmark_station: '車站',
@@ -1008,6 +1021,7 @@ const I18N = {
     nokyo_over: (min)=>`${min} Min. nach Schließung des Stempelbüros`,
     temple_info_toggle: 'Hauptgottheit anzeigen',
     label_honzon: 'Hauptgottheit',
+    official_site_link: 'Auf der offiziellen Website ansehen →',
     landmark_toilet: 'Toilette', landmark_lodging: 'Unterkunft', landmark_roadside: 'Raststätte (Michi-no-Eki)',
     landmark_onsen: 'Onsen (heiße Quelle)', landmark_vending: 'Verkaufsautomat', landmark_temple: 'Tempel/Schrein',
     landmark_shop: 'Geschäft', landmark_dining: 'Essen', landmark_station: 'Bahnhof',
@@ -1075,6 +1089,7 @@ const I18N = {
     nokyo_over: (min)=>`${min} min após o fechamento do escritório de carimbos`,
     temple_info_toggle: 'Ver divindade principal',
     label_honzon: 'Divindade principal',
+    official_site_link: 'Ver no site oficial →',
     landmark_toilet: 'Banheiro', landmark_lodging: 'Hospedagem', landmark_roadside: 'Posto de parada (Michi-no-eki)',
     landmark_onsen: 'Fonte termal (Onsen)', landmark_vending: 'Máquina de venda automática', landmark_temple: 'Templo/Santuário',
     landmark_shop: 'Loja', landmark_dining: 'Restaurante', landmark_station: 'Estação',
@@ -1294,6 +1309,15 @@ function honzonDisplay(no){
   const ja = TEMPLE_HONZON[no];
   if(!ja) return '';
   return ROMANIZED_LANGS.includes(currentLang) ? (HONZON_EN[ja] || ja) : ja;
+}
+
+// 公式サイト(四国八十八ヶ所霊場会)の札所紹介ページURL。
+// URL規則: https://88shikokuhenro.jp/{番号}{ローマ字名(小文字)}/
+// 著作権配慮のため本文を複製せず、公式ページへのリンクとして案内する。
+function officialTempleUrl(no){
+  const romaji = TEMPLE_NAMES_EN[no];
+  if(!romaji) return null;
+  return `https://88shikokuhenro.jp/${no}${romaji.toLowerCase()}/`;
 }
 
 function toggleVisited(no, btnEl){
@@ -1705,8 +1729,8 @@ async function runPlanner(){
     html += `<div class="stop">
       <div class="stop-rail">
         <div class="stop-dot"></div>
-        ${!isLast ? `<div class="stop-connector ${arrival[idx+1] && arrival[idx+1].mode==='bus' ? 'bus':''}"></div>` : ''}
         <div class="stop-time">${toHHMM(a.timeMin)}</div>
+        ${!isLast ? `<div class="stop-connector ${arrival[idx+1] && arrival[idx+1].mode==='bus' ? 'bus':''}"></div>` : ''}
       </div>
       <div class="stop-card">
         <div class="stop-title"><span class="no">${String(temple.no).padStart(2,'0')}</span>${displayName}
@@ -1717,6 +1741,8 @@ async function runPlanner(){
         ${TEMPLE_HONZON[temple.no] ? `
           <div class="honzon-toggle" onclick="this.nextElementSibling.classList.toggle('open')">${t('temple_info_toggle')}</div>
           <div class="honzon-info">${t('label_honzon')}：${honzonDisplay(temple.no)}</div>` : ''}
+        ${officialTempleUrl(temple.no) ? `
+          <a class="official-link" href="${officialTempleUrl(temple.no)}" target="_blank" rel="noopener">${t('official_site_link')}</a>` : ''}
         ${a.note ? `
           <div class="segment-note" onclick="openMapForIndex(${idx})">
             <span class="badge-mode ${a.mode}">${a.mode==='bus'?'BUS':'WALK'}</span>
@@ -2055,21 +2081,74 @@ function buildElevationSvg(elevations, distances){
   </svg>`;
 }
 
+let currentLocationMarker = null; // 方位表示のため、マーカー本体を保持しておく
+let compassListenerAdded = false;
+
+// 上向きの矢印(向き0度=北)のGoogle Maps Symbol定義。rotationプロパティで回転させる。
+function currentLocationIcon(heading){
+  return {
+    path: 'M 0,-9 L 6,7 L 0,3 L -6,7 Z',
+    fillColor: '#2F6FED',
+    fillOpacity: 1,
+    strokeColor: '#fff',
+    strokeWeight: 2,
+    scale: 1.4,
+    rotation: heading || 0,
+  };
+}
+
 function showCurrentLocation(){
   if(!navigator.geolocation) return;
   navigator.geolocation.getCurrentPosition(
     (pos)=>{
       const { latitude, longitude } = pos.coords;
-      addPinMarker({lat:latitude, lng:longitude}, '#2F6FED', null, t('current_location'), 10);
+      currentLocationMarker = new google.maps.Marker({
+        position: {lat:latitude, lng:longitude},
+        map: googleMap,
+        icon: currentLocationIcon(0),
+        title: t('current_location'),
+      });
+      mapOverlays.push(currentLocationMarker);
       const bounds = googleMap.getBounds();
       if(bounds){
         bounds.extend({lat:latitude, lng:longitude});
         googleMap.fitBounds(bounds, 40);
       }
+      enableCompassHeading();
     },
     (err)=> console.warn('現在地の取得に失敗しました（権限が許可されていない可能性があります）', err),
     { enableHighAccuracy:true, timeout:8000, maximumAge:30000 }
   );
+}
+
+// 端末のコンパスセンサーと連動し、現在地マーカーの矢印を実際に向いている方角へ回転させる
+function enableCompassHeading(){
+  if(compassListenerAdded) return;
+  compassListenerAdded = true;
+
+  const handleOrientation = (event)=>{
+    let heading = null;
+    if(typeof event.webkitCompassHeading === 'number'){
+      heading = event.webkitCompassHeading; // iOS Safari
+    } else if(typeof event.alpha === 'number'){
+      heading = 360 - event.alpha; // Android: alphaは反時計回りのため向きを反転
+    }
+    if(heading == null || !currentLocationMarker) return;
+    currentLocationMarker.setIcon(currentLocationIcon(heading));
+  };
+
+  // iOS 13+ ではジェスチャー起点での許可要求が必要。Androidでは通常不要。
+  if(typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function'){
+    DeviceOrientationEvent.requestPermission().then(state=>{
+      if(state === 'granted'){
+        window.addEventListener('deviceorientationabsolute', handleOrientation, true);
+        window.addEventListener('deviceorientation', handleOrientation, true);
+      }
+    }).catch(()=>{});
+  } else if(window.DeviceOrientationEvent){
+    window.addEventListener('deviceorientationabsolute', handleOrientation, true);
+    window.addEventListener('deviceorientation', handleOrientation, true);
+  }
 }
 
 function openMapForIndex(idx){
