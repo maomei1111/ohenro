@@ -74,6 +74,24 @@ export class GtfsCalendarDate {
   @Column('int') exception_type!: number;
 }
 
+// fare_attributes.txt: 運賃そのもの（金額・通貨）。フィードによっては存在しない場合がある。
+@Entity('gtfs_fare_attributes')
+export class GtfsFareAttribute {
+  @PrimaryColumn('varchar') agency_key!: string;
+  @PrimaryColumn('varchar') fare_id!: string;
+
+  @Column('float') price!: number;
+  @Column('varchar') currency_type!: string;
+}
+
+// fare_rules.txt: どの路線(route_id)にどの運賃(fare_id)が適用されるかの対応表
+@Entity('gtfs_fare_rules')
+export class GtfsFareRule {
+  @PrimaryColumn('varchar') agency_key!: string;
+  @PrimaryColumn('varchar') fare_id!: string;
+  @PrimaryColumn({ type: 'varchar', default: '' }) route_id!: string;
+}
+
 // 札所⇔最寄り停留所のマッピングは、GTFS由来ではなく自前で管理するテーブル
 @Entity('temple_stop_links')
 export class TempleStopLink {

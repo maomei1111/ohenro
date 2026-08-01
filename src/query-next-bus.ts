@@ -90,7 +90,11 @@ async function findDirectBus(
       st_to.stop_id     AS to_stop_id,
       s_to.stop_name    AS to_stop_name,
       s_to.stop_lat     AS to_stop_lat,
-      s_to.stop_lon     AS to_stop_lon
+      s_to.stop_lon     AS to_stop_lon,
+      (SELECT fr.fare_id FROM gtfs_fare_rules fr
+        WHERE fr.agency_key = trip.agency_key
+          AND (fr.route_id = trip.route_id OR fr.route_id = '')
+        ORDER BY (fr.route_id = trip.route_id) DESC LIMIT 1) AS fare_id
     FROM gtfs_stop_times st_from
     JOIN gtfs_stop_times st_to
       ON st_from.agency_key = st_to.agency_key
@@ -164,13 +168,15 @@ async function findOneTransferBus(
       leg1.mid_stop_id,
       leg1.mid_stop_name,
       leg1.mid_arrival,
+      leg1.fare_id1,
       leg2.trip2        AS trip2,
       leg2.mid_departure,
       leg2.to_stop_id,
       leg2.to_stop_name,
       leg2.to_stop_lat,
       leg2.to_stop_lon,
-      leg2.to_arrival
+      leg2.to_arrival,
+      leg2.fare_id2
     FROM (
       SELECT
         st_a.agency_key   AS agency_key,
@@ -179,7 +185,11 @@ async function findOneTransferBus(
         st_a.departure_time AS from_departure,
         st_b.stop_id      AS mid_stop_id,
         s_b.stop_name     AS mid_stop_name,
-        st_b.arrival_time AS mid_arrival
+        st_b.arrival_time AS mid_arrival,
+        (SELECT fr.fare_id FROM gtfs_fare_rules fr
+          WHERE fr.agency_key = trip1.agency_key
+            AND (fr.route_id = trip1.route_id OR fr.route_id = '')
+          ORDER BY (fr.route_id = trip1.route_id) DESC LIMIT 1) AS fare_id1
       FROM gtfs_stop_times st_a
       JOIN gtfs_stop_times st_b
         ON st_a.agency_key = st_b.agency_key
@@ -203,7 +213,11 @@ async function findOneTransferBus(
         s_d.stop_name     AS to_stop_name,
         s_d.stop_lat      AS to_stop_lat,
         s_d.stop_lon      AS to_stop_lon,
-        st_d.arrival_time AS to_arrival
+        st_d.arrival_time AS to_arrival,
+        (SELECT fr.fare_id FROM gtfs_fare_rules fr
+          WHERE fr.agency_key = trip2.agency_key
+            AND (fr.route_id = trip2.route_id OR fr.route_id = '')
+          ORDER BY (fr.route_id = trip2.route_id) DESC LIMIT 1) AS fare_id2
       FROM gtfs_stop_times st_c
       JOIN gtfs_stop_times st_d
         ON st_c.agency_key = st_d.agency_key
@@ -260,6 +274,36 @@ async function findOneTransferBus(
   return candidates[0] ?? null;
 }
 
+// 選ばれた便に、実際の運賃額(fare_attributes)を紐付ける。
+// 運賃データが無いフィードも多いため、見つからない場合は何も付与しない（undefinedのまま）。
+async function attachFare(result: any, ds: any) {
+  if (!result) return result;
+  const fareIds = [result.fare_id, result.fare_id1, result.fare_id2].filter(Boolean);
+  if (!fareIds.length) return result;
+
+  const rows = await ds.query(
+    `SELECT fare_id, price, currency_type FROM gtfs_fare_attributes WHERE agency_key = $1 AND fare_id = ANY($2)`,
+    [result.agency_key, fareIds]
+  );
+  const map = new Map(rows.map((r: any) => [r.fare_id, r]));
+
+  if (result.transfers === 1) {
+    const f1 = map.get(result.fare_id1);
+    const f2 = map.get(result.fare_id2);
+    if (f1 || f2) {
+      result.farePrice = (f1?.price ?? 0) + (f2?.price ?? 0);
+      result.fareCurrency = f1?.currency_type || f2?.currency_type || 'JPY';
+    }
+  } else {
+    const f = map.get(result.fare_id);
+    if (f) {
+      result.farePrice = f.price;
+      result.fareCurrency = f.currency_type;
+    }
+  }
+  return result;
+}
+
 export async function findNextBus(
   fromTempleNo: number,
   toTempleNo: number,
@@ -281,10 +325,9 @@ export async function findNextBus(
   ]);
 
   // 両方見つかった場合は、実際の到着(徒歩込み)が早い方を採用
-  if (direct && withTransfer) {
-    return direct.arrivalMin <= withTransfer.arrivalMin ? direct : withTransfer;
-  }
-  return direct ?? withTransfer ?? null;
+  const chosen = direct && withTransfer ? (direct.arrivalMin <= withTransfer.arrivalMin ? direct : withTransfer) : direct ?? withTransfer ?? null;
+
+  return attachFare(chosen, ds);
 }
 
 // CLIから直接実行された場合のみ動作確認用に実行

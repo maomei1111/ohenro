@@ -242,6 +242,71 @@
     font-family:'Noto Sans JP', sans-serif;
   }
   .run-btn:hover{ filter:brightness(1.08); }
+  .locate-btn{
+    margin-top:6px;
+    width:100%;
+    background:none;
+    border:1px dashed var(--indigo-mid);
+    color:var(--indigo-mid);
+    font-size:11.5px;
+    padding:6px 8px;
+    border-radius:2px;
+    cursor:pointer;
+    font-family:'Noto Sans JP', sans-serif;
+  }
+  .locate-btn:hover{ background:rgba(51,80,122,0.08); }
+  .share-btn{
+    grid-column:1/-1;
+    margin-top:8px;
+    background:none;
+    border:1px solid var(--indigo-mid);
+    color:var(--indigo-mid);
+    padding:10px 20px;
+    font-size:13px;
+    font-weight:700;
+    border-radius:2px;
+    cursor:pointer;
+    font-family:'Noto Sans JP', sans-serif;
+  }
+  .share-btn:hover{ background:rgba(51,80,122,0.06); }
+  .progress-bar{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    color:var(--indigo-mid);
+    background:var(--washi);
+    border:1px solid rgba(43,40,37,0.1);
+    border-radius:2px;
+    padding:8px 12px;
+    margin-bottom:18px;
+  }
+  .visited-toggle{
+    background:none;
+    border:none;
+    cursor:pointer;
+    font-size:15px;
+    margin-left:6px;
+    vertical-align:middle;
+    color:var(--gold);
+  }
+  .honzon-toggle{
+    display:inline-block;
+    font-size:11px;
+    color:var(--indigo-mid);
+    text-decoration:underline;
+    cursor:pointer;
+    margin-top:2px;
+  }
+  .honzon-info{
+    display:none;
+    font-size:12.5px;
+    color:#5a564f;
+    background:var(--washi);
+    border:1px solid rgba(43,40,37,0.1);
+    border-radius:2px;
+    padding:6px 10px;
+    margin-top:4px;
+  }
+  .honzon-info.open{ display:block; }
 
   .legend{
     display:flex;
@@ -473,10 +538,12 @@
 
 <div class="wrap">
   <div class="panel">
+    <div class="progress-bar" id="progressLabel"></div>
     <div class="controls">
       <div>
         <label data-i18n="label_start"></label>
         <select id="startTemple"></select>
+        <button type="button" class="locate-btn" onclick="setStartFromLocation()" data-i18n="btn_locate"></button>
       </div>
       <div>
         <label data-i18n="label_end"></label>
@@ -498,6 +565,7 @@
         </div>
       </div>
       <button class="run-btn" onclick="runPlanner()" data-i18n="btn_run"></button>
+      <button class="share-btn" onclick="sharePlan()" data-i18n="btn_share"></button>
     </div>
 
     <div class="legend">
@@ -536,7 +604,11 @@
 // ==================================================================
 // ---- 多言語対応（i18n） ----
 // ==================================================================
-let currentLang = localStorage.getItem('ohenro_lang') || 'ja';
+// 共有されたリンクを開いた場合は、URLのlangパラメータ(送信者が選んだ言語)を優先する。
+// 通常のアクセスでは、端末に保存済みの言語設定(localStorage)を使う。
+const __urlLang = new URLSearchParams(location.search).get('lang');
+let currentLang = __urlLang || localStorage.getItem('ohenro_lang') || 'ja';
+if(__urlLang) localStorage.setItem('ohenro_lang', __urlLang);
 
 const I18N = {
   ja: {
@@ -576,6 +648,7 @@ const I18N = {
     bus_transfer: (agency,dep,mid,midArr,midDep,arr)=>`${agency}｜${dep}発 → 「${mid}」で乗り換え(${midArr}着/${midDep}発) → ${arr}着`,
     to_temple_km: (name,km)=>`${name}まで ${km}km`,
     transfer_badge: '乗り換え1回',
+    fare_label: (amount)=>`｜運賃目安 ${amount}`,
     map_link: '地図を見る →',
     route_shown_direct: '実際の道のりを表示しています',
     route_shown_bus: '徒歩→バス→徒歩のルートを表示しています',
@@ -586,6 +659,20 @@ const I18N = {
     elevation_stats: (gain,loss)=>`徒歩区間の高低差：⬆️獲得標高 ${gain}m／⬇️下り ${loss}m`,
     elevation_climb: (s,e,len,gain)=>`最大の上り：${s}km地点から${e}km地点まで（${len}km区間）で${gain}m上ります。`,
     current_location: '現在地',
+    btn_locate: '📍 現在地から自動設定',
+    locate_searching: '検索中…',
+    locate_failed: '現在地を取得できませんでした',
+    locate_unsupported: 'この端末では位置情報が使えません',
+    btn_share: 'この計画を共有',
+    share_copied: 'リンクをコピーしました',
+    share_failed: '共有用リンクの作成に失敗しました',
+    progress_label: (n,total)=>`巡礼記録：${total}ヶ所中 ${n}ヶ所 達成`,
+    visited_mark: '訪問済みにする',
+    visited_unmark: '訪問済みを解除',
+    nokyo_countdown: (min)=>`納経受付終了まであと${min}分`,
+    nokyo_over: (min)=>`納経受付終了時刻を${min}分超過`,
+    temple_info_toggle: '御本尊を見る',
+    label_honzon: '御本尊',
     landmark_toilet: 'トイレ', landmark_lodging: '宿泊', landmark_roadside: '道の駅',
     landmark_onsen: '温泉', landmark_vending: '自販機', landmark_temple: '寺社',
     landmark_shop: '商店', landmark_dining: '飲食', landmark_station: '駅',
@@ -628,6 +715,7 @@ const I18N = {
     bus_transfer: (agency,dep,mid,midArr,midDep,arr)=>`${agency} | departs ${dep} → transfer at "${mid}" (arr ${midArr} / dep ${midDep}) → arrives ${arr}`,
     to_temple_km: (name,km)=>`To ${name}: ${km}km`,
     transfer_badge: '1 transfer',
+    fare_label: (amount)=>` | approx. fare ${amount}`,
     map_link: 'View map →',
     route_shown_direct: 'Showing the actual walking/driving route',
     route_shown_bus: 'Showing walk → bus → walk route',
@@ -638,6 +726,20 @@ const I18N = {
     elevation_stats: (gain,loss)=>`Elevation change on foot: ⬆️ ${gain}m climb / ⬇️ ${loss}m descent`,
     elevation_climb: (s,e,len,gain)=>`Biggest climb: ${gain}m over ${len}km, from the ${s}km point to the ${e}km point.`,
     current_location: 'Your location',
+    btn_locate: '📍 Use my current location',
+    locate_searching: 'Locating…',
+    locate_failed: 'Could not get your current location',
+    locate_unsupported: 'Location is not supported on this device',
+    btn_share: 'Share this plan',
+    share_copied: 'Link copied',
+    share_failed: 'Failed to create share link',
+    progress_label: (n,total)=>`Pilgrimage progress: ${n} of ${total} temples visited`,
+    visited_mark: 'Mark as visited',
+    visited_unmark: 'Unmark as visited',
+    nokyo_countdown: (min)=>`${min} min until the stamp office closes`,
+    nokyo_over: (min)=>`${min} min past stamp office closing time`,
+    temple_info_toggle: 'View principal deity',
+    label_honzon: 'Principal image',
     landmark_toilet: 'Restroom', landmark_lodging: 'Lodging', landmark_roadside: 'Roadside station',
     landmark_onsen: 'Hot spring', landmark_vending: 'Vending machine', landmark_temple: 'Temple/Shrine',
     landmark_shop: 'Shop', landmark_dining: 'Food', landmark_station: 'Station',
@@ -680,6 +782,7 @@ const I18N = {
     bus_transfer: (agency,dep,mid,midArr,midDep,arr)=>`${agency} | ${dep} 출발 → 「${mid}」에서 환승(${midArr} 도착/${midDep} 출발) → ${arr} 도착`,
     to_temple_km: (name,km)=>`${name}까지 ${km}km`,
     transfer_badge: '환승 1회',
+    fare_label: (amount)=>`｜예상 요금 ${amount}`,
     map_link: '지도 보기 →',
     route_shown_direct: '실제 이동 경로를 표시하고 있습니다',
     route_shown_bus: '도보→버스→도보 경로를 표시하고 있습니다',
@@ -690,6 +793,20 @@ const I18N = {
     elevation_stats: (gain,loss)=>`도보 구간 고저차: ⬆️상승고도 ${gain}m／⬇️하강 ${loss}m`,
     elevation_climb: (s,e,len,gain)=>`최대 오르막: ${s}km 지점부터 ${e}km 지점까지(${len}km 구간)에서 ${gain}m 상승합니다.`,
     current_location: '현재 위치',
+    btn_locate: '📍 현재 위치로 자동 설정',
+    locate_searching: '검색 중…',
+    locate_failed: '현재 위치를 가져올 수 없습니다',
+    locate_unsupported: '이 기기에서는 위치 정보를 사용할 수 없습니다',
+    btn_share: '이 일정 공유하기',
+    share_copied: '링크가 복사되었습니다',
+    share_failed: '공유 링크 생성에 실패했습니다',
+    progress_label: (n,total)=>`순례 기록: ${total}곳 중 ${n}곳 방문`,
+    visited_mark: '방문 완료로 표시',
+    visited_unmark: '방문 완료 해제',
+    nokyo_countdown: (min)=>`납경소 마감까지 ${min}분`,
+    nokyo_over: (min)=>`납경소 마감 시간 ${min}분 초과`,
+    temple_info_toggle: '본존불 보기',
+    label_honzon: '본존불',
     landmark_toilet: '화장실', landmark_lodging: '숙박시설', landmark_roadside: '미치노에키(휴게소)',
     landmark_onsen: '온천', landmark_vending: '자판기', landmark_temple: '사찰/신사',
     landmark_shop: '상점', landmark_dining: '음식점', landmark_station: '역',
@@ -732,6 +849,7 @@ const I18N = {
     bus_transfer: (agency,dep,mid,midArr,midDep,arr)=>`${agency}｜${dep}发车 → 在「${mid}」换乘(到达${midArr}/发车${midDep}) → ${arr}到达`,
     to_temple_km: (name,km)=>`距${name} ${km}公里`,
     transfer_badge: '换乘1次',
+    fare_label: (amount)=>`｜预估票价 ${amount}`,
     map_link: '查看地图 →',
     route_shown_direct: '正在显示实际路线',
     route_shown_bus: '正在显示 徒步→公交→徒步 路线',
@@ -742,6 +860,20 @@ const I18N = {
     elevation_stats: (gain,loss)=>`徒步路段高低差：⬆️爬升 ${gain}m／⬇️下降 ${loss}m`,
     elevation_climb: (s,e,len,gain)=>`最大爬坡路段：从${s}公里处到${e}公里处（共${len}公里），爬升${gain}米。`,
     current_location: '当前位置',
+    btn_locate: '📍 使用当前位置自动设置',
+    locate_searching: '定位中…',
+    locate_failed: '无法获取当前位置',
+    locate_unsupported: '此设备不支持位置信息',
+    btn_share: '分享此行程',
+    share_copied: '链接已复制',
+    share_failed: '生成分享链接失败',
+    progress_label: (n,total)=>`巡礼记录：共${total}所，已参拜${n}所`,
+    visited_mark: '标记为已参拜',
+    visited_unmark: '取消已参拜标记',
+    nokyo_countdown: (min)=>`距纳经所关闭还有${min}分钟`,
+    nokyo_over: (min)=>`已超过纳经所关闭时间${min}分钟`,
+    temple_info_toggle: '查看本尊',
+    label_honzon: '本尊',
     landmark_toilet: '厕所', landmark_lodging: '住宿', landmark_roadside: '道之驿(公路休息站)',
     landmark_onsen: '温泉', landmark_vending: '自动售货机', landmark_temple: '寺庙/神社',
     landmark_shop: '商店', landmark_dining: '餐饮', landmark_station: '车站',
@@ -784,6 +916,7 @@ const I18N = {
     bus_transfer: (agency,dep,mid,midArr,midDep,arr)=>`${agency}｜${dep}發車 → 在「${mid}」轉乘(抵達${midArr}/發車${midDep}) → ${arr}抵達`,
     to_temple_km: (name,km)=>`距${name} ${km}公里`,
     transfer_badge: '轉乘1次',
+    fare_label: (amount)=>`｜預估票價 ${amount}`,
     map_link: '查看地圖 →',
     route_shown_direct: '正在顯示實際路線',
     route_shown_bus: '正在顯示 徒步→公車→徒步 路線',
@@ -794,6 +927,20 @@ const I18N = {
     elevation_stats: (gain,loss)=>`徒步路段高低差：⬆️爬升 ${gain}m／⬇️下降 ${loss}m`,
     elevation_climb: (s,e,len,gain)=>`最大爬坡路段：從${s}公里處到${e}公里處（共${len}公里），爬升${gain}公尺。`,
     current_location: '目前位置',
+    btn_locate: '📍 使用目前位置自動設定',
+    locate_searching: '定位中…',
+    locate_failed: '無法取得目前位置',
+    locate_unsupported: '此裝置不支援位置資訊',
+    btn_share: '分享此行程',
+    share_copied: '連結已複製',
+    share_failed: '產生分享連結失敗',
+    progress_label: (n,total)=>`巡禮記錄：共${total}所，已參拜${n}所`,
+    visited_mark: '標記為已參拜',
+    visited_unmark: '取消已參拜標記',
+    nokyo_countdown: (min)=>`距納經所關閉還有${min}分鐘`,
+    nokyo_over: (min)=>`已超過納經所關閉時間${min}分鐘`,
+    temple_info_toggle: '查看本尊',
+    label_honzon: '本尊',
     landmark_toilet: '廁所', landmark_lodging: '住宿', landmark_roadside: '道之驛(公路休息站)',
     landmark_onsen: '溫泉', landmark_vending: '自動販賣機', landmark_temple: '寺廟/神社',
     landmark_shop: '商店', landmark_dining: '餐飲', landmark_station: '車站',
@@ -836,6 +983,7 @@ const I18N = {
     bus_transfer: (agency,dep,mid,midArr,midDep,arr)=>`${agency} | Abfahrt ${dep} → Umstieg in „${mid}" (an ${midArr} / ab ${midDep}) → Ankunft ${arr}`,
     to_temple_km: (name,km)=>`Bis ${name}: ${km}km`,
     transfer_badge: '1 Umstieg',
+    fare_label: (amount)=>` | ca. Fahrpreis ${amount}`,
     map_link: 'Karte ansehen →',
     route_shown_direct: 'Die tatsächliche Route wird angezeigt',
     route_shown_bus: 'Route zu Fuß → Bus → zu Fuß wird angezeigt',
@@ -846,6 +994,20 @@ const I18N = {
     elevation_stats: (gain,loss)=>`Höhenunterschied zu Fuß: ⬆️ ${gain}m Anstieg / ⬇️ ${loss}m Abstieg`,
     elevation_climb: (s,e,len,gain)=>`Größter Anstieg: ${gain}m auf ${len}km, vom ${s}km- bis zum ${e}km-Punkt.`,
     current_location: 'Ihr Standort',
+    btn_locate: '📍 Aktuellen Standort verwenden',
+    locate_searching: 'Standort wird ermittelt…',
+    locate_failed: 'Standort konnte nicht ermittelt werden',
+    locate_unsupported: 'Standortdienste werden auf diesem Gerät nicht unterstützt',
+    btn_share: 'Diesen Plan teilen',
+    share_copied: 'Link kopiert',
+    share_failed: 'Freigabelink konnte nicht erstellt werden',
+    progress_label: (n,total)=>`Pilgerfortschritt: ${n} von ${total} Tempeln besucht`,
+    visited_mark: 'Als besucht markieren',
+    visited_unmark: 'Markierung entfernen',
+    nokyo_countdown: (min)=>`Noch ${min} Min. bis das Stempelbüro schließt`,
+    nokyo_over: (min)=>`${min} Min. nach Schließung des Stempelbüros`,
+    temple_info_toggle: 'Hauptgottheit anzeigen',
+    label_honzon: 'Hauptgottheit',
     landmark_toilet: 'Toilette', landmark_lodging: 'Unterkunft', landmark_roadside: 'Raststätte (Michi-no-Eki)',
     landmark_onsen: 'Onsen (heiße Quelle)', landmark_vending: 'Verkaufsautomat', landmark_temple: 'Tempel/Schrein',
     landmark_shop: 'Geschäft', landmark_dining: 'Essen', landmark_station: 'Bahnhof',
@@ -888,6 +1050,7 @@ const I18N = {
     bus_transfer: (agency,dep,mid,midArr,midDep,arr)=>`${agency} | parte às ${dep} → baldeação em "${mid}" (chega ${midArr} / parte ${midDep}) → chega às ${arr}`,
     to_temple_km: (name,km)=>`Até ${name}: ${km}km`,
     transfer_badge: '1 baldeação',
+    fare_label: (amount)=>` | tarifa aprox. ${amount}`,
     map_link: 'Ver mapa →',
     route_shown_direct: 'Mostrando a rota real',
     route_shown_bus: 'Mostrando rota a pé → ônibus → a pé',
@@ -898,6 +1061,20 @@ const I18N = {
     elevation_stats: (gain,loss)=>`Desnível a pé: ⬆️ ${gain}m de subida / ⬇️ ${loss}m de descida`,
     elevation_climb: (s,e,len,gain)=>`Maior subida: ${gain}m ao longo de ${len}km, do ponto ${s}km ao ponto ${e}km.`,
     current_location: 'Sua localização',
+    btn_locate: '📍 Usar minha localização atual',
+    locate_searching: 'Localizando…',
+    locate_failed: 'Não foi possível obter sua localização',
+    locate_unsupported: 'Localização não é compatível com este dispositivo',
+    btn_share: 'Compartilhar este plano',
+    share_copied: 'Link copiado',
+    share_failed: 'Falha ao criar o link de compartilhamento',
+    progress_label: (n,total)=>`Progresso da peregrinação: ${n} de ${total} templos visitados`,
+    visited_mark: 'Marcar como visitado',
+    visited_unmark: 'Desmarcar visitado',
+    nokyo_countdown: (min)=>`Faltam ${min} min para o escritório de carimbos fechar`,
+    nokyo_over: (min)=>`${min} min após o fechamento do escritório de carimbos`,
+    temple_info_toggle: 'Ver divindade principal',
+    label_honzon: 'Divindade principal',
     landmark_toilet: 'Banheiro', landmark_lodging: 'Hospedagem', landmark_roadside: 'Posto de parada (Michi-no-eki)',
     landmark_onsen: 'Fonte termal (Onsen)', landmark_vending: 'Máquina de venda automática', landmark_temple: 'Templo/Santuário',
     landmark_shop: 'Loja', landmark_dining: 'Restaurante', landmark_station: 'Estação',
@@ -951,6 +1128,36 @@ function applyStaticTranslations(){
 
 function toggleHeroInfo(){
   document.getElementById('heroInfoTooltip')?.classList.toggle('open');
+}
+
+// 現在の計画(出発・到着札所、日付、時刻、言語)を、URL一つで共有できるようにする
+async function sharePlan(){
+  const params = new URLSearchParams();
+  params.set('from', startSel.value);
+  params.set('to', endSel.value);
+  params.set('date', getSelectedDateStr());
+  params.set('time', getSelectedTimeStr());
+  params.set('lang', currentLang);
+  const shareUrl = `${location.origin}${location.pathname}?${params.toString()}`;
+
+  try{
+    if(navigator.share){
+      await navigator.share({ title: t('hero_title').replace(/<br>/g,' '), url: shareUrl });
+      return;
+    }
+  }catch(e){
+    // ユーザーがシェアシートをキャンセルした場合等はここに来るが、エラー扱いしない
+    if(e && e.name === 'AbortError') return;
+  }
+
+  // Web Share API が無い環境(PCブラウザ等)ではクリップボードにコピーする
+  try{
+    await navigator.clipboard.writeText(shareUrl);
+    alert(t('share_copied'));
+  }catch(e){
+    console.warn('share failed', e);
+    alert(t('share_failed'));
+  }
 }
 
 function setLanguage(lang){
@@ -1013,6 +1220,133 @@ async function loadTemples(){
 function walkMinutesFor(temple){
   if(temple.isRealWalkData && temple.walkDurationMin != null) return temple.walkDurationMin;
   return temple.distanceKm / 4 * 60;
+}
+
+// 現在地から最も近い札所を検出し、出発する札所として自動設定する
+// ==================================================================
+// ---- 巡礼の進捗記録（端末内のみ。アカウント不要） ----
+// ==================================================================
+function getVisitedSet(){
+  try{ return new Set(JSON.parse(localStorage.getItem('ohenro_visited') || '[]')); }
+  catch(e){ return new Set(); }
+}
+function saveVisitedSet(set){
+  localStorage.setItem('ohenro_visited', JSON.stringify([...set]));
+}
+function isVisited(no){
+  return getVisitedSet().has(no);
+}
+// ==================================================================
+// ---- 88札所の御本尊（出典: 四国遍路情報サイト「四国遍路」の札所一覧。
+//      Wikipedia「四国八十八箇所」記載の本尊内訳統計と突き合わせて件数が
+//      完全一致することを確認済み） ----
+// ==================================================================
+const TEMPLE_HONZON = {
+  1:'釈迦如来', 2:'阿弥陀如来', 3:'釈迦如来', 4:'大日如来', 5:'延命地蔵・勝軍地蔵菩薩',
+  6:'薬師如来', 7:'阿弥陀如来', 8:'千手観世音菩薩', 9:'涅槃釈迦如来', 10:'千手観世音菩薩',
+  11:'薬師如来', 12:'虚空蔵菩薩', 13:'十一面観世音菩薩', 14:'弥勒菩薩', 15:'薬師如来',
+  16:'千手観世音菩薩', 17:'七仏薬師如来', 18:'薬師如来', 19:'延命地蔵菩薩', 20:'地蔵菩薩',
+  21:'虚空蔵菩薩', 22:'薬師如来', 23:'厄除薬師如来', 24:'虚空蔵菩薩', 25:'地蔵菩薩(楫取地蔵)',
+  26:'薬師如来', 27:'十一面観世音菩薩', 28:'大日如来', 29:'千手観世音菩薩', 30:'阿弥陀如来',
+  31:'文殊菩薩', 32:'十一面観世音菩薩', 33:'薬師如来', 34:'薬師如来', 35:'厄除薬師如来',
+  36:'波切不動明王', 37:'不動明王・観世音菩薩・阿弥陀如来・薬師如来・地蔵菩薩(五仏)', 38:'三面千手観世音菩薩', 39:'薬師如来', 40:'薬師如来',
+  41:'十一面観世音菩薩', 42:'大日如来', 43:'千手観世音菩薩', 44:'十一面観世音菩薩', 45:'不動明王',
+  46:'薬師如来', 47:'阿弥陀如来', 48:'十一面観世音菩薩', 49:'釈迦如来', 50:'薬師如来',
+  51:'薬師如来', 52:'十一面観世音菩薩', 53:'阿弥陀如来', 54:'不動明王', 55:'大通智勝如来',
+  56:'地蔵菩薩', 57:'阿弥陀如来', 58:'千手観世音菩薩', 59:'薬師瑠璃光如来', 60:'大日如来',
+  61:'大日如来', 62:'十一面観世音菩薩', 63:'毘沙門天', 64:'阿弥陀如来', 65:'十一面観世音菩薩',
+  66:'千手観世音菩薩', 67:'薬師如来', 68:'阿弥陀如来', 69:'聖観世音菩薩', 70:'馬頭観音',
+  71:'千手観世音菩薩', 72:'大日如来', 73:'釈迦如来', 74:'薬師如来', 75:'薬師如来',
+  76:'薬師如来', 77:'薬師如来', 78:'阿弥陀如来', 79:'十一面観世音菩薩', 80:'十一面千手観世音菩薩',
+  81:'千手観世音菩薩', 82:'千手観世音菩薩', 83:'聖観世音菩薩', 84:'十一面千手観世音菩薩', 85:'聖観世音菩薩',
+  86:'十一面観世音菩薩', 87:'聖観世音菩薩', 88:'薬師如来',
+};
+// ラテン文字圏(英・独・葡)向けの英語訳。ユニークな尊名の種類だけ用意すれば足りる。
+const HONZON_EN = {
+  '釈迦如来':'Shaka Nyorai (Shakyamuni Buddha)',
+  '阿弥陀如来':'Amida Nyorai (Amitabha Buddha)',
+  '大日如来':'Dainichi Nyorai (Mahavairocana Buddha)',
+  '薬師如来':'Yakushi Nyorai (Medicine Buddha)',
+  '厄除薬師如来':'Yakuyoke Yakushi Nyorai (Medicine Buddha, ward against misfortune)',
+  '七仏薬師如来':'Shichibutsu Yakushi Nyorai (Seven Medicine Buddhas)',
+  '薬師瑠璃光如来':'Yakushi Ruriko Nyorai (Medicine Buddha of Lapis Lazuli Light)',
+  '十一面観世音菩薩':'Juichimen Kannon (Eleven-Faced Avalokiteshvara)',
+  '千手観世音菩薩':'Senju Kannon (Thousand-Armed Avalokiteshvara)',
+  '聖観世音菩薩':'Sho Kannon (Avalokiteshvara)',
+  '十一面千手観世音菩薩':'Juichimen Senju Kannon (Eleven-Faced Thousand-Armed Avalokiteshvara)',
+  '三面千手観世音菩薩':'Sanmen Senju Kannon (Three-Faced Thousand-Armed Avalokiteshvara)',
+  '延命地蔵・勝軍地蔵菩薩':'Enmei Jizo & Shogun Jizo Bosatsu',
+  '延命地蔵菩薩':'Enmei Jizo Bosatsu',
+  '地蔵菩薩':'Jizo Bosatsu',
+  '地蔵菩薩(楫取地蔵)':'Jizo Bosatsu (Kajitori Jizo)',
+  '弥勒菩薩':'Miroku Bosatsu (Maitreya Bodhisattva)',
+  '文殊菩薩':'Monju Bosatsu (Manjushri Bodhisattva)',
+  '虚空蔵菩薩':'Kokuzo Bosatsu (Akashagarbha Bodhisattva)',
+  '不動明王':'Fudo Myoo (Acala)',
+  '波切不動明王':'Namikiri Fudo Myoo (Wave-Cutting Acala)',
+  '不動明王・観世音菩薩・阿弥陀如来・薬師如来・地蔵菩薩(五仏)':'Five principal images: Fudo Myoo, Kannon, Amida, Yakushi, and Jizo',
+  '涅槃釈迦如来':'Nehan Shaka Nyorai (Reclining/Parinirvana Shakyamuni Buddha)',
+  '大通智勝如来':'Daitsuchisho Nyorai',
+  '毘沙門天':'Bishamonten (Vaisravana)',
+  '馬頭観音':'Bato Kannon (Hayagriva, Horse-Headed Avalokiteshvara)',
+};
+function honzonDisplay(no){
+  const ja = TEMPLE_HONZON[no];
+  if(!ja) return '';
+  return ROMANIZED_LANGS.includes(currentLang) ? (HONZON_EN[ja] || ja) : ja;
+}
+
+function toggleVisited(no, btnEl){
+  const set = getVisitedSet();
+  if(set.has(no)) set.delete(no); else set.add(no);
+  saveVisitedSet(set);
+  if(btnEl){
+    const visited = set.has(no);
+    btnEl.textContent = visited ? '★' : '☆';
+    btnEl.title = visited ? t('visited_unmark') : t('visited_mark');
+  }
+  updateProgressLabel();
+}
+function updateProgressLabel(){
+  const el = document.getElementById('progressLabel');
+  if(!el || !temples.length) return;
+  const set = getVisitedSet();
+  el.textContent = t('progress_label', set.size, temples.length);
+}
+
+function setStartFromLocation(){
+  if(!navigator.geolocation){
+    alert(t('locate_unsupported'));
+    return;
+  }
+  const btn = document.querySelector('.locate-btn');
+  const originalText = btn.textContent;
+  btn.textContent = t('locate_searching');
+  btn.disabled = true;
+
+  navigator.geolocation.getCurrentPosition(
+    (pos)=>{
+      const { latitude, longitude } = pos.coords;
+      let nearest = null, minDist = Infinity;
+      temples.forEach(temple=>{
+        const d = metersBetween(latitude, longitude, temple.lat, temple.lng);
+        if(d < minDist){ minDist = d; nearest = temple; }
+      });
+      btn.textContent = originalText;
+      btn.disabled = false;
+      if(nearest){
+        startSel.value = nearest.no;
+        runPlanner();
+      }
+    },
+    (err)=>{
+      console.warn('現在地の取得に失敗しました', err);
+      btn.textContent = originalText;
+      btn.disabled = false;
+      alert(t('locate_failed'));
+    },
+    { enableHighAccuracy:true, timeout:8000, maximumAge:30000 }
+  );
 }
 
 function populateTempleSelects(){
@@ -1311,6 +1645,13 @@ async function runPlanner(){
           note = busResult.transfers === 1
             ? t('bus_transfer', agencyDisplayName(busResult.agency_key), hhmm(busResult.from_departure), busResult.mid_stop_name, hhmm(busResult.mid_arrival), hhmm(busResult.mid_departure), hhmm(busResult.to_arrival))
             : t('bus_direct', agencyDisplayName(busResult.agency_key), hhmm(busResult.from_departure), hhmm(busResult.to_arrival));
+          // 運賃データがあれば末尾に追記する（無いフィードも多いため、無ければ何も表示しない）
+          if(busResult.farePrice != null){
+            const amount = busResult.fareCurrency === 'JPY' || !busResult.fareCurrency
+              ? `¥${Math.round(busResult.farePrice)}`
+              : `${Math.round(busResult.farePrice)} ${busResult.fareCurrency}`;
+            note += t('fare_label', amount);
+          }
         } else {
           chosen = 'walk';
           arriveMin = walkArrive;
@@ -1352,6 +1693,13 @@ async function runPlanner(){
     const temple = temples.find(t=>t.no===a.no);
     const isLast = idx === arrival.length-1;
     const nokyoOver = a.timeMin > NOKYO_CLOSE;
+    const nokyoDiff = NOKYO_CLOSE - a.timeMin; // 正=まだ余裕あり、負=超過
+    let nokyoExtra = '';
+    if(nokyoOver){
+      nokyoExtra = ` ${t('nokyo_over', Math.abs(Math.round(nokyoDiff)))}`;
+    } else if(nokyoDiff <= 30){
+      nokyoExtra = ` ${t('nokyo_countdown', Math.round(nokyoDiff))}`;
+    }
     const displayName = templeDisplayName(temple);
 
     html += `<div class="stop">
@@ -1362,9 +1710,13 @@ async function runPlanner(){
       </div>
       <div class="stop-card">
         <div class="stop-title"><span class="no">${String(temple.no).padStart(2,'0')}</span>${displayName}
-          <span class="nokyo-badge ${nokyoOver?'nokyo-warn':'nokyo-ok'}">${nokyoOver? t('nokyo_warn') : t('nokyo_ok')}</span>
+          <button type="button" class="visited-toggle" onclick="toggleVisited(${temple.no}, this)" title="${isVisited(temple.no) ? t('visited_unmark') : t('visited_mark')}">${isVisited(temple.no) ? '★' : '☆'}</button>
+          <span class="nokyo-badge ${nokyoOver?'nokyo-warn':'nokyo-ok'}">${(nokyoOver? t('nokyo_warn') : t('nokyo_ok'))}${nokyoExtra}</span>
         </div>
         <div class="stop-meta mono">${temple.kana}</div>
+        ${TEMPLE_HONZON[temple.no] ? `
+          <div class="honzon-toggle" onclick="this.nextElementSibling.classList.toggle('open')">${t('temple_info_toggle')}</div>
+          <div class="honzon-info">${t('label_honzon')}：${honzonDisplay(temple.no)}</div>` : ''}
         ${a.note ? `
           <div class="segment-note" onclick="openMapForIndex(${idx})">
             <span class="badge-mode ${a.mode}">${a.mode==='bus'?'BUS':'WALK'}</span>
@@ -1390,6 +1742,7 @@ async function runPlanner(){
     return;
   }
   populateTempleSelects();
+  updateProgressLabel();
   // 言語切り替え時のページ再読み込みで、選択中だった出発・到着札所・日付・時刻をURLパラメータから復元
   const params = new URLSearchParams(location.search);
   const restoredFrom = params.get('from');

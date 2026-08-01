@@ -22,6 +22,8 @@ import {
   GtfsStopTime,
   GtfsCalendar,
   GtfsCalendarDate,
+  GtfsFareAttribute,
+  GtfsFareRule,
 } from './entities/gtfs.entities';
 
 function readCsvFromZip(zip: AdmZip, fileName: string): Record<string, string>[] {
@@ -143,6 +145,28 @@ async function importGtfs(zipPath: string, agencyKey: string) {
   if (calendarDates.length)
     await chunkedUpsert(ds.getRepository(GtfsCalendarDate), calendarDates, ['agency_key', 'service_id', 'date']);
   console.log(`  → ${calendarDates.length}件`);
+
+  console.log(`[${agencyKey}] fare_attributes.txt を取り込み中（運賃データ。無いフィードもあります）...`);
+  let fareAttributes = readCsvFromZip(zip, 'fare_attributes.txt').map((f) => ({
+    agency_key: agencyKey,
+    fare_id: f.fare_id,
+    price: Number(f.price),
+    currency_type: f.currency_type,
+  }));
+  fareAttributes = dedupeByKey(fareAttributes, ['agency_key', 'fare_id']);
+  if (fareAttributes.length)
+    await chunkedUpsert(ds.getRepository(GtfsFareAttribute), fareAttributes, ['agency_key', 'fare_id']);
+  console.log(`  → ${fareAttributes.length}件`);
+
+  console.log(`[${agencyKey}] fare_rules.txt を取り込み中（運賃と路線の対応表。無いフィードもあります）...`);
+  let fareRules = readCsvFromZip(zip, 'fare_rules.txt').map((f) => ({
+    agency_key: agencyKey,
+    fare_id: f.fare_id,
+    route_id: f.route_id ?? '',
+  }));
+  fareRules = dedupeByKey(fareRules, ['agency_key', 'fare_id', 'route_id']);
+  if (fareRules.length) await chunkedUpsert(ds.getRepository(GtfsFareRule), fareRules, ['agency_key', 'fare_id', 'route_id']);
+  console.log(`  → ${fareRules.length}件`);
 
   await ds.destroy();
   console.log(`[${agencyKey}] 取り込み完了`);
