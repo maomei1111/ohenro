@@ -33,6 +33,19 @@ export class GtfsTrip {
 
   @Column('varchar') route_id!: string;
   @Column('varchar') service_id!: string;
+  @Column({ type: 'varchar', nullable: true }) shape_id!: string | null; // 実際の走行経路形状への参照(無いフィードもある)
+}
+
+// shapes.txt: バスが実際に走る道なりの経路形状（緯度経度の点列）。
+// 停留所間の直線・仮のDirectionsルートではなく、実際に走ったルートを地図に描くために使う。
+@Entity('gtfs_shapes')
+export class GtfsShapePoint {
+  @PrimaryColumn('varchar') agency_key!: string;
+  @PrimaryColumn('varchar') shape_id!: string;
+  @PrimaryColumn('int') shape_pt_sequence!: number;
+
+  @Column('double precision') shape_pt_lat!: number;
+  @Column('double precision') shape_pt_lon!: number;
 }
 
 @Entity('gtfs_stop_times')

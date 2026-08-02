@@ -24,6 +24,7 @@ import {
   GtfsCalendarDate,
   GtfsFareAttribute,
   GtfsFareRule,
+  GtfsShapePoint,
 } from './entities/gtfs.entities';
 
 function readCsvFromZip(zip: AdmZip, fileName: string): Record<string, string>[] {
@@ -97,6 +98,7 @@ async function importGtfs(zipPath: string, agencyKey: string) {
     trip_id: t.trip_id,
     route_id: t.route_id,
     service_id: t.service_id,
+    shape_id: t.shape_id || null,
   }));
   trips = dedupeByKey(trips, ['agency_key', 'trip_id']);
   if (trips.length) await chunkedUpsert(ds.getRepository(GtfsTrip), trips, ['agency_key', 'trip_id']);
@@ -167,6 +169,18 @@ async function importGtfs(zipPath: string, agencyKey: string) {
   fareRules = dedupeByKey(fareRules, ['agency_key', 'fare_id', 'route_id']);
   if (fareRules.length) await chunkedUpsert(ds.getRepository(GtfsFareRule), fareRules, ['agency_key', 'fare_id', 'route_id']);
   console.log(`  → ${fareRules.length}件`);
+
+  console.log(`[${agencyKey}] shapes.txt を取り込み中（実際の走行経路形状。データ量が多い場合があります）...`);
+  let shapes = readCsvFromZip(zip, 'shapes.txt').map((s) => ({
+    agency_key: agencyKey,
+    shape_id: s.shape_id,
+    shape_pt_sequence: Number(s.shape_pt_sequence),
+    shape_pt_lat: Number(s.shape_pt_lat),
+    shape_pt_lon: Number(s.shape_pt_lon),
+  }));
+  shapes = dedupeByKey(shapes, ['agency_key', 'shape_id', 'shape_pt_sequence']);
+  if (shapes.length) await chunkedUpsert(ds.getRepository(GtfsShapePoint), shapes, ['agency_key', 'shape_id', 'shape_pt_sequence']);
+  console.log(`  → ${shapes.length}件`);
 
   await ds.destroy();
   console.log(`[${agencyKey}] 取り込み完了`);

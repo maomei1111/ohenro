@@ -290,6 +290,49 @@ async function findOneTransferBus(
   return pickBestCandidate(candidates);
 }
 
+// shapes.txt(実際の走行経路)から、乗車〜降車区間だけを切り出して返すヘルパー
+function nearestShapeIndex(coords: [number, number][], lat: number, lng: number): number {
+  let best = 0, bestDist = Infinity;
+  coords.forEach((c, i) => {
+    const d = (c[0] - lat) ** 2 + (c[1] - lng) ** 2; // 並び替え用途なので簡易な二乗距離で十分
+    if (d < bestDist) { bestDist = d; best = i; }
+  });
+  return best;
+}
+
+// 選ばれた便に、実際の走行経路(shapes.txt由来、乗車〜降車区間だけ切り出したもの)を紐付ける。
+// 乗り換えありの便は今回対象外（地図側でも直通のみ実経路表示に対応しているため）。
+// shapes.txtが無いフィードもあるため、見つからない場合は何も付与しない。
+async function attachBusShape(result: any, ds: any) {
+  if (!result || result.transfers === 1) return result;
+  try {
+    const tripRows = await ds.query(`SELECT shape_id FROM gtfs_trips WHERE agency_key = $1 AND trip_id = $2`, [
+      result.agency_key,
+      result.trip_id,
+    ]);
+    const shapeId = tripRows[0]?.shape_id;
+    if (!shapeId) return result;
+
+    const shapeRows = await ds.query(
+      `SELECT shape_pt_lat, shape_pt_lon FROM gtfs_shapes WHERE agency_key = $1 AND shape_id = $2 ORDER BY shape_pt_sequence`,
+      [result.agency_key, shapeId]
+    );
+    if (!shapeRows.length) return result;
+
+    const shapeCoords: [number, number][] = shapeRows.map((r: any) => [Number(r.shape_pt_lat), Number(r.shape_pt_lon)]);
+    const fromIdx = nearestShapeIndex(shapeCoords, Number(result.from_stop_lat), Number(result.from_stop_lon));
+    const toIdx = nearestShapeIndex(shapeCoords, Number(result.to_stop_lat), Number(result.to_stop_lon));
+    const [startIdx, endIdx] = fromIdx <= toIdx ? [fromIdx, toIdx] : [toIdx, fromIdx];
+    let trimmed = shapeCoords.slice(startIdx, endIdx + 1);
+    if (fromIdx > toIdx) trimmed = trimmed.reverse(); // 進行方向を乗車→降車の順に揃える
+
+    if (trimmed.length >= 2) result.busShapeCoords = trimmed;
+  } catch (e) {
+    console.warn('bus shape 取得に失敗しました', e);
+  }
+  return result;
+}
+
 // 選ばれた便に、実際の運賃額(fare_attributes)を紐付ける。
 // 運賃データが無いフィードも多いため、見つからない場合は何も付与しない（undefinedのまま）。
 async function attachFare(result: any, ds: any) {
@@ -346,7 +389,8 @@ export async function findNextBus(
     ? (withTransfer.arrivalMin < direct.arrivalMin - NEGLIGIBLE_DIFF_MIN ? withTransfer : direct)
     : direct ?? withTransfer ?? null;
 
-  return attachFare(chosen, ds);
+  const withFare = await attachFare(chosen, ds);
+  return attachBusShape(withFare, ds);
 }
 
 // CLIから直接実行された場合のみ動作確認用に実行

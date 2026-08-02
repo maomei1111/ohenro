@@ -9,6 +9,7 @@ import {
   GtfsCalendarDate,
   GtfsFareAttribute,
   GtfsFareRule,
+  GtfsShapePoint,
   TempleStopLink,
 } from './entities/gtfs.entities';
 import { CachedLandmark } from './entities/landmark.entities';
@@ -22,6 +23,7 @@ const ENTITIES = [
   GtfsCalendarDate,
   GtfsFareAttribute,
   GtfsFareRule,
+  GtfsShapePoint,
   TempleStopLink,
   CachedLandmark,
 ];

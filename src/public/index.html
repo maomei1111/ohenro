@@ -2054,7 +2054,7 @@ function drawPolyline(coords, color, dashed){
   return line;
 }
 
-function addPinMarker(position, color, label, title, scale, labelFontSize){
+function addPinMarker(position, color, label, title, scale, labelFontSize, showPersistentName){
   const marker = new google.maps.Marker({
     position, map: googleMap, title,
     label: label ? { text:label, color:'#fff', fontSize: labelFontSize || '11px', fontWeight:'700' } : undefined,
@@ -2068,6 +2068,15 @@ function addPinMarker(position, color, label, title, scale, labelFontSize){
     },
   });
   mapOverlays.push(marker);
+  // バス停名など、常に地図上に名前を出しておきたい場合はここで開いたままにする
+  if(showPersistentName && title){
+    const info = new google.maps.InfoWindow({
+      content: `<div style="font-family:'Noto Sans JP',sans-serif;font-size:11.5px;white-space:nowrap;">${title}</div>`,
+      disableAutoPan: true,
+    });
+    info.open({ map:googleMap, anchor:marker, shouldFocus:false });
+    mapOverlays.push({ setMap:(v)=> v===null && info.close() }); // clearMapOverlaysで一緒に閉じられるようにする
+  }
   return marker;
 }
 
@@ -2331,18 +2340,22 @@ async function openMap(fromNo, toNo, mode, note, distanceKm, busResult){
         // 無ければその場でDirections APIに問い合わせる(フォールバック)。
         const cachedWalk1 = cachedStopWalkRoute(fromNo, busResult.agency_key, busResult.from_stop_id, false);
         const cachedWalk2 = cachedStopWalkRoute(toNo, busResult.agency_key, busResult.to_stop_id, true);
+        // バスの乗車区間は、GTFSのshapes.txt由来の実際の走行経路があればそれを使う。
+        // 無い場合のみ、Directionsで「車で行くとしたら」の仮のルートにフォールバックする
+        // (この場合、実際にバスがループ・迂回するような経路とは異なる場合がある)。
+        const hasRealShape = busResult.busShapeCoords && busResult.busShapeCoords.length >= 2;
 
         const [walk1, busLeg, walk2] = await Promise.all([
           cachedWalk1 ? Promise.resolve({coords:cachedWalk1}) : fetchRoute(from, fromStop, 'WALKING').catch(()=>({coords:[[from.lat,from.lng],[fromStop.lat,fromStop.lng]]})),
-          fetchRoute(fromStop, toStop, 'DRIVING').catch(()=>({coords:[[fromStop.lat,fromStop.lng],[toStop.lat,toStop.lng]]})),
+          hasRealShape ? Promise.resolve({coords:busResult.busShapeCoords}) : fetchRoute(fromStop, toStop, 'DRIVING').catch(()=>({coords:[[fromStop.lat,fromStop.lng],[toStop.lat,toStop.lng]]})),
           cachedWalk2 ? Promise.resolve({coords:cachedWalk2}) : fetchRoute(toStop, to, 'WALKING').catch(()=>({coords:[[toStop.lat,toStop.lng],[to.lat,to.lng]]})),
         ]);
         if(myToken !== mapReqToken) return;
         drawPolyline(walk1.coords, '#5B6B4F', false);
         drawPolyline(busLeg.coords, '#A63A2A', true);
         drawPolyline(walk2.coords, '#5B6B4F', false);
-        addPinMarker(fromStop, '#A63A2A', null, busResult.from_stop_name || 'バス停', 7);
-        addPinMarker(toStop, '#A63A2A', null, busResult.to_stop_name || 'バス停', 7);
+        addPinMarker(fromStop, '#A63A2A', null, busResult.from_stop_name || 'バス停', 7, null, true);
+        addPinMarker(toStop, '#A63A2A', null, busResult.to_stop_name || 'バス停', 7, null, true);
         allCoords = [...walk1.coords, ...busLeg.coords, ...walk2.coords];
         walkOnlyCoords = [...walk1.coords, ...walk2.coords];
         routeOk = true;
