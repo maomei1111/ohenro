@@ -2054,6 +2054,57 @@ function drawPolyline(coords, color, dashed){
   return line;
 }
 
+// ピンの右横に、常に見えるラベルを表示するための軽量なOverlayView。
+// InfoWindow(吹き出し)と違い、地図の拡大縮小・移動に追従しつつ、
+// ピンのすぐ横にシンプルなラベルとして表示され続ける。
+// google.maps.OverlayViewはスクリプト読み込み完了後にしか参照できないため、
+// クラス自体を遅延生成する(トップレベルでいきなりextendsすると、
+// Google Maps読み込み前にスクリプト全体がエラーで止まってしまうため)。
+let _PinLabelOverlayClass = null;
+function getPinLabelOverlayClass(){
+  if(_PinLabelOverlayClass) return _PinLabelOverlayClass;
+  _PinLabelOverlayClass = class extends google.maps.OverlayView {
+    constructor(position, text, map){
+      super();
+      this.position = new google.maps.LatLng(position.lat, position.lng);
+      this.text = text;
+      this.div = null;
+      this.setMap(map);
+    }
+    onAdd(){
+      this.div = document.createElement('div');
+      Object.assign(this.div.style, {
+        position:'absolute',
+        background:'#fff',
+        border:'1px solid rgba(43,40,37,0.15)',
+        borderRadius:'10px',
+        padding:'2px 7px',
+        fontSize:'11px',
+        fontFamily:"'Noto Sans JP', sans-serif",
+        whiteSpace:'nowrap',
+        boxShadow:'0 1px 4px rgba(0,0,0,0.25)',
+        transform:'translate(10px, -10px)', // ピンの右横・少し上にオフセット
+      });
+      this.div.textContent = this.text;
+      this.getPanes().overlayLayer.appendChild(this.div);
+    }
+    draw(){
+      const projection = this.getProjection();
+      if(!projection || !this.div) return;
+      const point = projection.fromLatLngToDivPixel(this.position);
+      if(point){
+        this.div.style.left = point.x + 'px';
+        this.div.style.top = point.y + 'px';
+      }
+    }
+    onRemove(){
+      if(this.div && this.div.parentNode) this.div.parentNode.removeChild(this.div);
+      this.div = null;
+    }
+  };
+  return _PinLabelOverlayClass;
+}
+
 function addPinMarker(position, color, label, title, scale, labelFontSize, showPersistentName){
   const marker = new google.maps.Marker({
     position, map: googleMap, title,
@@ -2068,14 +2119,11 @@ function addPinMarker(position, color, label, title, scale, labelFontSize, showP
     },
   });
   mapOverlays.push(marker);
-  // バス停名など、常に地図上に名前を出しておきたい場合はここで開いたままにする
+  // バス停名など、常に地図上に名前を出しておきたい場合はピンの横にラベルを添える
   if(showPersistentName && title){
-    const info = new google.maps.InfoWindow({
-      content: `<div style="font-family:'Noto Sans JP',sans-serif;font-size:11.5px;white-space:nowrap;">${title}</div>`,
-      disableAutoPan: true,
-    });
-    info.open({ map:googleMap, anchor:marker, shouldFocus:false });
-    mapOverlays.push({ setMap:(v)=> v===null && info.close() }); // clearMapOverlaysで一緒に閉じられるようにする
+    const PinLabelOverlay = getPinLabelOverlayClass();
+    const overlay = new PinLabelOverlay(position, title, googleMap);
+    mapOverlays.push(overlay); // OverlayViewもsetMap(null)で消せるのでそのままclearMapOverlaysに乗る
   }
   return marker;
 }
