@@ -1805,11 +1805,16 @@ function renderResult(arrival){
     }
     const displayName = templeDisplayName(temple);
 
+    // 区間情報(バス/徒歩案内)は、到着側ではなく「出発側」の札所カードに表示する。
+    // ＝この札所を出発してから次の札所に着くまでの案内、という見せ方に統一。
+    const nextEntry = arrival[idx+1];
+    const nextTemple = nextEntry ? temples.find(t=>t.no===nextEntry.no) : null;
+
     html += `<div class="stop">
       <div class="stop-rail">
         <div class="stop-dot"></div>
         <div class="stop-time">${toHHMM(a.timeMin)}</div>
-        ${!isLast ? `<div class="stop-connector ${arrival[idx+1] && arrival[idx+1].mode==='bus' ? 'bus':''}"></div>` : ''}
+        ${!isLast ? `<div class="stop-connector ${nextEntry && nextEntry.mode==='bus' ? 'bus':''}"></div>` : ''}
       </div>
       <div class="stop-card">
         <div class="stop-title"><span class="no">${String(temple.no).padStart(2,'0')}</span>${displayName}
@@ -1818,11 +1823,11 @@ function renderResult(arrival){
         </div>
         <div class="stop-meta mono">${temple.kana}</div>
         <a class="official-link" href="/temple/${temple.no}?lang=${currentLang}" target="_blank" rel="noopener">${t('temple_detail_link')}</a>
-        ${a.note ? `
-          <div class="segment-note" onclick="openMapForIndex(${idx})">
-            <span class="badge-mode ${a.mode}">${a.mode==='bus'?'BUS':'WALK'}</span>
-            ${a.busResult && a.busResult.transfers === 1 ? `<span class="badge-mode transfer">${t('transfer_badge')}</span>` : ''}
-            <b>${t('to_temple_km', displayName, a.distanceKm)}</b>：${a.note}
+        ${nextEntry ? `
+          <div class="segment-note" onclick="openMapForIndex(${idx+1})">
+            <span class="badge-mode ${nextEntry.mode}">${nextEntry.mode==='bus'?'BUS':'WALK'}</span>
+            ${nextEntry.busResult && nextEntry.busResult.transfers === 1 ? `<span class="badge-mode transfer">${t('transfer_badge')}</span>` : ''}
+            <b>${t('to_temple_km', templeDisplayName(nextTemple), nextEntry.distanceKm)}</b>：${nextEntry.note}
             <div class="map-link">${t('map_link')}</div>
           </div>` : ''}
       </div>
