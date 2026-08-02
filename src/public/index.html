@@ -668,6 +668,7 @@ const I18N = {
     nokyo_warn: '納経受付終了後の可能性',
     err_same_temple: '出発と到着が同じ札所です。異なる札所を選んでください。',
     loading_route: 'ルートを取得中…',
+    prompt_press_button: '出発・到着の札所を選んで「ルートを計算する」を押してください。',
     loading_temples: '札所データを読み込み中…',
     err_temples: '札所データの取得に失敗しました。しばらくしてから、もう一度お試しください。',
     walk_mode_note: '徒歩優先モード',
@@ -737,6 +738,7 @@ const I18N = {
     nokyo_warn: 'May be after stamp office closes',
     err_same_temple: 'Start and destination are the same temple. Please choose two different temples.',
     loading_route: 'Fetching route…',
+    prompt_press_button: 'Choose your starting and destination temples, then press "Calculate route."',
     loading_temples: 'Loading temple data…',
     err_temples: 'Failed to load temple data. Please try again in a moment.',
     walk_mode_note: 'Walk-only mode',
@@ -806,6 +808,7 @@ const I18N = {
     nokyo_warn: '납경 접수 마감 이후일 수 있음',
     err_same_temple: '출발과 도착이 같은 사찰입니다. 다른 사찰을 선택해 주세요.',
     loading_route: '경로를 불러오는 중…',
+    prompt_press_button: '출발・도착 사찰을 선택하고 "경로 계산하기"를 눌러주세요.',
     loading_temples: '사찰 데이터를 불러오는 중…',
     err_temples: '사찰 데이터를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.',
     walk_mode_note: '도보 우선 모드',
@@ -875,6 +878,7 @@ const I18N = {
     nokyo_warn: '可能已过纳经受理时间',
     err_same_temple: '出发地和目的地是同一座寺庙，请选择两座不同的寺庙。',
     loading_route: '正在获取路线…',
+    prompt_press_button: '请选择出发和目的地寺庙，然后点击"计算路线"。',
     loading_temples: '正在加载寺庙数据…',
     err_temples: '寺庙数据加载失败，请稍后重试。',
     walk_mode_note: '仅徒步模式',
@@ -944,6 +948,7 @@ const I18N = {
     nokyo_warn: '可能已過納經受理時間',
     err_same_temple: '出發地與目的地為同一座寺廟，請選擇兩座不同的寺廟。',
     loading_route: '正在取得路線…',
+    prompt_press_button: '請選擇出發和目的地寺廟，然後點擊「計算路線」。',
     loading_temples: '正在載入寺廟資料…',
     err_temples: '寺廟資料載入失敗，請稍後再試。',
     walk_mode_note: '僅徒步模式',
@@ -1013,6 +1018,7 @@ const I18N = {
     nokyo_warn: 'Möglicherweise nach Schließung',
     err_same_temple: 'Start und Ziel sind derselbe Tempel. Bitte zwei unterschiedliche Tempel wählen.',
     loading_route: 'Route wird geladen…',
+    prompt_press_button: 'Wählen Sie Start- und Zieltempel und drücken Sie dann auf „Route berechnen".',
     loading_temples: 'Tempeldaten werden geladen…',
     err_temples: 'Tempeldaten konnten nicht geladen werden. Bitte später erneut versuchen.',
     walk_mode_note: 'Modus „Nur zu Fuß"',
@@ -1082,6 +1088,7 @@ const I18N = {
     nokyo_warn: 'Pode ser após o fechamento',
     err_same_temple: 'A partida e o destino são o mesmo templo. Escolha dois templos diferentes.',
     loading_route: 'Buscando rota…',
+    prompt_press_button: 'Escolha os templos de partida e destino e pressione "Calcular rota".',
     loading_temples: 'Carregando dados dos templos…',
     err_temples: 'Falha ao carregar os dados dos templos. Tente novamente em instantes.',
     walk_mode_note: 'Modo só a pé',
@@ -1659,6 +1666,16 @@ async function runPlanner(){
   const startTimeStr = getSelectedTimeStr();
   const startDateStr = getSelectedDateStr();
 
+  // 詳細ページから戻った時・アプリを開き直した時に前回の内容を復元できるよう、
+  // 計算実行のたびに現在の選択状態をURLに反映しておく(履歴には残さずURLだけ書き換える)。
+  const stateParams = new URLSearchParams();
+  stateParams.set('from', String(startNo));
+  stateParams.set('to', String(endNo));
+  stateParams.set('date', startDateStr);
+  stateParams.set('time', startTimeStr);
+  stateParams.set('lang', currentLang);
+  history.replaceState(null, '', `?${stateParams.toString()}`);
+
   if(startNo === endNo){
     document.getElementById('timeline').innerHTML =
       `<div class="segment-note">${t('err_same_temple')}</div>`;
@@ -1823,7 +1840,8 @@ async function runPlanner(){
     if(ry && rm && rd) buildDateFields(new Date(ry, rm-1, rd));
   }
   buildTimeFields(restoredTime);
-  runPlanner();
+  // 開いた瞬間に自動でルート計算はせず、ボタンを押した時だけ計算する
+  document.getElementById('timeline').innerHTML = `<div class="segment-note">${t('prompt_press_button')}</div>`;
 })();
 
 // ==================================================================
