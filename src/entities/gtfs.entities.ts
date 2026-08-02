@@ -119,3 +119,18 @@ export class TempleStopLink {
   // 未計算の場合はnull(その場合、地図表示は直線でフォールバックする)。
   @Column({ type: 'jsonb', nullable: true }) walk_route!: [number, number][] | null;
 }
+
+// 事業者をまたいだ乗り換えを可能にするため、「物理的に近い、別事業者同士の停留所ペア」を
+// 事前に洗い出して保持するテーブル。同一事業者内の乗り換えは共通のstop_idで賄えるが、
+// 事業者が違うと共通のIDが無いため、この仕組みが必要になる。
+// a側・b側の区別に意味は無く、常に agency_key_a < agency_key_b となる順で1行だけ保存する
+// (検索時にどちらの向きでも引けるよう、クエリ側で両方の並びを試す)。
+@Entity('cross_agency_stop_links')
+export class CrossAgencyStopLink {
+  @PrimaryColumn('varchar') agency_key_a!: string;
+  @PrimaryColumn('varchar') stop_id_a!: string;
+  @PrimaryColumn('varchar') agency_key_b!: string;
+  @PrimaryColumn('varchar') stop_id_b!: string;
+
+  @Column('double precision') distance_m!: number; // 2つの停留所間の直線距離
+}

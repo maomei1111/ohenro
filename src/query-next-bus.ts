@@ -18,10 +18,12 @@
  *  - 「バス停まで歩く時間」は temple_stop_links の実距離(distance_m)を使って区間ごとに計算し、
  *    door-to-door の所要時間で徒歩ルートと比較する。
  *
- * 乗り換え機能の割り切り（設計時に合意した制約）:
+ * 乗り換え機能の割り切り（設計時に合意した制約。事業者をまたぐ乗り換えは追って対応した）:
  *  - 乗り換えは1回まで（2回以上の乗り継ぎは非対応）
- *  - 乗り換えは同一事業者内のみ対象（事業者をまたぐ乗り換えは非対応）
- *  - 乗り換えに必要な時間は一律5分固定（停留所間の徒歩移動などは考慮しない）
+ *  - 同一事業者内の乗り換えに加え、cross_agency_stop_links（物理的に近い別事業者の
+ *    停留所ペアを事前計算したテーブル）を介した事業者をまたぐ乗り換えにも対応
+ *  - 同一事業者内の乗り換え時間は一律5分固定。事業者をまたぐ場合は、
+ *    停留所間の実距離から計算した徒歩時間＋手続き分2分をあてる
  */
 import { AppDataSource } from './data-source';
 import { TempleStopLink } from './entities/gtfs.entities';
@@ -290,6 +292,156 @@ async function findOneTransferBus(
   return pickBestCandidate(candidates);
 }
 
+async function findCrossAgencyTransferBus(
+  fromLinks: TempleStopLink[],
+  toLinks: TempleStopLink[],
+  afterMinutes: number,
+  dayColumn: string,
+  dateStr: string
+) {
+  const ds = AppDataSource;
+
+  // cross_agency_stop_links は a<b の順で1行しか無いため、
+  // CTEで両方向(a→b, b→a)に展開しておき、JOINをシンプルにする。
+  const sql = `
+    WITH cas_both AS (
+      SELECT agency_key_a AS agency_from, stop_id_a AS stop_from, agency_key_b AS agency_to, stop_id_b AS stop_to, distance_m
+      FROM cross_agency_stop_links
+      UNION ALL
+      SELECT agency_key_b, stop_id_b, agency_key_a, stop_id_a, distance_m
+      FROM cross_agency_stop_links
+    )
+    SELECT
+      leg1.agency_key   AS agency_key,
+      leg1.from_stop_id AS from_stop_id,
+      leg1.from_stop_name,
+      leg1.trip1        AS trip1,
+      leg1.from_departure,
+      leg1.mid_stop_id,
+      leg1.mid_stop_name,
+      leg1.mid_arrival,
+      leg1.fare_id1,
+      leg2.agency_key   AS agency_key2,
+      leg2.trip2        AS trip2,
+      leg2.mid_stop_id  AS mid_stop_id2,
+      leg2.mid_stop_name AS mid_stop_name2,
+      leg2.mid_departure,
+      leg2.to_stop_id,
+      leg2.to_stop_name,
+      leg2.to_stop_lat,
+      leg2.to_stop_lon,
+      leg2.to_arrival,
+      leg2.fare_id2,
+      cas_both.distance_m AS transfer_distance_m
+    FROM (
+      SELECT
+        st_a.agency_key   AS agency_key,
+        st_a.stop_id      AS from_stop_id,
+        s_a.stop_name     AS from_stop_name,
+        st_a.trip_id      AS trip1,
+        st_a.departure_time AS from_departure,
+        st_b.stop_id      AS mid_stop_id,
+        s_b.stop_name     AS mid_stop_name,
+        st_b.arrival_time AS mid_arrival,
+        (SELECT fr.fare_id FROM gtfs_fare_rules fr
+          WHERE fr.agency_key = trip1.agency_key
+            AND (fr.route_id = trip1.route_id OR fr.route_id = '')
+          ORDER BY (fr.route_id = trip1.route_id) DESC LIMIT 1) AS fare_id1
+      FROM gtfs_stop_times st_a
+      JOIN gtfs_stop_times st_b
+        ON st_a.agency_key = st_b.agency_key
+       AND st_a.trip_id    = st_b.trip_id
+       AND st_b.stop_sequence > st_a.stop_sequence
+      JOIN gtfs_trips trip1
+        ON trip1.agency_key = st_a.agency_key AND trip1.trip_id = st_a.trip_id
+      JOIN gtfs_stops s_a
+        ON s_a.agency_key = st_a.agency_key AND s_a.stop_id = st_a.stop_id
+      JOIN gtfs_stops s_b
+        ON s_b.agency_key = st_b.agency_key AND s_b.stop_id = st_b.stop_id
+      WHERE st_a.agency_key = ANY($1)
+        AND st_a.stop_id = ANY($2)
+        AND (${serviceRunsOnDateClause('trip1', dayColumn).replace(/\$DATE/g, '$4')})
+    ) leg1
+    JOIN cas_both
+      ON cas_both.agency_from = leg1.agency_key
+     AND cas_both.stop_from   = leg1.mid_stop_id
+    JOIN (
+      SELECT
+        st_c.agency_key   AS agency_key,
+        st_c.trip_id      AS trip2,
+        st_c.stop_id      AS mid_stop_id,
+        s_c.stop_name     AS mid_stop_name,
+        st_c.departure_time AS mid_departure,
+        st_d.stop_id      AS to_stop_id,
+        s_d.stop_name     AS to_stop_name,
+        s_d.stop_lat      AS to_stop_lat,
+        s_d.stop_lon      AS to_stop_lon,
+        st_d.arrival_time AS to_arrival,
+        (SELECT fr.fare_id FROM gtfs_fare_rules fr
+          WHERE fr.agency_key = trip2.agency_key
+            AND (fr.route_id = trip2.route_id OR fr.route_id = '')
+          ORDER BY (fr.route_id = trip2.route_id) DESC LIMIT 1) AS fare_id2
+      FROM gtfs_stop_times st_c
+      JOIN gtfs_stop_times st_d
+        ON st_c.agency_key = st_d.agency_key
+       AND st_c.trip_id    = st_d.trip_id
+       AND st_d.stop_sequence > st_c.stop_sequence
+      JOIN gtfs_trips trip2
+        ON trip2.agency_key = st_c.agency_key AND trip2.trip_id = st_c.trip_id
+      JOIN gtfs_stops s_c
+        ON s_c.agency_key = st_c.agency_key AND s_c.stop_id = st_c.stop_id
+      JOIN gtfs_stops s_d
+        ON s_d.agency_key = st_d.agency_key AND s_d.stop_id = st_d.stop_id
+      WHERE st_d.stop_id = ANY($3)
+        AND (${serviceRunsOnDateClause('trip2', dayColumn).replace(/\$DATE/g, '$4')})
+    ) leg2
+      ON leg2.agency_key = cas_both.agency_to
+     AND leg2.mid_stop_id = cas_both.stop_to
+    ORDER BY leg1.mid_arrival ASC
+  `;
+
+  const rows = await ds.query(sql, [
+    Array.from(new Set(fromLinks.map((l) => l.agency_key))),
+    fromLinks.map((l) => l.stop_id),
+    toLinks.map((l) => l.stop_id),
+    dateStr,
+  ]);
+
+  const candidates = rows
+    .map((r: any) => {
+      const fromLink = fromLinks.find((l) => l.agency_key === r.agency_key && l.stop_id === r.from_stop_id);
+      const toLink = toLinks.find((l) => l.agency_key === r.agency_key2 && l.stop_id === r.to_stop_id);
+      const walkToStopMin = fromLink ? walkMinutesForMeters(fromLink.distance_m) : walkMinutesForMeters(500);
+      const walkFromStopMin = toLink ? walkMinutesForMeters(toLink.distance_m) : walkMinutesForMeters(500);
+      // 乗換地点の徒歩は、事前計算済みの実距離をもとに計算する(固定5分ではなく)。
+      // 乗り降りの手続き分として、最低2分のバッファを見込む。
+      const transferWalkMin = walkMinutesForMeters(r.transfer_distance_m) + 2;
+      const departureMin = gtfsTimeToMinutes(r.from_departure);
+      const midArrivalMin = gtfsTimeToMinutes(r.mid_arrival);
+      const midDepartureMin = gtfsTimeToMinutes(r.mid_departure);
+      const stopArrivalMin = gtfsTimeToMinutes(r.to_arrival);
+      return {
+        ...r,
+        transfers: 1,
+        crossAgency: true, // クライアント側で「事業者をまたぐ乗換」と分かるようにする
+        departureMin,
+        midArrivalMin,
+        midDepartureMin,
+        transferWalkMin,
+        walkToStopMin,
+        walkFromStopMin,
+        arrivalMin: stopArrivalMin + walkFromStopMin,
+      };
+    })
+    .filter(
+      (r: any) =>
+        r.departureMin >= afterMinutes + r.walkToStopMin &&
+        r.midDepartureMin >= r.midArrivalMin + r.transferWalkMin
+    );
+
+  return pickBestCandidate(candidates);
+}
+
 // shapes.txt(実際の走行経路)から、乗車〜降車区間だけを切り出して返すヘルパー
 function nearestShapeIndex(coords: [number, number][], lat: number, lng: number): number {
   let best = 0, bestDist = Infinity;
@@ -378,16 +530,24 @@ export async function findNextBus(
 
   const dayColumn = WEEKDAY_COLUMNS[weekday];
 
-  const [direct, withTransfer] = await Promise.all([
+  const [direct, withTransfer, withCrossTransfer] = await Promise.all([
     findDirectBus(fromLinks, toLinks, afterMinutes, dayColumn, dateStr),
     findOneTransferBus(fromLinks, toLinks, afterMinutes, dayColumn, dateStr),
+    findCrossAgencyTransferBus(fromLinks, toLinks, afterMinutes, dayColumn, dateStr),
   ]);
 
-  // 両方見つかった場合は、実際の到着(徒歩込み)が早い方を採用
-  // 僅差(3分以内)なら、乗り換えの手間が無い直通を優先する
-  const chosen = direct && withTransfer
-    ? (withTransfer.arrivalMin < direct.arrivalMin - NEGLIGIBLE_DIFF_MIN ? withTransfer : direct)
-    : direct ?? withTransfer ?? null;
+  // 3種類の候補(直通・同一事業者乗換・事業者またぎ乗換)から選ぶ。
+  // 到着が僅差(3分以内)なら、よりシンプルな方（直通 > 同一事業者乗換 > 事業者またぎ乗換）を優先する。
+  const options = [direct, withTransfer, withCrossTransfer].filter(Boolean) as any[];
+  let chosen: any = null;
+  if (options.length) {
+    options.sort((a, b) => a.arrivalMin - b.arrivalMin);
+    const best = options[0];
+    const simplicity = (o: any) => (o.transfers === 0 ? 0 : o.crossAgency ? 2 : 1);
+    const nearlyBest = options.filter((o) => o.arrivalMin - best.arrivalMin <= NEGLIGIBLE_DIFF_MIN);
+    nearlyBest.sort((a, b) => simplicity(a) - simplicity(b));
+    chosen = nearlyBest[0];
+  }
 
   const withFare = await attachFare(chosen, ds);
   return attachBusShape(withFare, ds);

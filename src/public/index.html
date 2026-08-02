@@ -677,6 +677,7 @@ const I18N = {
     walk_faster: (dep)=>`バス(${dep}発)より徒歩の方が早いため徒歩を推奨`,
     bus_direct: (agency,fromStop,dep,toStop,arr)=>`${agency}｜${fromStop} ${dep}発 → ${toStop} ${arr}着`,
     bus_transfer: (agency,fromStop,dep,mid,midArr,midDep,toStop,arr)=>`${agency}｜${fromStop} ${dep}発 → 「${mid}」で乗り換え(${midArr}着/${midDep}発) → ${toStop} ${arr}着`,
+    bus_transfer_cross: (agency1,fromStop,dep,mid1,midArr,mid2,midDep,agency2,toStop,arr)=>`${agency1}｜${fromStop} ${dep}発 → 「${mid1}」下車(${midArr}着) → 徒歩で「${mid2}」へ乗り換え → ${agency2}｜${midDep}発 → ${toStop} ${arr}着`,
     to_temple_km: (name,km)=>`${name}まで ${km}km`,
     transfer_badge: '乗り換え1回',
     fare_label: (amount)=>`｜運賃目安 ${amount}`,
@@ -747,6 +748,7 @@ const I18N = {
     walk_faster: (dep)=>`Walking is faster than the bus (departs ${dep}) — walking recommended`,
     bus_direct: (agency,fromStop,dep,toStop,arr)=>`${agency} | ${fromStop} departs ${dep} → ${toStop} arrives ${arr}`,
     bus_transfer: (agency,fromStop,dep,mid,midArr,midDep,toStop,arr)=>`${agency} | ${fromStop} departs ${dep} → transfer at "${mid}" (arr ${midArr} / dep ${midDep}) → ${toStop} arrives ${arr}`,
+    bus_transfer_cross: (agency1,fromStop,dep,mid1,midArr,mid2,midDep,agency2,toStop,arr)=>`${agency1} | ${fromStop} departs ${dep} → alight at "${mid1}" (arr ${midArr}) → walk to "${mid2}" → ${agency2} | departs ${midDep} → ${toStop} arrives ${arr}`,
     to_temple_km: (name,km)=>`To ${name}: ${km}km`,
     transfer_badge: '1 transfer',
     fare_label: (amount)=>` | approx. fare ${amount}`,
@@ -817,6 +819,7 @@ const I18N = {
     walk_faster: (dep)=>`버스(${dep} 출발)보다 도보가 더 빨라 도보를 권장합니다`,
     bus_direct: (agency,fromStop,dep,toStop,arr)=>`${agency} | ${fromStop} ${dep} 출발 → ${toStop} ${arr} 도착`,
     bus_transfer: (agency,fromStop,dep,mid,midArr,midDep,toStop,arr)=>`${agency} | ${fromStop} ${dep} 출발 → 「${mid}」에서 환승(${midArr} 도착/${midDep} 출발) → ${toStop} ${arr} 도착`,
+    bus_transfer_cross: (agency1,fromStop,dep,mid1,midArr,mid2,midDep,agency2,toStop,arr)=>`${agency1} | ${fromStop} ${dep} 출발 → 「${mid1}」하차(${midArr} 도착) → 도보로 「${mid2}」로 환승 → ${agency2} | ${midDep} 출발 → ${toStop} ${arr} 도착`,
     to_temple_km: (name,km)=>`${name}까지 ${km}km`,
     transfer_badge: '환승 1회',
     fare_label: (amount)=>`｜예상 요금 ${amount}`,
@@ -887,6 +890,7 @@ const I18N = {
     walk_faster: (dep)=>`徒步比公交（${dep}发车）更快，建议徒步`,
     bus_direct: (agency,fromStop,dep,toStop,arr)=>`${agency}｜${fromStop} ${dep}发车 → ${toStop} ${arr}到达`,
     bus_transfer: (agency,fromStop,dep,mid,midArr,midDep,toStop,arr)=>`${agency}｜${fromStop} ${dep}发车 → 在「${mid}」换乘(到达${midArr}/发车${midDep}) → ${toStop} ${arr}到达`,
+    bus_transfer_cross: (agency1,fromStop,dep,mid1,midArr,mid2,midDep,agency2,toStop,arr)=>`${agency1}｜${fromStop} ${dep}发车 → 在「${mid1}」下车(${midArr}到达) → 步行换乘至「${mid2}」 → ${agency2}｜${midDep}发车 → ${toStop} ${arr}到达`,
     to_temple_km: (name,km)=>`距${name} ${km}公里`,
     transfer_badge: '换乘1次',
     fare_label: (amount)=>`｜预估票价 ${amount}`,
@@ -957,6 +961,7 @@ const I18N = {
     walk_faster: (dep)=>`徒步比公車（${dep}發車）更快，建議徒步`,
     bus_direct: (agency,fromStop,dep,toStop,arr)=>`${agency}｜${fromStop} ${dep}發車 → ${toStop} ${arr}抵達`,
     bus_transfer: (agency,fromStop,dep,mid,midArr,midDep,toStop,arr)=>`${agency}｜${fromStop} ${dep}發車 → 在「${mid}」轉乘(抵達${midArr}/發車${midDep}) → ${toStop} ${arr}抵達`,
+    bus_transfer_cross: (agency1,fromStop,dep,mid1,midArr,mid2,midDep,agency2,toStop,arr)=>`${agency1}｜${fromStop} ${dep}發車 → 在「${mid1}」下車(${midArr}抵達) → 步行轉乘至「${mid2}」 → ${agency2}｜${midDep}發車 → ${toStop} ${arr}抵達`,
     to_temple_km: (name,km)=>`距${name} ${km}公里`,
     transfer_badge: '轉乘1次',
     fare_label: (amount)=>`｜預估票價 ${amount}`,
@@ -1027,6 +1032,7 @@ const I18N = {
     walk_faster: (dep)=>`Zu Fuß schneller als der Bus (Abfahrt ${dep}) — zu Fuß gehen empfohlen`,
     bus_direct: (agency,fromStop,dep,toStop,arr)=>`${agency} | ${fromStop} Abfahrt ${dep} → ${toStop} Ankunft ${arr}`,
     bus_transfer: (agency,fromStop,dep,mid,midArr,midDep,toStop,arr)=>`${agency} | ${fromStop} Abfahrt ${dep} → Umstieg in „${mid}" (an ${midArr} / ab ${midDep}) → ${toStop} Ankunft ${arr}`,
+    bus_transfer_cross: (agency1,fromStop,dep,mid1,midArr,mid2,midDep,agency2,toStop,arr)=>`${agency1} | ${fromStop} Abfahrt ${dep} → Ausstieg an „${mid1}" (an ${midArr}) → zu Fuß umsteigen zu „${mid2}" → ${agency2} | Abfahrt ${midDep} → ${toStop} Ankunft ${arr}`,
     to_temple_km: (name,km)=>`Bis ${name}: ${km}km`,
     transfer_badge: '1 Umstieg',
     fare_label: (amount)=>` | ca. Fahrpreis ${amount}`,
@@ -1097,6 +1103,7 @@ const I18N = {
     walk_faster: (dep)=>`A pé é mais rápido que o ônibus (parte às ${dep}) — recomenda-se ir a pé`,
     bus_direct: (agency,fromStop,dep,toStop,arr)=>`${agency} | ${fromStop} parte às ${dep} → ${toStop} chega às ${arr}`,
     bus_transfer: (agency,fromStop,dep,mid,midArr,midDep,toStop,arr)=>`${agency} | ${fromStop} parte às ${dep} → baldeação em "${mid}" (chega ${midArr} / parte ${midDep}) → ${toStop} chega às ${arr}`,
+    bus_transfer_cross: (agency1,fromStop,dep,mid1,midArr,mid2,midDep,agency2,toStop,arr)=>`${agency1} | ${fromStop} parte às ${dep} → desce em "${mid1}" (chega ${midArr}) → caminhe até "${mid2}" → ${agency2} | parte às ${midDep} → ${toStop} chega às ${arr}`,
     to_temple_km: (name,km)=>`Até ${name}: ${km}km`,
     transfer_badge: '1 baldeação',
     fare_label: (amount)=>` | tarifa aprox. ${amount}`,
@@ -1746,7 +1753,9 @@ async function runPlanner(){
           chosen = 'bus';
           arriveMin = busArrive;
           note = busResult.transfers === 1
-            ? t('bus_transfer', agencyDisplayName(busResult.agency_key), busResult.from_stop_name, hhmm(busResult.from_departure), busResult.mid_stop_name, hhmm(busResult.mid_arrival), hhmm(busResult.mid_departure), busResult.to_stop_name, hhmm(busResult.to_arrival))
+            ? (busResult.crossAgency
+                ? t('bus_transfer_cross', agencyDisplayName(busResult.agency_key), busResult.from_stop_name, hhmm(busResult.from_departure), busResult.mid_stop_name, hhmm(busResult.mid_arrival), busResult.mid_stop_name2, hhmm(busResult.mid_departure), agencyDisplayName(busResult.agency_key2), busResult.to_stop_name, hhmm(busResult.to_arrival))
+                : t('bus_transfer', agencyDisplayName(busResult.agency_key), busResult.from_stop_name, hhmm(busResult.from_departure), busResult.mid_stop_name, hhmm(busResult.mid_arrival), hhmm(busResult.mid_departure), busResult.to_stop_name, hhmm(busResult.to_arrival)))
             : t('bus_direct', agencyDisplayName(busResult.agency_key), busResult.from_stop_name, hhmm(busResult.from_departure), busResult.to_stop_name, hhmm(busResult.to_arrival));
           // 運賃データがあれば末尾に追記する（無いフィードも多いため、無ければ何も表示しない）
           if(busResult.farePrice != null){

@@ -11,6 +11,7 @@ import {
   GtfsFareRule,
   GtfsShapePoint,
   TempleStopLink,
+  CrossAgencyStopLink,
 } from './entities/gtfs.entities';
 import { CachedLandmark } from './entities/landmark.entities';
 
@@ -25,6 +26,7 @@ const ENTITIES = [
   GtfsFareRule,
   GtfsShapePoint,
   TempleStopLink,
+  CrossAgencyStopLink,
   CachedLandmark,
 ];
 
