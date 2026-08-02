@@ -100,4 +100,9 @@ export class TempleStopLink {
   @PrimaryColumn('varchar') stop_id!: string;
 
   @Column('double precision') distance_m!: number; // 札所から停留所までの徒歩距離(概算)
+
+  // 事前計算済みの実際の徒歩ルート座標([lat,lng]の配列, 札所→停留所の向き)。
+  // 逆方向(停留所→札所)で使う時は、クライアント側で配列を反転させて使う。
+  // 未計算の場合はnull(その場合、地図表示は直線でフォールバックする)。
+  @Column({ type: 'jsonb', nullable: true }) walk_route!: [number, number][] | null;
 }

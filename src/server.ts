@@ -49,6 +49,21 @@ app.get('/temple-places', (_req, res) => {
   res.json(templesPlacesInfo);
 });
 
+// 札所⇔バス停 の事前計算済み徒歩ルート(walk_route)を配信。
+// クライアント側は temple_no + agency_key + stop_id をキーに引き当てて使う。
+app.get('/stop-walk-routes', async (_req, res) => {
+  try {
+    const ds = AppDataSource.isInitialized ? AppDataSource : await AppDataSource.initialize();
+    const rows = await ds.query(
+      `SELECT temple_no, agency_key, stop_id, walk_route FROM temple_stop_links WHERE walk_route IS NOT NULL`
+    );
+    res.json(rows);
+  } catch (e) {
+    console.error('[stop-walk-routes] exception:', e);
+    res.status(500).json({ error: 'internal error' });
+  }
+});
+
 // 札所ごとのオリジナル紹介ページ（由来・見どころ）。
 // 外部サイトの文章を複製せず、事実ベースで新規に書き起こしたもの。
 // まずは試作として1番のみ用意している。

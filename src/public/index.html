@@ -1248,11 +1248,13 @@ function distToPolyline(lat, lng, coords){
 }
 
 let templePlacesInfo = {}; // 写真・紹介文（Google Places由来）。取得できなければ空のまま
+let stopWalkRoutes = new Map(); // 札所⇔バス停の事前計算済み徒歩ルート。key: "temple_no:agency_key:stop_id"
 
 async function loadTemples(){
-  const [res, placesRes] = await Promise.all([
+  const [res, placesRes, walkRoutesRes] = await Promise.all([
     fetch(`${API_BASE}/temples`),
     fetch(`${API_BASE}/temple-places`).catch(()=>null), // 無くても致命的ではないので握りつぶす
+    fetch(`${API_BASE}/stop-walk-routes`).catch(()=>null),
   ]);
   if(!res.ok) throw new Error(`temples API responded ${res.status}`);
   const raw = await res.json();
@@ -1267,6 +1269,7 @@ async function loadTemples(){
       distanceKm: hasReal ? t.walkDistanceKm : Math.round(straightKm*10)/10,
       walkDurationMin: hasReal ? t.walkDurationMin : null, // nullなら時速4km換算にフォールバック
       isRealWalkData: hasReal,
+      elevations: t.elevations || null, // 事前計算済みの標高プロファイル(あれば)
       lat: t.lat, lng: t.lng,
     };
   });
@@ -1274,6 +1277,20 @@ async function loadTemples(){
   if(placesRes && placesRes.ok){
     try{ templePlacesInfo = await placesRes.json(); }catch(e){ templePlacesInfo = {}; }
   }
+  if(walkRoutesRes && walkRoutesRes.ok){
+    try{
+      const rows = await walkRoutesRes.json();
+      rows.forEach(r=> stopWalkRoutes.set(`${r.temple_no}:${r.agency_key}:${r.stop_id}`, r.walk_route));
+    }catch(e){ /* 無くても致命的ではない */ }
+  }
+}
+
+// 札所⇔バス停の事前計算済み徒歩ルートを取得する。無ければnull(呼び出し側でDirections APIにフォールバック)。
+// reverse=trueの場合、バス停→札所の向きで使うため配列を反転して返す。
+function cachedStopWalkRoute(templeNo, agencyKey, stopId, reverse){
+  const coords = stopWalkRoutes.get(`${templeNo}:${agencyKey}:${stopId}`);
+  if(!coords) return null;
+  return reverse ? [...coords].reverse() : coords;
 }
 
 // Google Places写真のURL（帰属表示ルールに従い、寄稿者名も別途表示する）
@@ -2072,7 +2089,16 @@ function fitBoundsToCoords(coords){
 }
 
 // 徒歩区間の標高プロファイルを取得し、獲得標高(上り)・下り標高を計算する
-async function fetchElevationProfile(coords){
+async function fetchElevationProfile(coords, cachedTemple){
+  // 事前計算済みのキャッシュ(temples_88.jsonのelevations)があれば、そちらを優先して使う
+  // (区間は固定なので、毎回Elevation APIを呼ぶ必要が無い)
+  if(cachedTemple && cachedTemple.elevations && cachedTemple.elevations.length){
+    const elevations = cachedTemple.elevations;
+    const totalDist = cachedTemple.distanceKm * 1000;
+    const distances = elevations.map((_, i)=> totalDist * i/(elevations.length-1));
+    return { elevations, distances, totalDist };
+  }
+
   const { ElevationService } = await google.maps.importLibrary('elevation');
   const elevator = new ElevationService();
   const path = coords.map(c=>({lat:c[0], lng:c[1]}));
@@ -2301,10 +2327,15 @@ async function openMap(fromNo, toNo, mode, note, distanceKm, busResult){
       const fromStop = { lat:Number(busResult.from_stop_lat), lng:Number(busResult.from_stop_lon) };
       const toStop   = { lat:Number(busResult.to_stop_lat),   lng:Number(busResult.to_stop_lon) };
       try{
+        // 札所⇔バス停の徒歩ルートは、事前計算済みキャッシュがあればそれを使い、
+        // 無ければその場でDirections APIに問い合わせる(フォールバック)。
+        const cachedWalk1 = cachedStopWalkRoute(fromNo, busResult.agency_key, busResult.from_stop_id, false);
+        const cachedWalk2 = cachedStopWalkRoute(toNo, busResult.agency_key, busResult.to_stop_id, true);
+
         const [walk1, busLeg, walk2] = await Promise.all([
-          fetchRoute(from, fromStop, 'WALKING').catch(()=>({coords:[[from.lat,from.lng],[fromStop.lat,fromStop.lng]]})),
+          cachedWalk1 ? Promise.resolve({coords:cachedWalk1}) : fetchRoute(from, fromStop, 'WALKING').catch(()=>({coords:[[from.lat,from.lng],[fromStop.lat,fromStop.lng]]})),
           fetchRoute(fromStop, toStop, 'DRIVING').catch(()=>({coords:[[fromStop.lat,fromStop.lng],[toStop.lat,toStop.lng]]})),
-          fetchRoute(toStop, to, 'WALKING').catch(()=>({coords:[[toStop.lat,toStop.lng],[to.lat,to.lng]]})),
+          cachedWalk2 ? Promise.resolve({coords:cachedWalk2}) : fetchRoute(toStop, to, 'WALKING').catch(()=>({coords:[[toStop.lat,toStop.lng],[to.lat,to.lng]]})),
         ]);
         if(myToken !== mapReqToken) return;
         drawPolyline(walk1.coords, '#5B6B4F', false);
@@ -2341,7 +2372,12 @@ async function openMap(fromNo, toNo, mode, note, distanceKm, busResult){
     let elevationNote = '';
     if(walkOnlyCoords.length >= 2){
       try{
-        const { elevations, distances } = await fetchElevationProfile(walkOnlyCoords);
+        // 乗り換え等の部分徒歩ではなく「札所間をまるごと徒歩」の区間のみ、
+        // 事前計算済みキャッシュ(temples_88.jsonのelevations)が使える
+        const cachedTemple = (!useBusStops && mode!=='bus')
+          ? temples.find(t=>t.no===Math.max(fromNo,toNo))
+          : null;
+        const { elevations, distances } = await fetchElevationProfile(walkOnlyCoords, cachedTemple);
         if(myToken !== mapReqToken) return;
         const { gain, loss } = elevationGainLoss(elevations);
         const climb = findBiggestClimb(elevations, distances);
