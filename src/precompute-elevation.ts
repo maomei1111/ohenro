@@ -36,12 +36,18 @@ async function fetchPolyline(
   return data.routes[0].overview_polyline.points as string;
 }
 
-async function fetchElevationForPolyline(polyline: string, apiKey: string): Promise<number[] | null> {
+async function fetchElevationForPolyline(polyline: string, apiKey: string, retryCount = 0): Promise<number[] | null> {
   const url = `https://maps.googleapis.com/maps/api/elevation/json?path=enc:${encodeURIComponent(polyline)}&samples=60&key=${apiKey}`;
   const res = await fetch(url);
   const data = await res.json();
   if (data.status !== 'OK' || !data.results) {
-    console.warn(`  ⚠ Elevation取得失敗: ${data.status} ${data.error_message ?? ''}`);
+    if (retryCount < 3) {
+      const waitSec = 5 * (retryCount + 1);
+      console.log(`  ⚠ ${data.status}。${waitSec}秒待って再試行(${retryCount + 1}/3)...`);
+      await sleep(waitSec * 1000);
+      return fetchElevationForPolyline(polyline, apiKey, retryCount + 1);
+    }
+    console.warn(`  ⚠ Elevation取得失敗（リトライ上限）: ${data.status} ${data.error_message ?? ''}`);
     return null;
   }
   return data.results.map((r: any) => r.elevation);
@@ -58,11 +64,18 @@ async function main() {
   const temples: any[] = JSON.parse(fs.readFileSync(templesPath, 'utf-8'));
   temples.sort((a, b) => a.no - b.no);
 
-  let successCount = 0;
+  let successCount = 0, skippedCount = 0;
 
   for (let i = 1; i < temples.length; i++) {
     const prev = temples[i - 1];
     const curr = temples[i];
+
+    // 既に取得済みならAPIを呼ばずスキップする（再実行時の無駄なAPI消費を防ぐ）
+    if (curr.elevations && curr.elevations.length) {
+      skippedCount++;
+      continue;
+    }
+
     process.stdout.write(`[${prev.no}→${curr.no}] 標高プロファイルを取得中... `);
     try {
       const polyline = await fetchPolyline({ lat: prev.lat, lng: prev.lng }, { lat: curr.lat, lng: curr.lng }, apiKey);
@@ -87,7 +100,9 @@ async function main() {
   }
 
   fs.writeFileSync(templesPath, JSON.stringify(temples, null, 2), 'utf-8');
-  console.log(`\n完了: ${successCount}/87区間 の標高プロファイルを temples_88.json に保存しました。`);
+  const totalDone = temples.filter((t) => t.elevations && t.elevations.length).length;
+  console.log(`\n今回新規取得: ${successCount}件／スキップ(取得済み): ${skippedCount}件`);
+  console.log(`合計: ${totalDone}/87区間 が temples_88.json に保存済みです。`);
 }
 
 main().catch((e) => {
