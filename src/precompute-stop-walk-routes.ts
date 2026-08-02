@@ -20,6 +20,36 @@ function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
+// Googleのエンコード済みポリライン文字列を [lat,lng] の配列にデコードする標準アルゴリズム
+function decodePolyline(encoded: string): [number, number][] {
+  const points: [number, number][] = [];
+  let index = 0, lat = 0, lng = 0;
+
+  while (index < encoded.length) {
+    let b, shift = 0, result = 0;
+    do {
+      b = encoded.charCodeAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    const dlat = (result & 1) !== 0 ? ~(result >> 1) : result >> 1;
+    lat += dlat;
+
+    shift = 0;
+    result = 0;
+    do {
+      b = encoded.charCodeAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    const dlng = (result & 1) !== 0 ? ~(result >> 1) : result >> 1;
+    lng += dlng;
+
+    points.push([lat / 1e5, lng / 1e5]);
+  }
+  return points;
+}
+
 async function fetchWalkingRouteCoords(
   from: { lat: number; lng: number },
   to: { lat: number; lng: number },
@@ -32,16 +62,10 @@ async function fetchWalkingRouteCoords(
     console.warn(`  ⚠ Directions取得失敗: ${data.status} ${data.error_message ?? ''}`);
     return null;
   }
-  // overview_pathがJS APIと違い、REST APIではlat/lngペアの配列そのものではなく
-  // stepsごとのpolylineなので、シンプルにstart/endの直線ではなくoverview_polylineを
-  // 手動でデコードする必要がある。ここではdecode不要な簡易版として、
-  // legs[].steps[].start_location / end_locationを繋いだ折れ線を使う。
-  const leg = data.routes[0].legs[0];
-  const coords: [number, number][] = [[leg.start_location.lat, leg.start_location.lng]];
-  for (const step of leg.steps) {
-    coords.push([step.end_location.lat, step.end_location.lng]);
-  }
-  return coords;
+  // overview_polyline(符号化された詳細なルート形状)をデコードして使う。
+  // 以前は各ステップの始点・終点だけを繋いだ簡易な折れ線だったため、
+  // 橋などカーブのある区間で実際の道なりから外れてしまっていた。
+  return decodePolyline(data.routes[0].overview_polyline.points);
 }
 
 async function main() {
