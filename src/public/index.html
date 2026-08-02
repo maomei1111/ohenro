@@ -1783,14 +1783,6 @@ async function runPlanner(){
           <span class="nokyo-badge ${nokyoOver?'nokyo-warn':'nokyo-ok'}">${(nokyoOver? t('nokyo_warn') : t('nokyo_ok'))}${nokyoExtra}</span>
         </div>
         <div class="stop-meta mono">${temple.kana}</div>
-        ${TEMPLE_HONZON[temple.no] ? `
-          <div class="honzon-toggle" onclick="this.nextElementSibling.classList.toggle('open')">${t('temple_info_toggle')}</div>
-          <div class="honzon-info">
-            ${templePhotoUrl(temple.no) ? `<img class="temple-photo" src="${templePhotoUrl(temple.no)}" alt="${displayName}">
-            <div class="photo-credit">Photo: ${templePlacesInfo[temple.no]?.photoAttribution || 'Google'}</div>` : ''}
-            ${t('label_honzon')}：${honzonDisplay(temple.no)}
-            ${templePlacesInfo[temple.no]?.summary ? `<div class="places-summary">${templePlacesInfo[temple.no].summary}<span class="google-credit"> — Google</span></div>` : ''}
-          </div>` : ''}
         <a class="official-link" href="/temple/${temple.no}?lang=${currentLang}" target="_blank" rel="noopener">${t('temple_detail_link')}</a>
         ${a.note ? `
           <div class="segment-note" onclick="openMapForIndex(${idx})">
