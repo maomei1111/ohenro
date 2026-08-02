@@ -1761,7 +1761,24 @@ async function runPlanner(){
     arrival.push({ no:seg.no, timeMin:currentMin, mode:chosen, note, distanceKm, missedBus, busResult: chosen==='bus' ? busResult : null });
   }
 
+  renderResult(arrival);
+
+  // 詳細ページから戻った時に、再計算せずそのまま復元できるよう結果をキャッシュしておく
+  try{
+    sessionStorage.setItem('ohenro_last_result', JSON.stringify({
+      from: startNo, to: endNo, date: startDateStr, time: startTimeStr, lang: currentLang,
+      arrival,
+    }));
+  }catch(e){ console.warn('結果のキャッシュに失敗しました', e); }
+}
+
+// 計算結果(arrival配列)を画面に描画する。新規計算時・キャッシュ復元時の両方から呼ばれる。
+function renderResult(arrival){
   lastArrival = arrival;
+  const NOKYO_CLOSE = toMinutes('17:00');
+
+  const totalWalkKm = arrival.reduce((sum,a)=> a.mode==='walk' ? sum + (a.distanceKm||0) : sum, 0);
+  const busSegments = arrival.filter(a=>a.mode==='bus').length;
 
   const finalMin = arrival[arrival.length-1].timeMin;
   const overClose = finalMin > NOKYO_CLOSE;
@@ -1840,8 +1857,28 @@ async function runPlanner(){
     if(ry && rm && rd) buildDateFields(new Date(ry, rm-1, rd));
   }
   buildTimeFields(restoredTime);
-  // 開いた瞬間に自動でルート計算はせず、ボタンを押した時だけ計算する
-  document.getElementById('timeline').innerHTML = `<div class="segment-note">${t('prompt_press_button')}</div>`;
+
+  // 詳細ページから戻った場合など、直前と同じ条件のキャッシュ結果があれば
+  // 再計算せずにそのまま復元する（APIへの再問い合わせを避けるため）。
+  let restoredFromCache = false;
+  try{
+    const cached = JSON.parse(sessionStorage.getItem('ohenro_last_result') || 'null');
+    if(cached
+      && String(cached.from) === (restoredFrom ?? String(startSel.value))
+      && String(cached.to) === (restoredTo ?? String(endSel.value))
+      && cached.date === getSelectedDateStr()
+      && cached.time === getSelectedTimeStr()
+      && cached.lang === currentLang
+    ){
+      renderResult(cached.arrival);
+      restoredFromCache = true;
+    }
+  }catch(e){ console.warn('キャッシュ結果の復元に失敗しました', e); }
+
+  if(!restoredFromCache){
+    // 開いた瞬間に自動でルート計算はせず、ボタンを押した時だけ計算する
+    document.getElementById('timeline').innerHTML = `<div class="segment-note">${t('prompt_press_button')}</div>`;
+  }
 })();
 
 // ==================================================================
