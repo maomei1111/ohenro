@@ -28,6 +28,20 @@ import { TempleStopLink } from './entities/gtfs.entities';
 
 const TRANSFER_MINUTES = 5; // 乗り換えに最低限必要な時間（固定値）
 const WALK_KMH = 4; // 徒歩速度の想定
+const NEGLIGIBLE_DIFF_MIN = 3; // 到着時刻の差がこの範囲内なら「実質同じ」とみなす
+
+// 到着時刻がほぼ同じ候補が複数ある場合、無駄に遠い停留所を選んでしまわないよう、
+// その中では歩く距離が一番短いものを優先して選ぶ。
+// (例: ループ運行するバスで、同じ便がたまたま1分早く別の停留所にも停まる場合、
+//  何も考えずに「1分早い」方だけを見ると、実際には遠回りな停留所を選んでしまうことがあるため)
+function pickBestCandidate(candidates: any[]): any | null {
+  if (!candidates.length) return null;
+  const sorted = [...candidates].sort((a, b) => a.arrivalMin - b.arrivalMin);
+  const best = sorted[0];
+  const nearlyBest = sorted.filter((c) => c.arrivalMin - best.arrivalMin <= NEGLIGIBLE_DIFF_MIN);
+  nearlyBest.sort((a, b) => (a.walkToStopMin + a.walkFromStopMin) - (b.walkToStopMin + b.walkFromStopMin));
+  return nearlyBest[0];
+}
 
 function gtfsTimeToMinutes(hhmmss: string): number {
   const [h, m] = hhmmss.split(':').map(Number);
@@ -142,10 +156,9 @@ async function findDirectBus(
       };
     })
     // このバスに乗るには、乗車停留所までの徒歩を終えている必要がある
-    .filter((r: any) => r.departureMin >= afterMinutes + r.walkToStopMin)
-    .sort((a: any, b: any) => a.arrivalMin - b.arrivalMin);
+    .filter((r: any) => r.departureMin >= afterMinutes + r.walkToStopMin);
 
-  return candidates[0] ?? null;
+  return pickBestCandidate(candidates);
 }
 
 async function findOneTransferBus(
@@ -272,10 +285,9 @@ async function findOneTransferBus(
       (r: any) =>
         r.departureMin >= afterMinutes + r.walkToStopMin &&
         r.midDepartureMin >= r.midArrivalMin + TRANSFER_MINUTES
-    )
-    .sort((a: any, b: any) => a.arrivalMin - b.arrivalMin);
+    );
 
-  return candidates[0] ?? null;
+  return pickBestCandidate(candidates);
 }
 
 // 選ばれた便に、実際の運賃額(fare_attributes)を紐付ける。
@@ -289,7 +301,7 @@ async function attachFare(result: any, ds: any) {
     `SELECT fare_id, price, currency_type FROM gtfs_fare_attributes WHERE agency_key = $1 AND fare_id = ANY($2)`,
     [result.agency_key, fareIds]
   );
-  const map = new Map(rows.map((r: any) => [r.fare_id, r]));
+  const map = new Map<string, any>(rows.map((r: any): [string, any] => [r.fare_id, r]));
 
   if (result.transfers === 1) {
     const f1 = map.get(result.fare_id1);
@@ -329,7 +341,10 @@ export async function findNextBus(
   ]);
 
   // 両方見つかった場合は、実際の到着(徒歩込み)が早い方を採用
-  const chosen = direct && withTransfer ? (direct.arrivalMin <= withTransfer.arrivalMin ? direct : withTransfer) : direct ?? withTransfer ?? null;
+  // 僅差(3分以内)なら、乗り換えの手間が無い直通を優先する
+  const chosen = direct && withTransfer
+    ? (withTransfer.arrivalMin < direct.arrivalMin - NEGLIGIBLE_DIFF_MIN ? withTransfer : direct)
+    : direct ?? withTransfer ?? null;
 
   return attachFare(chosen, ds);
 }
