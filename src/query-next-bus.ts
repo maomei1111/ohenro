@@ -163,6 +163,7 @@ async function findOneTransferBus(
     SELECT
       leg1.agency_key   AS agency_key,
       leg1.from_stop_id AS from_stop_id,
+      leg1.from_stop_name,
       leg1.trip1        AS trip1,
       leg1.from_departure,
       leg1.mid_stop_id,
@@ -181,6 +182,7 @@ async function findOneTransferBus(
       SELECT
         st_a.agency_key   AS agency_key,
         st_a.stop_id      AS from_stop_id,
+        s_a.stop_name     AS from_stop_name,
         st_a.trip_id      AS trip1,
         st_a.departure_time AS from_departure,
         st_b.stop_id      AS mid_stop_id,
@@ -197,6 +199,8 @@ async function findOneTransferBus(
        AND st_b.stop_sequence > st_a.stop_sequence
       JOIN gtfs_trips trip1
         ON trip1.agency_key = st_a.agency_key AND trip1.trip_id = st_a.trip_id
+      JOIN gtfs_stops s_a
+        ON s_a.agency_key = st_a.agency_key AND s_a.stop_id = st_a.stop_id
       JOIN gtfs_stops s_b
         ON s_b.agency_key = st_b.agency_key AND s_b.stop_id = st_b.stop_id
       WHERE st_a.agency_key = ANY($1)

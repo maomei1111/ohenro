@@ -675,8 +675,8 @@ const I18N = {
     bus_no_service: 'この時間以降、実データ上でバス便が見つかりません → 徒歩',
     bus_fetch_error: 'バス情報の取得に失敗しました（通信エラー） → 徒歩で計算',
     walk_faster: (dep)=>`バス(${dep}発)より徒歩の方が早いため徒歩を推奨`,
-    bus_direct: (agency,dep,arr)=>`${agency}｜${dep}発 → ${arr}着`,
-    bus_transfer: (agency,dep,mid,midArr,midDep,arr)=>`${agency}｜${dep}発 → 「${mid}」で乗り換え(${midArr}着/${midDep}発) → ${arr}着`,
+    bus_direct: (agency,fromStop,dep,toStop,arr)=>`${agency}｜${fromStop} ${dep}発 → ${toStop} ${arr}着`,
+    bus_transfer: (agency,fromStop,dep,mid,midArr,midDep,toStop,arr)=>`${agency}｜${fromStop} ${dep}発 → 「${mid}」で乗り換え(${midArr}着/${midDep}発) → ${toStop} ${arr}着`,
     to_temple_km: (name,km)=>`${name}まで ${km}km`,
     transfer_badge: '乗り換え1回',
     fare_label: (amount)=>`｜運賃目安 ${amount}`,
@@ -745,8 +745,8 @@ const I18N = {
     bus_no_service: 'No bus service found in the data after this time → walking',
     bus_fetch_error: 'Failed to fetch bus data (connection error) → calculated on foot',
     walk_faster: (dep)=>`Walking is faster than the bus (departs ${dep}) — walking recommended`,
-    bus_direct: (agency,dep,arr)=>`${agency} | departs ${dep} → arrives ${arr}`,
-    bus_transfer: (agency,dep,mid,midArr,midDep,arr)=>`${agency} | departs ${dep} → transfer at "${mid}" (arr ${midArr} / dep ${midDep}) → arrives ${arr}`,
+    bus_direct: (agency,fromStop,dep,toStop,arr)=>`${agency} | ${fromStop} departs ${dep} → ${toStop} arrives ${arr}`,
+    bus_transfer: (agency,fromStop,dep,mid,midArr,midDep,toStop,arr)=>`${agency} | ${fromStop} departs ${dep} → transfer at "${mid}" (arr ${midArr} / dep ${midDep}) → ${toStop} arrives ${arr}`,
     to_temple_km: (name,km)=>`To ${name}: ${km}km`,
     transfer_badge: '1 transfer',
     fare_label: (amount)=>` | approx. fare ${amount}`,
@@ -815,8 +815,8 @@ const I18N = {
     bus_no_service: '이 시간 이후 실제 데이터상 버스 편이 없습니다 → 도보',
     bus_fetch_error: '버스 정보를 가져오지 못했습니다 (통신 오류) → 도보로 계산',
     walk_faster: (dep)=>`버스(${dep} 출발)보다 도보가 더 빨라 도보를 권장합니다`,
-    bus_direct: (agency,dep,arr)=>`${agency} | ${dep} 출발 → ${arr} 도착`,
-    bus_transfer: (agency,dep,mid,midArr,midDep,arr)=>`${agency} | ${dep} 출발 → 「${mid}」에서 환승(${midArr} 도착/${midDep} 출발) → ${arr} 도착`,
+    bus_direct: (agency,fromStop,dep,toStop,arr)=>`${agency} | ${fromStop} ${dep} 출발 → ${toStop} ${arr} 도착`,
+    bus_transfer: (agency,fromStop,dep,mid,midArr,midDep,toStop,arr)=>`${agency} | ${fromStop} ${dep} 출발 → 「${mid}」에서 환승(${midArr} 도착/${midDep} 출발) → ${toStop} ${arr} 도착`,
     to_temple_km: (name,km)=>`${name}까지 ${km}km`,
     transfer_badge: '환승 1회',
     fare_label: (amount)=>`｜예상 요금 ${amount}`,
@@ -885,8 +885,8 @@ const I18N = {
     bus_no_service: '此时间之后的数据中未找到公交班次 → 按徒步计算',
     bus_fetch_error: '获取公交信息失败（通信错误）→ 按徒步计算',
     walk_faster: (dep)=>`徒步比公交（${dep}发车）更快，建议徒步`,
-    bus_direct: (agency,dep,arr)=>`${agency}｜${dep}发车 → ${arr}到达`,
-    bus_transfer: (agency,dep,mid,midArr,midDep,arr)=>`${agency}｜${dep}发车 → 在「${mid}」换乘(到达${midArr}/发车${midDep}) → ${arr}到达`,
+    bus_direct: (agency,fromStop,dep,toStop,arr)=>`${agency}｜${fromStop} ${dep}发车 → ${toStop} ${arr}到达`,
+    bus_transfer: (agency,fromStop,dep,mid,midArr,midDep,toStop,arr)=>`${agency}｜${fromStop} ${dep}发车 → 在「${mid}」换乘(到达${midArr}/发车${midDep}) → ${toStop} ${arr}到达`,
     to_temple_km: (name,km)=>`距${name} ${km}公里`,
     transfer_badge: '换乘1次',
     fare_label: (amount)=>`｜预估票价 ${amount}`,
@@ -955,8 +955,8 @@ const I18N = {
     bus_no_service: '此時間之後的資料中找不到公車班次 → 以徒步計算',
     bus_fetch_error: '取得公車資訊失敗（通訊錯誤）→ 以徒步計算',
     walk_faster: (dep)=>`徒步比公車（${dep}發車）更快，建議徒步`,
-    bus_direct: (agency,dep,arr)=>`${agency}｜${dep}發車 → ${arr}抵達`,
-    bus_transfer: (agency,dep,mid,midArr,midDep,arr)=>`${agency}｜${dep}發車 → 在「${mid}」轉乘(抵達${midArr}/發車${midDep}) → ${arr}抵達`,
+    bus_direct: (agency,fromStop,dep,toStop,arr)=>`${agency}｜${fromStop} ${dep}發車 → ${toStop} ${arr}抵達`,
+    bus_transfer: (agency,fromStop,dep,mid,midArr,midDep,toStop,arr)=>`${agency}｜${fromStop} ${dep}發車 → 在「${mid}」轉乘(抵達${midArr}/發車${midDep}) → ${toStop} ${arr}抵達`,
     to_temple_km: (name,km)=>`距${name} ${km}公里`,
     transfer_badge: '轉乘1次',
     fare_label: (amount)=>`｜預估票價 ${amount}`,
@@ -1025,8 +1025,8 @@ const I18N = {
     bus_no_service: 'Ab diesem Zeitpunkt keine Busverbindung in den Daten gefunden → zu Fuß',
     bus_fetch_error: 'Busdaten konnten nicht abgerufen werden (Verbindungsfehler) → Berechnung zu Fuß',
     walk_faster: (dep)=>`Zu Fuß schneller als der Bus (Abfahrt ${dep}) — zu Fuß gehen empfohlen`,
-    bus_direct: (agency,dep,arr)=>`${agency} | Abfahrt ${dep} → Ankunft ${arr}`,
-    bus_transfer: (agency,dep,mid,midArr,midDep,arr)=>`${agency} | Abfahrt ${dep} → Umstieg in „${mid}" (an ${midArr} / ab ${midDep}) → Ankunft ${arr}`,
+    bus_direct: (agency,fromStop,dep,toStop,arr)=>`${agency} | ${fromStop} Abfahrt ${dep} → ${toStop} Ankunft ${arr}`,
+    bus_transfer: (agency,fromStop,dep,mid,midArr,midDep,toStop,arr)=>`${agency} | ${fromStop} Abfahrt ${dep} → Umstieg in „${mid}" (an ${midArr} / ab ${midDep}) → ${toStop} Ankunft ${arr}`,
     to_temple_km: (name,km)=>`Bis ${name}: ${km}km`,
     transfer_badge: '1 Umstieg',
     fare_label: (amount)=>` | ca. Fahrpreis ${amount}`,
@@ -1095,8 +1095,8 @@ const I18N = {
     bus_no_service: 'Nenhum ônibus encontrado nos dados após este horário → a pé',
     bus_fetch_error: 'Falha ao obter dados do ônibus (erro de conexão) → calculado a pé',
     walk_faster: (dep)=>`A pé é mais rápido que o ônibus (parte às ${dep}) — recomenda-se ir a pé`,
-    bus_direct: (agency,dep,arr)=>`${agency} | parte às ${dep} → chega às ${arr}`,
-    bus_transfer: (agency,dep,mid,midArr,midDep,arr)=>`${agency} | parte às ${dep} → baldeação em "${mid}" (chega ${midArr} / parte ${midDep}) → chega às ${arr}`,
+    bus_direct: (agency,fromStop,dep,toStop,arr)=>`${agency} | ${fromStop} parte às ${dep} → ${toStop} chega às ${arr}`,
+    bus_transfer: (agency,fromStop,dep,mid,midArr,midDep,toStop,arr)=>`${agency} | ${fromStop} parte às ${dep} → baldeação em "${mid}" (chega ${midArr} / parte ${midDep}) → ${toStop} chega às ${arr}`,
     to_temple_km: (name,km)=>`Até ${name}: ${km}km`,
     transfer_badge: '1 baldeação',
     fare_label: (amount)=>` | tarifa aprox. ${amount}`,
@@ -1746,8 +1746,8 @@ async function runPlanner(){
           chosen = 'bus';
           arriveMin = busArrive;
           note = busResult.transfers === 1
-            ? t('bus_transfer', agencyDisplayName(busResult.agency_key), hhmm(busResult.from_departure), busResult.mid_stop_name, hhmm(busResult.mid_arrival), hhmm(busResult.mid_departure), hhmm(busResult.to_arrival))
-            : t('bus_direct', agencyDisplayName(busResult.agency_key), hhmm(busResult.from_departure), hhmm(busResult.to_arrival));
+            ? t('bus_transfer', agencyDisplayName(busResult.agency_key), busResult.from_stop_name, hhmm(busResult.from_departure), busResult.mid_stop_name, hhmm(busResult.mid_arrival), hhmm(busResult.mid_departure), busResult.to_stop_name, hhmm(busResult.to_arrival))
+            : t('bus_direct', agencyDisplayName(busResult.agency_key), busResult.from_stop_name, hhmm(busResult.from_departure), busResult.to_stop_name, hhmm(busResult.to_arrival));
           // 運賃データがあれば末尾に追記する（無いフィードも多いため、無ければ何も表示しない）
           if(busResult.farePrice != null){
             const amount = busResult.fareCurrency === 'JPY' || !busResult.fareCurrency
