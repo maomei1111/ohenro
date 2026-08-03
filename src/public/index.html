@@ -335,6 +335,7 @@
     overflow-y:auto;
     padding:14px;
     display:grid;
+<<<<<<< HEAD
     grid-template-columns:repeat(auto-fill, minmax(140px, 1fr));
     gap:12px;
     background:var(--washi);
@@ -343,21 +344,37 @@
     position:relative;
     aspect-ratio:4/5;
     border-radius:8px;
+=======
+    grid-template-columns:repeat(auto-fill, minmax(90px, 1fr));
+    gap:10px;
+  }
+  .zukan-card{
+    position:relative;
+    aspect-ratio:3/4;
+    border-radius:4px;
+>>>>>>> bcebf41c270f2e8593ca46139c79488510ce05de
     overflow:hidden;
     background:#ddd6c7;
     cursor:pointer;
     border:1px solid rgba(43,40,37,0.12);
+<<<<<<< HEAD
     box-shadow:0 1px 3px rgba(0,0,0,0.12);
     transition:transform 0.1s;
   }
   .zukan-card:active{ transform:scale(0.97); }
   .zukan-card .zukan-photo{
     width:100%; height:72%;
+=======
+  }
+  .zukan-card .zukan-photo{
+    width:100%; height:65%;
+>>>>>>> bcebf41c270f2e8593ca46139c79488510ce05de
     object-fit:cover;
     display:block;
     background:#ccc4b0;
   }
   .zukan-card.unvisited .zukan-photo{
+<<<<<<< HEAD
     filter:grayscale(100%) brightness(0.7) contrast(0.9);
   }
   .zukan-card .zukan-noimg{
@@ -418,6 +435,61 @@
     cursor:pointer;
     z-index:2;
     box-shadow:0 1px 4px rgba(0,0,0,0.25);
+=======
+    filter:grayscale(100%) brightness(0.75) contrast(0.9);
+  }
+  .zukan-card .zukan-noimg{
+    width:100%; height:65%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:26px; color:rgba(43,40,37,0.25);
+    background:#ccc4b0;
+  }
+  .zukan-card .zukan-info{
+    padding:4px 5px;
+    text-align:center;
+  }
+  .zukan-card .zukan-no{
+    font-family:'JetBrains Mono', monospace;
+    font-size:10px;
+    color:var(--vermillion);
+    font-weight:700;
+  }
+  .zukan-card.unvisited .zukan-no{ color:rgba(43,40,37,0.4); }
+  .zukan-card .zukan-name{
+    font-family:'Noto Serif JP', serif;
+    font-size:11px;
+    line-height:1.25;
+    color:var(--sumi);
+  }
+  .zukan-card.unvisited .zukan-name{ color:rgba(43,40,37,0.4); }
+  .zukan-stamp{
+    position:absolute;
+    top:6px; right:6px;
+    width:34px; height:34px;
+    border-radius:50%;
+    background:rgba(166,58,42,0.92);
+    color:#fff;
+    display:flex; align-items:center; justify-content:center;
+    flex-direction:column;
+    line-height:1;
+    border:2px solid #fff;
+    box-shadow:0 1px 4px rgba(0,0,0,0.35);
+    transform:rotate(-8deg);
+  }
+  .zukan-stamp .n{ font-family:'JetBrains Mono', monospace; font-size:12px; font-weight:700; }
+  .zukan-stamp .kanji{ font-family:'Noto Serif JP', serif; font-size:8px; }
+  .zukan-visited-star{
+    position:absolute;
+    bottom:4px; left:4px;
+    background:rgba(255,255,255,0.85);
+    border-radius:50%;
+    width:22px; height:22px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:13px;
+    border:none;
+    cursor:pointer;
+    z-index:2;
+>>>>>>> bcebf41c270f2e8593ca46139c79488510ce05de
   }
   .visited-toggle{
     background:none;
@@ -886,7 +958,10 @@ const I18N = {
     zukan_too_far: (m)=>`この札所からまだ${m}m離れています。近くまで来てから訪問済みにできます。`,
     zukan_locate_failed: '現在地を取得できませんでした。位置情報の許可を確認してください。',
     zukan_locate_unsupported: 'この端末では位置情報が利用できません。',
+<<<<<<< HEAD
     location_open_settings_confirm: '設定画面を開いて位置情報を許可しますか？',
+=======
+>>>>>>> bcebf41c270f2e8593ca46139c79488510ce05de
     visited_mark: '訪問済みにする',
     visited_unmark: '訪問済みを解除',
     nokyo_countdown: (min)=>`納経受付終了まであと${min}分`,
@@ -967,7 +1042,10 @@ const I18N = {
     zukan_too_far: (m)=>`You're still ${m}m from this temple. Get closer to mark it as visited.`,
     zukan_locate_failed: 'Could not get your location. Please check location permissions.',
     zukan_locate_unsupported: 'Location services are not available on this device.',
+<<<<<<< HEAD
     location_open_settings_confirm: 'Open app settings to allow location access?',
+=======
+>>>>>>> bcebf41c270f2e8593ca46139c79488510ce05de
     visited_mark: 'Mark as visited',
     visited_unmark: 'Unmark as visited',
     nokyo_countdown: (min)=>`${min} min until the stamp office closes`,
@@ -1048,7 +1126,10 @@ const I18N = {
     zukan_too_far: (m)=>`이 사찰에서 아직 ${m}m 떨어져 있습니다. 가까이 가면 방문 완료로 표시할 수 있습니다.`,
     zukan_locate_failed: '현재 위치를 가져올 수 없었습니다. 위치 정보 권한을 확인해 주세요.',
     zukan_locate_unsupported: '이 기기에서는 위치 정보를 사용할 수 없습니다.',
+<<<<<<< HEAD
     location_open_settings_confirm: '설정 화면을 열어 위치 정보를 허용하시겠습니까?',
+=======
+>>>>>>> bcebf41c270f2e8593ca46139c79488510ce05de
     visited_mark: '방문 완료로 표시',
     visited_unmark: '방문 완료 해제',
     nokyo_countdown: (min)=>`납경소 마감까지 ${min}분`,
@@ -1129,7 +1210,10 @@ const I18N = {
     zukan_too_far: (m)=>`您距离这座寺庙还有${m}米。请靠近后再标记为已参拜。`,
     zukan_locate_failed: '无法获取当前位置。请确认位置信息权限设置。',
     zukan_locate_unsupported: '此设备无法使用位置信息功能。',
+<<<<<<< HEAD
     location_open_settings_confirm: '是否打开设置界面以允许位置信息访问？',
+=======
+>>>>>>> bcebf41c270f2e8593ca46139c79488510ce05de
     visited_mark: '标记为已参拜',
     visited_unmark: '取消已参拜标记',
     nokyo_countdown: (min)=>`距纳经所关闭还有${min}分钟`,
@@ -1210,7 +1294,10 @@ const I18N = {
     zukan_too_far: (m)=>`您距離這座寺廟還有${m}公尺。請靠近後再標記為已參拜。`,
     zukan_locate_failed: '無法取得目前位置。請確認位置資訊權限設定。',
     zukan_locate_unsupported: '此裝置無法使用位置資訊功能。',
+<<<<<<< HEAD
     location_open_settings_confirm: '是否開啟設定畫面以允許位置資訊存取？',
+=======
+>>>>>>> bcebf41c270f2e8593ca46139c79488510ce05de
     visited_mark: '標記為已參拜',
     visited_unmark: '取消已參拜標記',
     nokyo_countdown: (min)=>`距納經所關閉還有${min}分鐘`,
@@ -1291,7 +1378,10 @@ const I18N = {
     zukan_too_far: (m)=>`Sie sind noch ${m}m von diesem Tempel entfernt. Kommen Sie näher, um ihn als besucht zu markieren.`,
     zukan_locate_failed: 'Standort konnte nicht ermittelt werden. Bitte Standortberechtigung prüfen.',
     zukan_locate_unsupported: 'Standortdienste sind auf diesem Gerät nicht verfügbar.',
+<<<<<<< HEAD
     location_open_settings_confirm: 'App-Einstellungen öffnen, um den Standortzugriff zu erlauben?',
+=======
+>>>>>>> bcebf41c270f2e8593ca46139c79488510ce05de
     visited_mark: 'Als besucht markieren',
     visited_unmark: 'Markierung entfernen',
     nokyo_countdown: (min)=>`Noch ${min} Min. bis das Stempelbüro schließt`,
@@ -1372,7 +1462,10 @@ const I18N = {
     zukan_too_far: (m)=>`Você ainda está a ${m}m deste templo. Aproxime-se para marcá-lo como visitado.`,
     zukan_locate_failed: 'Não foi possível obter sua localização. Verifique as permissões de localização.',
     zukan_locate_unsupported: 'Os serviços de localização não estão disponíveis neste dispositivo.',
+<<<<<<< HEAD
     location_open_settings_confirm: 'Abrir as configurações do aplicativo para permitir o acesso à localização?',
+=======
+>>>>>>> bcebf41c270f2e8593ca46139c79488510ce05de
     visited_mark: 'Marcar como visitado',
     visited_unmark: 'Desmarcar visitado',
     nokyo_countdown: (min)=>`Faltam ${min} min para o escritório de carimbos fechar`,
