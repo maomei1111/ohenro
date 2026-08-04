@@ -294,6 +294,37 @@
     cursor:pointer;
   }
   .zukan-open-btn:active{ background:rgba(166,58,42,0.08); }
+  .panel-btn-row{ display:flex; gap:8px; margin-bottom:18px; }
+  .panel-btn-row .zukan-open-btn{ margin-bottom:0; }
+  .settings-modal{ max-width:420px; }
+  .settings-body{ padding:18px; }
+  .settings-section-title{
+    font-family:'Noto Serif JP', serif;
+    font-size:14px;
+    font-weight:700;
+    color:var(--indigo-deep);
+    margin-bottom:4px;
+  }
+  .settings-section-desc{
+    font-size:12.5px;
+    color:#8a8578;
+    margin-bottom:10px;
+  }
+  .settings-status{
+    font-size:13.5px;
+    font-weight:700;
+    padding:8px 10px;
+    border-radius:2px;
+    background:var(--washi);
+    border:1px solid rgba(43,40,37,0.1);
+    margin-bottom:12px;
+  }
+  .settings-secondary-btn{
+    background:transparent;
+    border-color:rgba(43,40,37,0.2);
+    color:var(--indigo-mid);
+    margin-top:8px;
+  }
   .zukan-overlay{
     display:none;
     position:fixed; inset:0;
@@ -727,7 +758,10 @@
 <div class="wrap">
   <div class="panel">
     <div class="progress-bar" id="progressLabel"></div>
-    <button type="button" class="zukan-open-btn" onclick="openZukan()" data-i18n="zukan_open_btn"></button>
+    <div class="panel-btn-row">
+      <button type="button" class="zukan-open-btn" onclick="openZukan()" data-i18n="zukan_open_btn"></button>
+      <button type="button" class="zukan-open-btn" onclick="openSettings()" data-i18n="settings_open_btn"></button>
+    </div>
     <div class="controls">
       <div>
         <label data-i18n="label_start"></label>
@@ -805,6 +839,22 @@
       <button class="map-close" onclick="closeZukan()">&times;</button>
     </div>
     <div class="zukan-grid" id="zukanGrid"></div>
+  </div>
+</div>
+
+<div class="zukan-overlay" id="settingsOverlay">
+  <div class="zukan-modal settings-modal">
+    <div class="zukan-modal-head">
+      <div><h3 data-i18n="settings_title"></h3></div>
+      <button class="map-close" onclick="closeSettings()">&times;</button>
+    </div>
+    <div class="settings-body">
+      <div class="settings-section-title" data-i18n="settings_location_section"></div>
+      <div class="settings-section-desc" data-i18n="settings_location_desc"></div>
+      <div class="settings-status" id="settingsLocationStatus"></div>
+      <button type="button" class="zukan-open-btn" onclick="settingsRequestLocation()" data-i18n="settings_location_request_btn"></button>
+      <button type="button" class="zukan-open-btn settings-secondary-btn" onclick="settingsOpenAppSettings()" data-i18n="settings_location_opensettings_btn"></button>
+    </div>
   </div>
 </div>
 
@@ -887,6 +937,16 @@ const I18N = {
     zukan_locate_failed: '現在地を取得できませんでした。位置情報の許可を確認してください。',
     zukan_locate_unsupported: 'この端末では位置情報が利用できません。',
     location_open_settings_confirm: '設定画面を開いて位置情報を許可しますか？',
+    settings_open_btn: '⚙️ 設定',
+    settings_title: '設定',
+    settings_close: '閉じる',
+    settings_location_section: '位置情報',
+    settings_location_desc: '現在地表示・訪問済みチェックに使われます。',
+    settings_location_granted: '✅ 許可されています',
+    settings_location_denied: '❌ 許可されていません',
+    settings_location_unknown: '状態を確認できません（ブラウザ版など）',
+    settings_location_request_btn: '位置情報の利用を許可する',
+    settings_location_opensettings_btn: '端末の設定画面を開く',
     visited_mark: '訪問済みにする',
     visited_unmark: '訪問済みを解除',
     nokyo_countdown: (min)=>`納経受付終了まであと${min}分`,
@@ -968,6 +1028,16 @@ const I18N = {
     zukan_locate_failed: 'Could not get your location. Please check location permissions.',
     zukan_locate_unsupported: 'Location services are not available on this device.',
     location_open_settings_confirm: 'Open app settings to allow location access?',
+    settings_open_btn: '⚙️ Settings',
+    settings_title: 'Settings',
+    settings_close: 'Close',
+    settings_location_section: 'Location',
+    settings_location_desc: 'Used for showing your current position and confirming visits.',
+    settings_location_granted: '✅ Allowed',
+    settings_location_denied: '❌ Not allowed',
+    settings_location_unknown: 'Status unavailable (e.g. in a browser)',
+    settings_location_request_btn: 'Allow location access',
+    settings_location_opensettings_btn: 'Open device settings',
     visited_mark: 'Mark as visited',
     visited_unmark: 'Unmark as visited',
     nokyo_countdown: (min)=>`${min} min until the stamp office closes`,
@@ -1049,6 +1119,16 @@ const I18N = {
     zukan_locate_failed: '현재 위치를 가져올 수 없었습니다. 위치 정보 권한을 확인해 주세요.',
     zukan_locate_unsupported: '이 기기에서는 위치 정보를 사용할 수 없습니다.',
     location_open_settings_confirm: '설정 화면을 열어 위치 정보를 허용하시겠습니까?',
+    settings_open_btn: '⚙️ 설정',
+    settings_title: '설정',
+    settings_close: '닫기',
+    settings_location_section: '위치 정보',
+    settings_location_desc: '현재 위치 표시·방문 확인에 사용됩니다.',
+    settings_location_granted: '✅ 허용됨',
+    settings_location_denied: '❌ 허용되지 않음',
+    settings_location_unknown: '상태를 확인할 수 없습니다(브라우저 버전 등)',
+    settings_location_request_btn: '위치 정보 사용 허용하기',
+    settings_location_opensettings_btn: '기기 설정 화면 열기',
     visited_mark: '방문 완료로 표시',
     visited_unmark: '방문 완료 해제',
     nokyo_countdown: (min)=>`납경소 마감까지 ${min}분`,
@@ -1130,6 +1210,16 @@ const I18N = {
     zukan_locate_failed: '无法获取当前位置。请确认位置信息权限设置。',
     zukan_locate_unsupported: '此设备无法使用位置信息功能。',
     location_open_settings_confirm: '是否打开设置界面以允许位置信息访问？',
+    settings_open_btn: '⚙️ 设置',
+    settings_title: '设置',
+    settings_close: '关闭',
+    settings_location_section: '位置信息',
+    settings_location_desc: '用于显示当前位置及确认参拜状态。',
+    settings_location_granted: '✅ 已允许',
+    settings_location_denied: '❌ 未允许',
+    settings_location_unknown: '无法确认状态（如浏览器版本）',
+    settings_location_request_btn: '允许使用位置信息',
+    settings_location_opensettings_btn: '打开设备设置界面',
     visited_mark: '标记为已参拜',
     visited_unmark: '取消已参拜标记',
     nokyo_countdown: (min)=>`距纳经所关闭还有${min}分钟`,
@@ -1211,6 +1301,16 @@ const I18N = {
     zukan_locate_failed: '無法取得目前位置。請確認位置資訊權限設定。',
     zukan_locate_unsupported: '此裝置無法使用位置資訊功能。',
     location_open_settings_confirm: '是否開啟設定畫面以允許位置資訊存取？',
+    settings_open_btn: '⚙️ 設定',
+    settings_title: '設定',
+    settings_close: '關閉',
+    settings_location_section: '位置資訊',
+    settings_location_desc: '用於顯示目前位置及確認參拜狀態。',
+    settings_location_granted: '✅ 已允許',
+    settings_location_denied: '❌ 未允許',
+    settings_location_unknown: '無法確認狀態（如瀏覽器版本）',
+    settings_location_request_btn: '允許使用位置資訊',
+    settings_location_opensettings_btn: '開啟裝置設定畫面',
     visited_mark: '標記為已參拜',
     visited_unmark: '取消已參拜標記',
     nokyo_countdown: (min)=>`距納經所關閉還有${min}分鐘`,
@@ -1292,6 +1392,16 @@ const I18N = {
     zukan_locate_failed: 'Standort konnte nicht ermittelt werden. Bitte Standortberechtigung prüfen.',
     zukan_locate_unsupported: 'Standortdienste sind auf diesem Gerät nicht verfügbar.',
     location_open_settings_confirm: 'App-Einstellungen öffnen, um den Standortzugriff zu erlauben?',
+    settings_open_btn: '⚙️ Einstellungen',
+    settings_title: 'Einstellungen',
+    settings_close: 'Schließen',
+    settings_location_section: 'Standort',
+    settings_location_desc: 'Wird für die Standortanzeige und Besuchsbestätigung verwendet.',
+    settings_location_granted: '✅ Erlaubt',
+    settings_location_denied: '❌ Nicht erlaubt',
+    settings_location_unknown: 'Status nicht verfügbar (z. B. im Browser)',
+    settings_location_request_btn: 'Standortzugriff erlauben',
+    settings_location_opensettings_btn: 'Geräteeinstellungen öffnen',
     visited_mark: 'Als besucht markieren',
     visited_unmark: 'Markierung entfernen',
     nokyo_countdown: (min)=>`Noch ${min} Min. bis das Stempelbüro schließt`,
@@ -1373,6 +1483,16 @@ const I18N = {
     zukan_locate_failed: 'Não foi possível obter sua localização. Verifique as permissões de localização.',
     zukan_locate_unsupported: 'Os serviços de localização não estão disponíveis neste dispositivo.',
     location_open_settings_confirm: 'Abrir as configurações do aplicativo para permitir o acesso à localização?',
+    settings_open_btn: '⚙️ Configurações',
+    settings_title: 'Configurações',
+    settings_close: 'Fechar',
+    settings_location_section: 'Localização',
+    settings_location_desc: 'Usado para mostrar sua posição atual e confirmar visitas.',
+    settings_location_granted: '✅ Permitido',
+    settings_location_denied: '❌ Não permitido',
+    settings_location_unknown: 'Status indisponível (ex.: versão do navegador)',
+    settings_location_request_btn: 'Permitir acesso à localização',
+    settings_location_opensettings_btn: 'Abrir configurações do dispositivo',
     visited_mark: 'Marcar como visitado',
     visited_unmark: 'Desmarcar visitado',
     nokyo_countdown: (min)=>`Faltam ${min} min para o escritório de carimbos fechar`,
@@ -1669,6 +1789,52 @@ function updateProgressLabel(){
 // 「未訪問はグレーアウト・訪問済みはスタンプ付きカラー」という
 // 一覧の見え方だけで達成感を演出する。
 // ==================================================================
+// ==================================================================
+// ---- 設定画面（位置情報の許可状態の確認・変更）----
+// ==================================================================
+function openSettings(){
+  refreshLocationStatus();
+  document.getElementById('settingsOverlay').classList.add('open');
+}
+function closeSettings(){
+  document.getElementById('settingsOverlay').classList.remove('open');
+}
+function refreshLocationStatus(){
+  const el = document.getElementById('settingsLocationStatus');
+  if(!el) return;
+  // Androidアプリ内であればAndroidBridge経由で正確な許可状態を確認できる。
+  // 通常のブラウザ版では、この方法では確認できないため「不明」と表示する。
+  if(window.AndroidBridge && typeof window.AndroidBridge.hasLocationPermission === 'function'){
+    const granted = window.AndroidBridge.hasLocationPermission();
+    el.textContent = granted ? t('settings_location_granted') : t('settings_location_denied');
+    el.style.color = granted ? 'var(--line-walk)' : 'var(--vermillion)';
+  }else{
+    el.textContent = t('settings_location_unknown');
+    el.style.color = '#8a8578';
+  }
+}
+// 「位置情報の利用を許可する」ボタン：ダミーの位置情報取得を1回行うことで、
+// (まだ許可されていなければ)MainActivity.kt側の許可ダイアログを呼び出す。
+// これも単発取得であり、常時監視は行わない。
+function settingsRequestLocation(){
+  if(!navigator.geolocation){
+    alert(t('zukan_locate_unsupported'));
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    ()=> refreshLocationStatus(),
+    ()=> refreshLocationStatus(),
+    { enableHighAccuracy:false, timeout:8000, maximumAge:0 }
+  );
+}
+function settingsOpenAppSettings(){
+  if(window.AndroidBridge && typeof window.AndroidBridge.openAppSettings === 'function'){
+    window.AndroidBridge.openAppSettings();
+  }else{
+    alert(t('zukan_locate_unsupported'));
+  }
+}
+
 function openZukan(){
   renderZukan();
   document.getElementById('zukanOverlay').classList.add('open');
@@ -2830,7 +2996,7 @@ async function openMap(fromNo, toNo, mode, note, distanceKm, busResult){
     }
 
     fitBoundsToCoords(allCoords);
-    showCurrentLocation();
+    // 現在地の自動取得はしない。ボタンを押した時だけ取得する(mapLocateMe)。
 
     let elevationNote = '';
     if(walkOnlyCoords.length >= 2){
