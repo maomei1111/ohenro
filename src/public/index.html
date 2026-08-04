@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>遍路みちしるべ ― 徒歩×公共交通 周遊プランナー</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@500;700&family=Noto+Sans+JP:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@500;700&family=BIZ+UDPGothic:wght@400;700&display=swap" rel="stylesheet">
 <script>
   // Google Mapsのスクリプトはasync読み込みのため、下部の本体スクリプトが
   // 実行される前にコールバックが呼ばれることがある。そのため、この受け皿だけは
@@ -46,10 +46,10 @@
   body{
     background:var(--washi);
     color:var(--sumi);
-    font-family:'Noto Sans JP', sans-serif;
+    font-family:'BIZ UDPGothic', 'Noto Sans JP', sans-serif;
     -webkit-font-smoothing:antialiased;
   }
-  .mono{ font-family:'JetBrains Mono', monospace; }
+  .mono{ font-family:'BIZ UDPGothic', 'Noto Sans JP', sans-serif; }
 
   .hero{
     background:
@@ -78,7 +78,7 @@
     z-index:1;
   }
   .hero-eyebrow{
-    font-family:'JetBrains Mono', monospace;
+    font-family:'BIZ UDPGothic', 'Noto Sans JP', sans-serif;
     font-size:12px;
     letter-spacing:0.18em;
     color:var(--gold);
@@ -92,7 +92,7 @@
     border-radius:2px;
     padding:5px 10px;
     font-size:12px;
-    font-family:'Noto Sans JP', sans-serif;
+    font-family:'BIZ UDPGothic', 'Noto Sans JP', sans-serif;
     cursor:pointer;
   }
   .hero-title-row{
@@ -178,7 +178,7 @@
     border:1px solid rgba(43,40,37,0.25);
     border-radius:2px;
     background:#fff;
-    font-family:'Noto Sans JP', sans-serif;
+    font-family:'BIZ UDPGothic', 'Noto Sans JP', sans-serif;
     font-size:14px;
     color:var(--sumi);
   }
@@ -201,7 +201,7 @@
   .time-fields .tf-colon{
     display:flex;
     align-items:center;
-    font-family:'JetBrains Mono', monospace;
+    font-family:'BIZ UDPGothic', 'Noto Sans JP', sans-serif;
     font-weight:700;
     color:var(--indigo-mid);
   }
@@ -220,7 +220,7 @@
     font-size:12.5px;
     font-weight:700;
     cursor:pointer;
-    font-family:'Noto Sans JP', sans-serif;
+    font-family:'BIZ UDPGothic', 'Noto Sans JP', sans-serif;
   }
   .mode-toggle button.active{
     background:var(--indigo-mid);
@@ -239,7 +239,7 @@
     letter-spacing:0.03em;
     border-radius:2px;
     cursor:pointer;
-    font-family:'Noto Sans JP', sans-serif;
+    font-family:'BIZ UDPGothic', 'Noto Sans JP', sans-serif;
   }
   .run-btn:hover{ filter:brightness(1.08); }
   .locate-btn{
@@ -252,7 +252,7 @@
     padding:6px 8px;
     border-radius:2px;
     cursor:pointer;
-    font-family:'Noto Sans JP', sans-serif;
+    font-family:'BIZ UDPGothic', 'Noto Sans JP', sans-serif;
   }
   .locate-btn:hover{ background:rgba(51,80,122,0.08); }
   .share-btn{
@@ -266,11 +266,11 @@
     font-weight:700;
     border-radius:2px;
     cursor:pointer;
-    font-family:'Noto Sans JP', sans-serif;
+    font-family:'BIZ UDPGothic', 'Noto Sans JP', sans-serif;
   }
   .share-btn:hover{ background:rgba(51,80,122,0.06); }
   .progress-bar{
-    font-family:'JetBrains Mono', monospace;
+    font-family:'BIZ UDPGothic', 'Noto Sans JP', sans-serif;
     font-size:12px;
     color:var(--indigo-mid);
     background:var(--washi);
@@ -286,7 +286,7 @@
   }
   .view-header{ margin-bottom:14px; }
   .view-header h2{
-    font-family:'Noto Serif JP', serif;
+    font-family:'BIZ UDPGothic', 'Noto Sans JP', sans-serif;
     font-size:18px;
     color:var(--indigo-deep);
     margin:0;
@@ -313,7 +313,7 @@
     color:#8a8578;
   }
   .tab-btn .tab-icon{ font-size:20px; line-height:1; }
-  .tab-btn .tab-label{ font-size:10.5px; font-family:'Noto Serif JP', serif; }
+  .tab-btn .tab-label{ font-size:10.5px; font-family:'BIZ UDPGothic', 'Noto Sans JP', sans-serif; }
   .tab-btn.active{ color:var(--vermillion); }
   .settings-body{ padding:0; }
   .settings-select{
@@ -331,7 +331,7 @@
     margin:20px 0;
   }
   .settings-section-title{
-    font-family:'Noto Serif JP', serif;
+    font-family:'BIZ UDPGothic', 'Noto Sans JP', sans-serif;
     font-size:14px;
     font-weight:700;
     color:var(--indigo-deep);
@@ -387,7 +387,7 @@
     border:1px solid rgba(43,40,37,0.2);
     color:var(--indigo-mid);
     border-radius:2px;
-    font-family:'Noto Serif JP', serif;
+    font-family:'BIZ UDPGothic', 'Noto Sans JP', sans-serif;
     font-size:12.5px;
     cursor:pointer;
     margin-top:4px;
@@ -431,7 +431,7 @@
     border-top:1px solid rgba(43,40,37,0.1);
   }
   .zukan-card .zukan-no{
-    font-family:'JetBrains Mono', monospace;
+    font-family:'BIZ UDPGothic', 'Noto Sans JP', sans-serif;
     font-size:11px;
     color:var(--vermillion);
     font-weight:700;
@@ -462,7 +462,7 @@
     box-shadow:0 2px 6px rgba(0,0,0,0.4);
     transform:rotate(-8deg);
   }
-  .zukan-stamp .n{ font-family:'JetBrains Mono', monospace; font-size:15px; font-weight:700; }
+  .zukan-stamp .n{ font-family:'BIZ UDPGothic', 'Noto Sans JP', sans-serif; font-size:15px; font-weight:700; }
   .zukan-stamp .kanji{ font-family:'Noto Serif JP', serif; font-size:9px; }
   .zukan-visited-star{
     position:absolute;
@@ -581,7 +581,7 @@
     border-left:2px dashed var(--line-bus);
   }
   .stop-time{
-    font-family:'JetBrains Mono', monospace;
+    font-family:'BIZ UDPGothic', 'Noto Sans JP', sans-serif;
     font-size:11px;
     color:var(--indigo-mid);
     margin-top:4px;
@@ -598,7 +598,7 @@
   }
   .stop-title .no{
     color:var(--vermillion);
-    font-family:'JetBrains Mono', monospace;
+    font-family:'BIZ UDPGothic', 'Noto Sans JP', sans-serif;
     font-size:13px;
     margin-right:8px;
   }
@@ -633,12 +633,12 @@
     margin-top:8px;
     font-size:11px;
     color:var(--indigo-mid);
-    font-family:'JetBrains Mono', monospace;
+    font-family:'BIZ UDPGothic', 'Noto Sans JP', sans-serif;
     text-align:right;
   }
   .segment-note b{ color:var(--indigo-deep); }
   .badge-mode{
-    font-family:'JetBrains Mono', monospace;
+    font-family:'BIZ UDPGothic', 'Noto Sans JP', sans-serif;
     font-size:10.5px;
     padding:2px 6px;
     border-radius:2px;
@@ -661,7 +661,7 @@
   }
   .summary .figure{ min-width:120px; }
   .summary .figure .num{
-    font-family:'JetBrains Mono', monospace;
+    font-family:'BIZ UDPGothic', 'Noto Sans JP', sans-serif;
     font-size:26px;
     font-weight:700;
     color:#fff;
@@ -716,7 +716,7 @@
   .map-modal-head .sub{
     font-size:11px;
     color:rgba(239,230,214,0.7);
-    font-family:'JetBrains Mono', monospace;
+    font-family:'BIZ UDPGothic', 'Noto Sans JP', sans-serif;
     margin-top:2px;
   }
   .map-close{
@@ -2679,7 +2679,7 @@ function getPinLabelOverlayClass(){
         borderRadius:'10px',
         padding:'2px 7px',
         fontSize:'11px',
-        fontFamily:"'Noto Sans JP', sans-serif",
+        fontFamily:"'BIZ UDPGothic', 'Noto Sans JP', sans-serif",
         whiteSpace:'nowrap',
         boxShadow:'0 1px 4px rgba(0,0,0,0.25)',
         transform:'translate(10px, -10px)', // ピンの右横・少し上にオフセット
