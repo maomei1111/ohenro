@@ -18,6 +18,10 @@ app.use(cors()); // WebView(file://やhttps://)からのアクセスを許可
 // 札所の見どころ画像（src/public/temple-images/ 配下）を配信
 app.use('/temple-images', express.static(path.join(__dirname, 'public', 'temple-images')));
 
+// デジタル御朱印画像（src/public/goshuin/ 配下）を配信
+// ファイル名は {札所番号2桁}.png（例: 01.png, 02.png）
+app.use('/goshuin', express.static(path.join(__dirname, 'public', 'goshuin')));
+
 // 88札所のマスタデータ（番号・名前・都道府県・市区町村・緯度経度）
 // src/data/temples_88.json に配置。アプリ側はこのAPIから取得し、
 // サーバー側の停留所マッチング(match-temple-stops.ts)とも同じデータを共有する。
