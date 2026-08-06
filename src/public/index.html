@@ -684,49 +684,24 @@
   .goshuin-modal{ max-width:440px; }
   .goshuin-viewer{
     overflow-y:auto;
-    max-height:75vh;
+    max-height:78vh;
     background:#1a1a1a;
     display:flex; align-items:center; justify-content:center;
-    padding:12px;
+    padding:10px;
   }
   .goshuin-frame{
-    position:relative;
-    /* 画像の元サイズ(1024x1536)を画面幅に収まるようにscaleする */
-    width:320px;
-    height:480px;
-    overflow:hidden;
+    width:100%;
+    max-width:400px;
   }
   .goshuin-img{
-    position:absolute;
-    top:0; left:0;
-    width:1024px; height:1536px;
-    transform-origin:top left;
-    transform:scale(calc(320/1024));
+    width:100%;
+    height:auto;
     display:block;
-  }
-  /* 日付overlay: 元画像(1024×1536)上の絶対座標を、
-     表示倍率(320/1024 = 0.3125)にあわせてscale()で一括変換する */
-  .goshuin-date-overlay{
-    position:absolute;
-    top:0; left:0;
-    width:1024px; height:1536px;
-    transform-origin:top left;
-    transform:scale(calc(320/1024));
-    pointer-events:none;
-  }
-  .goshuin-date-char{
-    position:absolute;
-    left:calc(var(--ox) - 0.5em);
-    top:calc(var(--oy) - 0.5em);
-    font-family:'Yuji Boku', serif;
-    font-size:72px;
-    color:#1e1917;
-    line-height:1;
-    white-space:nowrap;
+    border-radius:2px;
   }
   .goshuin-placeholder{
     display:none;
-    color:#888;
+    color:#aaa;
     font-size:14px;
     text-align:center;
     padding:40px 20px;
@@ -932,18 +907,6 @@
     <div class="goshuin-viewer">
       <div class="goshuin-frame" id="goshuinFrame">
         <img class="goshuin-img" id="goshuinImg" src="" alt="">
-        <!-- 日付overlayは、画像の上にCSS座標で重ねる。
-             画像はオリジナル1024×1536px、表示サイズに合わせてscale()で比率調整する。
-             日付の各数字をそれぞれ絶対座標で配置し、
-             元画像内での座標(特定済み)に対応させる。 -->
-        <div class="goshuin-date-overlay" id="goshuinDateOverlay">
-          <span class="goshuin-date-char" id="gd-year"  style="--oy:971px;--ox:70px"></span>
-          <span class="goshuin-date-char" id="gd-month1" style="--oy:1070px;--ox:70px"></span>
-          <span class="goshuin-date-char" id="gd-month2" style="--oy:1165px;--ox:70px;display:none"></span>
-          <span class="goshuin-date-char" id="gd-day1"  style="--oy:1220px;--ox:70px"></span>
-          <span class="goshuin-date-char" id="gd-day2"  style="--oy:1297px;--ox:70px;display:none"></span>
-          <span class="goshuin-date-char" id="gd-day3"  style="--oy:1335px;--ox:70px;display:none"></span>
-        </div>
       </div>
       <div class="goshuin-placeholder" id="goshuinPlaceholder"></div>
     </div>
@@ -2006,22 +1969,13 @@ function switchTab(tab){
 // 画像のオリジナルサイズ(1024×1536)をベースに座標を定義し、
 // 表示サイズ(320×480)へは CSS scale() で一括変換する。
 // ==================================================================
-const KANJI_DIGITS = ['〇','一','二','三','四','五','六','七','八','九','十'];
-function toKanji(n){
-  if(n <= 10) return KANJI_DIGITS[n];
-  if(n < 20)  return '十' + (n > 10 ? KANJI_DIGITS[n-10] : '');
-  if(n === 20) return '二十';
-  return '二十' + KANJI_DIGITS[n-20];
-}
-
 function openGoshuin(no){
-  const dateStr = getVisitedDate(no);
-  const overlay     = document.getElementById('goshuinOverlay');
-  const frame       = document.getElementById('goshuinFrame');
-  const img         = document.getElementById('goshuinImg');
+  const dateStr   = getVisitedDate(no);
+  const overlay   = document.getElementById('goshuinOverlay');
+  const frame     = document.getElementById('goshuinFrame');
+  const img       = document.getElementById('goshuinImg');
   const placeholder = document.getElementById('goshuinPlaceholder');
-  const visitedEl   = document.getElementById('goshuinVisitedOn');
-  const dateOverlay = document.getElementById('goshuinDateOverlay');
+  const visitedEl = document.getElementById('goshuinVisitedOn');
 
   const imgPath = `/goshuin/${String(no).padStart(2,'0')}.png`;
   img.src = imgPath;
@@ -2035,65 +1989,7 @@ function openGoshuin(no){
     placeholder.classList.remove('show');
   };
 
-  if(!dateStr){
-    visitedEl.textContent = t('goshuin_not_visited');
-    dateOverlay.style.display = 'none';
-  } else {
-    visitedEl.textContent = t('goshuin_visited_on', dateStr);
-    dateOverlay.style.display = 'block';
-
-    const dt = new Date(dateStr);
-    const reiwaYear = dt.getFullYear() - 2018;
-    const month     = dt.getMonth() + 1;
-    const day       = dt.getDate();
-    const yearStr   = toKanji(reiwaYear);
-    const monthStr  = toKanji(month);
-    const dayStr    = toKanji(day);
-
-    // 年（令和〜年の間: 1文字）
-    document.getElementById('gd-year').textContent = yearStr;
-
-    // 月（1文字か2文字かで分岐）
-    const m1 = document.getElementById('gd-month1');
-    const m2 = document.getElementById('gd-month2');
-    if(monthStr.length === 1){
-      m1.textContent = monthStr;
-      m1.style.setProperty('--oy','1113px');
-      m2.style.display = 'none';
-    } else {
-      m1.textContent = monthStr[0];
-      m1.style.setProperty('--oy','1070px');
-      m2.textContent = monthStr[1];
-      m2.style.display = '';
-    }
-
-    // 日（1〜3文字）
-    const d1 = document.getElementById('gd-day1');
-    const d2 = document.getElementById('gd-day2');
-    const d3 = document.getElementById('gd-day3');
-    if(dayStr.length === 1){
-      d1.textContent = dayStr;
-      d1.style.setProperty('--oy','1297px');
-      d2.style.display = 'none';
-      d3.style.display = 'none';
-    } else if(dayStr.length === 2){
-      d1.textContent = dayStr[0];
-      d1.style.setProperty('--oy','1260px');
-      d2.textContent = dayStr[1];
-      d2.style.setProperty('--oy','1335px');
-      d2.style.display = '';
-      d3.style.display = 'none';
-    } else {
-      d1.textContent = dayStr[0];
-      d1.style.setProperty('--oy','1220px');
-      d2.textContent = dayStr[1];
-      d2.style.setProperty('--oy','1297px');
-      d2.style.display = '';
-      d3.textContent = dayStr[2];
-      d3.style.setProperty('--oy','1374px');
-      d3.style.display = '';
-    }
-  }
+  visitedEl.textContent = dateStr ? t('goshuin_visited_on', dateStr) : t('goshuin_not_visited');
   overlay.classList.add('open');
 }
 function closeGoshuin(){
