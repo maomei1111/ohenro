@@ -780,6 +780,53 @@
     color:#5a564f;
     line-height:1.7;
   }
+  /* Map-first home */
+  .home-map-shell{position:relative;min-height:calc(100vh - 74px);background:var(--washi);padding-bottom:92px}
+  .home-map-header{position:absolute;left:14px;right:14px;top:14px;z-index:8;display:flex;align-items:center;justify-content:space-between;padding:10px 12px 10px 15px;border-radius:18px;color:#fff;background:rgba(29,43,79,.94);box-shadow:0 8px 24px rgba(29,43,79,.24);backdrop-filter:blur(14px)}
+  .home-map-title{font-family:'Noto Serif JP',serif;font-size:17px;font-weight:700}
+  .home-map-kicker{color:rgba(255,255,255,.7);font-size:9px;letter-spacing:.12em;margin-top:2px}
+  .home-info-btn{width:38px;height:38px;border:0;border-radius:13px;color:#fff;background:rgba(255,255,255,.12);font-size:17px}
+  .home-map-shell>.info-tooltip{position:absolute;left:14px;right:14px;top:70px;z-index:10;margin:0;border-radius:14px;background:rgba(29,43,79,.96);box-shadow:0 10px 28px rgba(29,43,79,.25)}
+  #homeMapCanvas{width:100%;height:min(64vh,590px);min-height:410px;background:#ddd6c7}
+  .home-map-empty{position:absolute;inset:0;z-index:1;display:flex;align-items:center;justify-content:center;padding:120px 30px 210px;text-align:center;color:var(--indigo-mid);pointer-events:none;background:radial-gradient(circle at center,rgba(247,241,230,.2),rgba(239,230,214,.48))}
+  .home-map-empty.hidden{display:none}
+  .home-map-empty-inner{max-width:260px;padding:15px 18px;border-radius:16px;background:rgba(247,241,230,.92);box-shadow:0 8px 24px rgba(29,43,79,.12)}
+  .home-map-empty-inner b{display:block;color:var(--indigo-deep);margin-bottom:4px}
+  .home-route-card{position:relative;z-index:7;margin:-22px 14px 0;padding:12px 16px 16px;border:1px solid rgba(43,40,37,.12);border-radius:22px;background:rgba(247,241,230,.97);box-shadow:0 12px 32px rgba(29,43,79,.15)}
+  .sheet-grabber{width:38px;height:4px;margin:0 auto 12px;border-radius:4px;background:rgba(43,40,37,.2)}
+  .home-route-title{display:flex;align-items:center;justify-content:center;gap:8px;font-family:'Noto Serif JP',serif;font-size:17px;color:var(--indigo-deep)}
+  .home-route-arrow{color:var(--vermillion)}
+  .home-route-meta{display:flex;justify-content:center;gap:14px;margin-top:8px;color:#5a564f;font-size:12px}
+  .home-route-meta strong{color:var(--vermillion)}
+  .home-route-actions{display:grid;grid-template-columns:1fr 1.15fr;gap:10px;margin-top:14px}
+  .route-condition-btn,.route-start-btn{min-height:48px;border-radius:14px;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+  .route-condition-btn{color:var(--indigo-deep);background:#fff;border:1px solid rgba(29,43,79,.28)}
+  .route-start-btn{color:#fff;background:var(--vermillion);border:0}
+  .home-detail{max-width:720px;margin:18px auto 0;padding:0 18px 40px}
+  .home-detail .panel{margin:0;padding:18px;border-radius:18px}
+  .route-sheet-overlay{display:none;position:fixed;inset:0;z-index:65;background:rgba(19,27,44,.52);align-items:flex-end;justify-content:center}
+  .route-sheet-overlay.open{display:flex}
+  .route-sheet{width:min(100%,640px);max-height:88vh;overflow:auto;padding:10px 18px calc(18px + env(safe-area-inset-bottom,0));border-radius:24px 24px 0 0;background:var(--washi-panel);box-shadow:0 -18px 50px rgba(0,0,0,.25)}
+  .route-sheet-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+  .route-sheet-head h2{margin:0;color:var(--indigo-deep);font-family:'Noto Serif JP',serif;font-size:20px}
+  .route-sheet-close{width:40px;height:40px;border:0;border-radius:13px;background:var(--washi);color:var(--indigo-deep);font-size:24px}
+  .route-sheet .controls{gap:14px}
+  .route-sheet select{min-height:46px;border-radius:12px}
+  .route-sheet .mode-toggle{height:46px;border-radius:12px}
+  .route-sheet .run-btn{min-height:50px;border-radius:14px;position:sticky;bottom:0;box-shadow:0 8px 18px rgba(166,58,42,.22)}
+  .swap-route-btn{grid-column:1/-1;min-height:42px;border:1px solid rgba(43,40,37,.16);border-radius:12px;background:transparent;color:var(--indigo-mid);font:inherit;font-size:12px}
+  .route-sheet .share-btn{border-radius:12px}
+  .bottom-tab-bar{left:14px;right:14px;bottom:12px;border:1px solid rgba(43,40,37,.14);border-radius:20px;overflow:hidden;box-shadow:0 10px 28px rgba(29,43,79,.18)}
+  .tab-btn{min-height:58px}
+  .tab-btn .tab-icon{width:20px;height:20px;display:flex}
+  .tab-btn.active{background:rgba(166,58,42,.09)}
+  .tab-btn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8}
+  @media (min-width:700px){.home-map-shell{max-width:760px;margin:0 auto}#homeMapCanvas{border-radius:0 0 24px 24px}}
+  body>.hero{display:none}
+  #viewHome{max-width:none;margin:0;padding:0 0 90px}
+  #viewHome>.wrap{max-width:760px;padding:0 18px}
+  #viewHome>.wrap>.panel{margin:18px 0 0;padding:18px;border-radius:18px}
+  #viewHome>.wrap .legend{display:none}
 </style>
 </head>
 <body>
@@ -798,6 +845,23 @@
 </div>
 
 <div class="view" id="viewHome">
+<div class="home-map-shell">
+  <header class="home-map-header">
+    <div><div class="home-map-title" data-i18n="hero_title"></div><div class="home-map-kicker">OHENRO ROUTE PLANNER</div></div>
+    <button class="home-info-btn" onclick="toggleHeroInfo()" aria-label="info">i</button>
+  </header>
+  <div id="homeMapCanvas" aria-label="巡礼ルート地図"></div>
+  <div class="home-map-empty" id="homeMapEmpty"><div class="home-map-empty-inner"><b>地図を読み込んでいます</b><span>ルート条件を設定すると、札所と移動経路が表示されます。</span></div></div>
+  <section class="home-route-card" aria-label="選択中のルート">
+    <div class="sheet-grabber"></div>
+    <div class="home-route-title"><span id="homeRouteFrom">出発札所</span><span class="home-route-arrow">→</span><span id="homeRouteTo">到着札所</span></div>
+    <div class="home-route-meta" id="homeRouteMeta"><span>条件を設定してください</span></div>
+    <div class="home-route-actions">
+      <button type="button" class="route-condition-btn" onclick="openRouteSheet()">ルート条件</button>
+      <button type="button" class="route-start-btn" onclick="startRouteGuidance()">案内を開始</button>
+    </div>
+  </section>
+</div>
 <div class="wrap">
   <div class="panel">
     <div class="progress-bar" id="progressLabel"></div>
@@ -847,6 +911,14 @@
     </div>
   </div>
 </div>
+</div>
+
+<div class="route-sheet-overlay" id="routeSheetOverlay" onclick="routeSheetBackdrop(event)">
+  <section class="route-sheet" role="dialog" aria-modal="true" aria-labelledby="routeSheetTitle">
+    <div class="sheet-grabber"></div>
+    <div class="route-sheet-head"><h2 id="routeSheetTitle">ルート条件</h2><button type="button" class="route-sheet-close" onclick="closeRouteSheet()" aria-label="閉じる">&times;</button></div>
+    <div id="routeSheetContent"></div>
+  </section>
 </div>
 
 <div class="view" id="viewZukan" style="display:none;">
@@ -1962,6 +2034,75 @@ function switchTab(tab){
   window.scrollTo(0,0);
 }
 
+function prepareMapFirstHome(){
+  const controls = document.querySelector('#viewHome > .wrap .controls');
+  const target = document.getElementById('routeSheetContent');
+  if(controls && target && controls.parentElement !== target){
+    const swap = document.createElement('button');
+    swap.type = 'button';
+    swap.className = 'swap-route-btn';
+    swap.textContent = '⇅ 出発地と到着地を入れ替える';
+    swap.onclick = swapRouteTemples;
+    controls.insertBefore(swap, controls.children[2] || null);
+    const run = controls.querySelector('.run-btn');
+    if(run){ run.onclick = runPlannerFromSheet; }
+    target.appendChild(controls);
+  }
+  const heroInfo = document.getElementById('heroInfoTooltip');
+  const homeShell = document.querySelector('.home-map-shell');
+  if(heroInfo && homeShell) homeShell.appendChild(heroInfo);
+  const icons = {
+    tabHomeBtn:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V20h13v-9.5M9.5 20v-6h5v6"/></svg>',
+    tabZukanBtn:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H12v18H7.5A3.5 3.5 0 0 0 4 23z"/><path d="M20 5.5A3.5 3.5 0 0 0 16.5 2H12v18h4.5A3.5 3.5 0 0 1 20 23z"/></svg>',
+    tabSettingsBtn:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>'
+  };
+  Object.entries(icons).forEach(([id,svg])=>{
+    const icon = document.querySelector(`#${id} .tab-icon`);
+    if(icon) icon.innerHTML = svg;
+  });
+}
+function openRouteSheet(){
+  updateHomeRouteCard();
+  document.getElementById('routeSheetOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeRouteSheet(){
+  document.getElementById('routeSheetOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function routeSheetBackdrop(event){ if(event.target === event.currentTarget) closeRouteSheet(); }
+function swapRouteTemples(){
+  const value = startSel.value;
+  startSel.value = endSel.value;
+  endSel.value = value;
+  updateHomeRouteCard();
+}
+async function runPlannerFromSheet(){
+  closeRouteSheet();
+  await runPlanner();
+}
+function updateHomeRouteCard(arrival){
+  if(!temples.length || !startSel || !endSel) return;
+  const from = temples.find(item=>item.no===Number(startSel.value));
+  const to = temples.find(item=>item.no===Number(endSel.value));
+  if(!from || !to) return;
+  document.getElementById('homeRouteFrom').textContent = `${from.no}. ${templeDisplayName(from)}`;
+  document.getElementById('homeRouteTo').textContent = `${to.no}. ${templeDisplayName(to)}`;
+  const meta = document.getElementById('homeRouteMeta');
+  if(arrival && arrival.length){
+    const finalTime = toHHMM(arrival[arrival.length-1].timeMin);
+    const walkKm = arrival.reduce((sum,item)=>item.mode==='walk' ? sum+(item.distanceKm||0) : sum,0);
+    const busCount = arrival.filter(item=>item.mode==='bus').length;
+    meta.innerHTML = `<span>徒歩 ${walkKm.toFixed(1)}km</span>${busCount?`<span>バス ${busCount}区間</span>`:''}<strong>到着予定 ${finalTime}</strong>`;
+  }else{
+    meta.innerHTML = `<span>${getSelectedDateStr()}</span><span>${getSelectedTimeStr()} 出発</span><span>${mode==='efficient'?'効率優先':'徒歩優先'}</span>`;
+  }
+}
+function startRouteGuidance(){
+  if(lastArrival.length > 1){ openMapForIndex(1); }
+  else{ openRouteSheet(); }
+}
+
 // ==================================================================
 // ---- デジタル御朱印モーダル ----
 // 御朱印画像はサーバー側 /goshuin/{no}.png として管理。
@@ -2530,6 +2671,8 @@ async function runPlanner(){
 // 計算結果(arrival配列)を画面に描画する。新規計算時・キャッシュ復元時の両方から呼ばれる。
 function renderResult(arrival){
   lastArrival = arrival;
+  updateHomeRouteCard(arrival);
+  renderHomeRouteMap(arrival);
   const NOKYO_CLOSE = toMinutes('17:00');
 
   const totalWalkKm = arrival.reduce((sum,a)=> a.mode==='walk' ? sum + (a.distanceKm||0) : sum, 0);
@@ -2603,6 +2746,7 @@ function renderResult(arrival){
     return;
   }
   populateTempleSelects();
+  prepareMapFirstHome();
   updateProgressLabel();
   // 言語切り替え時のページ再読み込みで、選択中だった出発・到着札所・日付・時刻をURLパラメータから復元
   const params = new URLSearchParams(location.search);
@@ -2617,6 +2761,8 @@ function renderResult(arrival){
     if(ry && rm && rd) buildDateFields(new Date(ry, rm-1, rd));
   }
   buildTimeFields(restoredTime);
+  updateHomeRouteCard();
+  renderHomeRouteMap();
 
   // 詳細ページから戻った場合など、直前と同じ条件のキャッシュ結果があれば
   // 再計算せずにそのまま復元する（APIへの再問い合わせを避けるため）。
@@ -2646,6 +2792,60 @@ function renderResult(arrival){
 // ==================================================================
 let lastArrival = [];
 let googleMap = null;
+let homeGoogleMap = null;
+let homeMapOverlays = [];
+
+function clearHomeMapOverlays(){
+  homeMapOverlays.forEach(item=>item.setMap(null));
+  homeMapOverlays = [];
+}
+async function renderHomeRouteMap(arrival){
+  if(!temples.length) return;
+  const from = temples.find(item=>item.no===Number(startSel.value));
+  const to = temples.find(item=>item.no===Number(endSel.value));
+  if(!from || !to) return;
+  try{
+    await waitForGoogleMaps();
+    const canvas = document.getElementById('homeMapCanvas');
+    if(!canvas) return;
+    document.getElementById('homeMapEmpty').classList.add('hidden');
+    homeGoogleMap = new google.maps.Map(canvas,{
+      center:{lat:(from.lat+to.lat)/2,lng:(from.lng+to.lng)/2},
+      zoom:12,disableDefaultUI:true,zoomControl:true,gestureHandling:'greedy',
+      styles:[{featureType:'poi.business',stylers:[{visibility:'off'}]}]
+    });
+    clearHomeMapOverlays();
+    const bounds = new google.maps.LatLngBounds();
+    const points = arrival && arrival.length
+      ? arrival.map(item=>temples.find(t=>t.no===item.no)).filter(Boolean)
+      : [from,to];
+    points.forEach((temple,index)=>{
+      const marker = new google.maps.Marker({
+        map:homeGoogleMap,position:{lat:temple.lat,lng:temple.lng},
+        label:{text:String(temple.no),color:'#fff',fontSize:'11px',fontWeight:'700'},
+        title:templeDisplayName(temple),
+        icon:{path:google.maps.SymbolPath.CIRCLE,scale:index===0?12:11,fillColor:index===0?'#1D2B4F':'#A63A2A',fillOpacity:1,strokeColor:'#fff',strokeWeight:3}
+      });
+      homeMapOverlays.push(marker);
+      bounds.extend(marker.getPosition());
+    });
+    for(let i=1;i<points.length;i++){
+      const entry = arrival && arrival[i];
+      const travelMode = entry && entry.mode==='bus' ? 'DRIVING' : 'WALKING';
+      let coords;
+      try{ coords = (await fetchRoute(points[i-1],points[i],travelMode)).coords; }
+      catch(_){ coords = [[points[i-1].lat,points[i-1].lng],[points[i].lat,points[i].lng]]; }
+      const path = coords.map(([lat,lng])=>({lat,lng}));
+      const line = new google.maps.Polyline({map:homeGoogleMap,path,strokeColor:entry&&entry.mode==='bus'?'#A63A2A':'#33507A',strokeOpacity:.95,strokeWeight:5});
+      homeMapOverlays.push(line);
+      path.forEach(point=>bounds.extend(point));
+    }
+    if(!bounds.isEmpty()) homeGoogleMap.fitBounds(bounds,54);
+  }catch(error){
+    const empty = document.getElementById('homeMapEmpty');
+    if(empty) empty.querySelector('b').textContent = '地図を表示できませんでした';
+  }
+}
 let mapOverlays = []; // 開き直すたびにクリアするマーカー・ポリラインの一覧
 let mapReqToken = 0;
 
