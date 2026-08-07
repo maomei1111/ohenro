@@ -781,7 +781,8 @@
     line-height:1.7;
   }
   /* Map-first home */
-  .home-map-shell{position:relative;min-height:calc(100vh - 74px);background:var(--washi);padding-bottom:92px}
+  .home-map-shell{display:none;position:relative;min-height:calc(100vh - 74px);background:var(--washi);padding-bottom:92px}
+  #viewHome.result-mode .home-map-shell{display:block}
   .home-map-header{position:absolute;left:14px;right:14px;top:14px;z-index:8;display:flex;align-items:center;justify-content:space-between;padding:10px 12px 10px 15px;border-radius:18px;color:#fff;background:rgba(29,43,79,.94);box-shadow:0 8px 24px rgba(29,43,79,.24);backdrop-filter:blur(14px)}
   .home-map-title{font-family:'Noto Serif JP',serif;font-size:17px;font-weight:700}
   .home-map-kicker{color:rgba(255,255,255,.7);font-size:9px;letter-spacing:.12em;margin-top:2px}
@@ -822,11 +823,10 @@
   .tab-btn.active{background:rgba(166,58,42,.09)}
   .tab-btn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8}
   @media (min-width:700px){.home-map-shell{max-width:760px;margin:0 auto}#homeMapCanvas{border-radius:0 0 24px 24px}}
-  body>.hero{display:none}
   #viewHome{max-width:none;margin:0;padding:0 0 90px}
   #viewHome>.wrap{max-width:760px;padding:0 18px}
   #viewHome>.wrap>.panel{margin:18px 0 0;padding:18px;border-radius:18px}
-  #viewHome>.wrap .legend{display:none}
+  #viewHome.result-mode>.wrap .legend{display:none}
 </style>
 </head>
 <body>
@@ -2035,22 +2035,6 @@ function switchTab(tab){
 }
 
 function prepareMapFirstHome(){
-  const controls = document.querySelector('#viewHome > .wrap .controls');
-  const target = document.getElementById('routeSheetContent');
-  if(controls && target && controls.parentElement !== target){
-    const swap = document.createElement('button');
-    swap.type = 'button';
-    swap.className = 'swap-route-btn';
-    swap.textContent = '⇅ 出発地と到着地を入れ替える';
-    swap.onclick = swapRouteTemples;
-    controls.insertBefore(swap, controls.children[2] || null);
-    const run = controls.querySelector('.run-btn');
-    if(run){ run.onclick = runPlannerFromSheet; }
-    target.appendChild(controls);
-  }
-  const heroInfo = document.getElementById('heroInfoTooltip');
-  const homeShell = document.querySelector('.home-map-shell');
-  if(heroInfo && homeShell) homeShell.appendChild(heroInfo);
   const icons = {
     tabHomeBtn:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V20h13v-9.5M9.5 20v-6h5v6"/></svg>',
     tabZukanBtn:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H12v18H7.5A3.5 3.5 0 0 0 4 23z"/><path d="M20 5.5A3.5 3.5 0 0 0 16.5 2H12v18h4.5A3.5 3.5 0 0 1 20 23z"/></svg>',
@@ -2061,7 +2045,33 @@ function prepareMapFirstHome(){
     if(icon) icon.innerHTML = svg;
   });
 }
+function moveControlsToRouteSheet(){
+  const controls = document.querySelector('.controls');
+  const target = document.getElementById('routeSheetContent');
+  if(!controls || !target || controls.parentElement === target) return;
+  if(!controls.querySelector('.swap-route-btn')){
+    const swap = document.createElement('button');
+    swap.type = 'button';
+    swap.className = 'swap-route-btn';
+    swap.textContent = '⇅ 出発地と到着地を入れ替える';
+    swap.onclick = swapRouteTemples;
+    controls.insertBefore(swap, controls.children[2] || null);
+  }
+  const run = controls.querySelector('.run-btn');
+  if(run) run.onclick = runPlannerFromSheet;
+  target.appendChild(controls);
+}
+function showMapResultView(){
+  moveControlsToRouteSheet();
+  document.getElementById('viewHome').classList.add('result-mode');
+  const hero = document.querySelector('body > .hero');
+  if(hero) hero.style.display = 'none';
+  const heroInfo = document.getElementById('heroInfoTooltip');
+  const homeShell = document.querySelector('.home-map-shell');
+  if(heroInfo && homeShell) homeShell.appendChild(heroInfo);
+}
 function openRouteSheet(){
+  moveControlsToRouteSheet();
   updateHomeRouteCard();
   document.getElementById('routeSheetOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -2671,6 +2681,7 @@ async function runPlanner(){
 // 計算結果(arrival配列)を画面に描画する。新規計算時・キャッシュ復元時の両方から呼ばれる。
 function renderResult(arrival){
   lastArrival = arrival;
+  showMapResultView();
   updateHomeRouteCard(arrival);
   renderHomeRouteMap(arrival);
   const NOKYO_CLOSE = toMinutes('17:00');
@@ -2762,7 +2773,6 @@ function renderResult(arrival){
   }
   buildTimeFields(restoredTime);
   updateHomeRouteCard();
-  renderHomeRouteMap();
 
   // 詳細ページから戻った場合など、直前と同じ条件のキャッシュ結果があれば
   // 再計算せずにそのまま復元する（APIへの再問い合わせを避けるため）。
