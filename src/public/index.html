@@ -411,9 +411,10 @@
   .zukan-card:active{ transform:scale(0.97); }
   .zukan-card .zukan-photo{
     width:100%; height:82%;
-    object-fit:cover;
+    object-fit:contain;
+    object-position:center;
     display:block;
-    background:#ccc4b0;
+    background:#fff;
   }
   .zukan-card.unvisited .zukan-photo{
     display:none;
@@ -783,6 +784,8 @@
     padding:14px 18px calc(16px + env(safe-area-inset-bottom,0));
     background:#fbf7ef;border-top:1px solid rgba(43,40,37,.1);
   }
+  .zukan-name-row{display:flex;align-items:baseline;justify-content:space-between;gap:6px}
+  .zukan-card-date{flex:0 0 auto;color:#777064;font-size:10px;white-space:nowrap}
   .goshuin-date-overlay{
     position:absolute;left:4.8%;bottom:5.2%;
     writing-mode:vertical-rl;text-orientation:upright;
@@ -851,12 +854,17 @@
   .zukan-progress-track{height:5px;margin-top:11px;overflow:hidden;border-radius:8px;background:#ded6c9}
   .zukan-progress-fill{height:100%;border-radius:8px;background:var(--vermillion)}
   .zukan-progress-detail{display:flex;justify-content:space-between;margin-top:9px;font-size:11px;color:#777064}
+  .goshuin-guide{
+    display:flex;align-items:flex-start;gap:7px;margin-top:11px;padding-top:10px;
+    border-top:1px solid #ded6c9;color:#625d54;font-size:11px;line-height:1.55;
+  }
+  .goshuin-guide-icon{flex:0 0 auto;display:flex;align-items:center;justify-content:center;width:17px;height:17px;border:1px solid currentColor;border-radius:50%;font-size:11px;font-weight:700}
   #viewZukan .zukan-grid{
     grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;min-height:70vh;
     padding:54px 14px 28px;border-radius:24px 24px 0 0;background:var(--washi-panel);
   }
   #viewZukan .zukan-card{
-    aspect-ratio:3/4.25;border-radius:15px;background:#ded6c8;
+    aspect-ratio:3/4.65;border-radius:15px;background:#ded6c8;
     border:1px solid rgba(43,40,37,.12);box-shadow:0 3px 9px rgba(43,40,37,.12);
   }
   #viewZukan .zukan-card .zukan-photo,#viewZukan .zukan-card .zukan-noimg,#viewZukan .zukan-hidden-goshuin{height:78%}
@@ -867,7 +875,7 @@
     border-radius:14px 0 10px 0;font-size:16px;font-weight:600;
   }
   #viewZukan .zukan-card.unvisited .zukan-no{color:#fff;background:#77746d}
-  #viewZukan .zukan-card .zukan-name{font-size:16px;font-weight:600;line-height:1.45}
+  #viewZukan .zukan-card .zukan-name{min-width:0;font-size:15px;font-weight:600;line-height:1.45}
   #viewZukan .zukan-stamp{
     top:auto;right:8px;bottom:8px;width:46px;height:46px;color:var(--vermillion);
     background:rgba(251,247,239,.94);border:2px solid var(--vermillion);box-shadow:none;
@@ -1153,6 +1161,7 @@ const I18N = {
     tab_settings: '設定',
     settings_language_section: '言語',
     goshuin_title: 'デジタル御朱印',
+    goshuin_guide: '札所を開き、「訪問済みにする」を押すと御朱印が追加されます。',
     goshuin_not_visited: 'この札所はまだ参拝されていません。',
     goshuin_no_image: 'この札所の御朱印画像は準備中です。',
     goshuin_visited_on: (d)=>`参拝日：${d}`,
@@ -1252,6 +1261,7 @@ const I18N = {
     tab_settings: 'Settings',
     settings_language_section: 'Language',
     goshuin_title: 'Digital Goshuin',
+    goshuin_guide: 'Open a temple and tap “Mark as visited” to add its goshuin.',
     goshuin_not_visited: 'You have not visited this temple yet.',
     goshuin_no_image: 'The goshuin image for this temple is coming soon.',
     goshuin_visited_on: (d)=>`Visited: ${d}`,
@@ -1351,6 +1361,7 @@ const I18N = {
     tab_settings: '설정',
     settings_language_section: '언어',
     goshuin_title: '디지털 어인',
+    goshuin_guide: '사찰을 열고 “방문 완료로 표시”를 누르면 고슈인이 추가됩니다.',
     goshuin_not_visited: '이 사찰은 아직 참배하지 않으셨습니다.',
     goshuin_no_image: '이 사찰의 어인 이미지는 준비 중입니다.',
     goshuin_visited_on: (d)=>`참배일：${d}`,
@@ -1450,6 +1461,7 @@ const I18N = {
     tab_settings: '设置',
     settings_language_section: '语言',
     goshuin_title: '数字御朱印',
+    goshuin_guide: '打开寺院并点击“标记为已参拜”，即可添加御朱印。',
     goshuin_not_visited: '您尚未参拜此寺院。',
     goshuin_no_image: '此寺院的御朱印图像正在准备中。',
     goshuin_visited_on: (d)=>`参拜日：${d}`,
@@ -1549,6 +1561,7 @@ const I18N = {
     tab_settings: '設定',
     settings_language_section: '語言',
     goshuin_title: '數位御朱印',
+    goshuin_guide: '開啟寺院並點擊「標記為已參拜」，即可新增御朱印。',
     goshuin_not_visited: '您尚未參拜此寺院。',
     goshuin_no_image: '此寺院的御朱印圖像正在準備中。',
     goshuin_visited_on: (d)=>`參拜日：${d}`,
@@ -1648,6 +1661,7 @@ const I18N = {
     tab_settings: 'Einstellungen',
     settings_language_section: 'Sprache',
     goshuin_title: 'Digitaler Goshuin',
+    goshuin_guide: 'Öffnen Sie einen Tempel und tippen Sie auf „Als besucht markieren“, um den Goshuin hinzuzufügen.',
     goshuin_not_visited: 'Sie haben diesen Tempel noch nicht besucht.',
     goshuin_no_image: 'Das Goshuin-Bild für diesen Tempel ist in Vorbereitung.',
     goshuin_visited_on: (d)=>`Besuchsdatum: ${d}`,
@@ -1747,6 +1761,7 @@ const I18N = {
     tab_settings: 'Configurações',
     settings_language_section: 'Idioma',
     goshuin_title: 'Goshuin Digital',
+    goshuin_guide: 'Abra um templo e toque em “Marcar como visitado” para adicionar o goshuin.',
     goshuin_not_visited: 'Você ainda não visitou este templo.',
     goshuin_no_image: 'A imagem do goshuin para este templo está em preparação.',
     goshuin_visited_on: (d)=>`Data da visita: ${d}`,
@@ -2169,6 +2184,18 @@ function getWarekiDate(dateStr){
   const yearText = eraYear === 1 ? '元' : toKanjiNumber(eraYear);
   return `${era}${yearText}年${toKanjiNumber(month)}月${toKanjiNumber(day)}日`;
 }
+function formatVisitDate(dateStr){
+  if(!dateStr) return '';
+  const date = new Date(`${dateStr}T00:00:00`);
+  if(Number.isNaN(date.getTime())) return dateStr;
+  try{
+    return new Intl.DateTimeFormat(currentLang, {
+      year:'numeric', month:'numeric', day:'numeric'
+    }).format(date);
+  }catch(e){
+    return dateStr;
+  }
+}
 function openGoshuin(no){
   activeZukanTempleNo = no;
   const temple = temples.find(item=>item.no===no);
@@ -2212,7 +2239,7 @@ function openGoshuin(no){
     placeholder.textContent = t('goshuin_not_visited');
     placeholder.classList.add('show');
   }
-  visitedEl.textContent = dateStr ? t('goshuin_visited_on', dateStr) : t('goshuin_not_visited');
+  visitedEl.textContent = dateStr ? t('goshuin_visited_on', formatVisitDate(dateStr)) : t('goshuin_not_visited');
   overlay.classList.add('open');
 }
 function toggleVisitedFromDetail(){
@@ -2299,13 +2326,15 @@ function renderZukan(){
       <div class="zukan-progress-count">${set.size}<small> / ${temples.length}</small></div>
     </div>
     <div class="zukan-progress-track"><div class="zukan-progress-fill" style="width:${progressPct}%"></div></div>
-    <div class="zukan-progress-detail"><span>${visitedLabel}</span><span>${unvisitedLabel}</span></div>`;
+    <div class="zukan-progress-detail"><span>${visitedLabel}</span><span>${unvisitedLabel}</span></div>
+    <div class="goshuin-guide"><span class="goshuin-guide-icon">i</span><span>${t('goshuin_guide')}</span></div>`;
 
   const sorted = [...temples].sort((a,b)=>a.no-b.no);
   grid.innerHTML = sorted.map(temple=>{
     const visited = set.has(temple.no);
     const displayName = templeDisplayName(temple);
     const no = String(temple.no).padStart(2,'0');
+    const visitDate = visited ? formatVisitDate(getVisitedDate(temple.no)) : '';
     const hiddenHtml = `<div class="zukan-hidden-goshuin"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span>${t('zukan_unvisited_badge')}</span></div>`;
     const photoHtml = visited
       ? `<img class="zukan-photo" src="/goshuin/${no}.png" alt="${displayName}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="zukan-hidden-goshuin" style="display:none"><span>${t('goshuin_no_image')}</span></div>`
@@ -2314,7 +2343,7 @@ function renderZukan(){
       <div class="zukan-no">${temple.no}</div>
       ${photoHtml}
       <div class="zukan-info">
-        <div class="zukan-name">${displayName}</div>
+        <div class="zukan-name-row"><div class="zukan-name">${displayName}</div>${visitDate ? `<div class="zukan-card-date">${visitDate}</div>` : ''}</div>
       </div>
     </div>`;
   }).join('');
