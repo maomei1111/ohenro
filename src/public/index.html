@@ -2560,11 +2560,21 @@ function renderZukan(){
 const ZUKAN_VISIT_MIN_RADIUS_M = 100;
 const ZUKAN_VISIT_MAX_RADIUS_M = 200;
 
+//御朱印取得を無条件で実施
+const DISABLE_GOSHUIN_LOCATION_CHECK = true;
+
 function checkTempleProximity(no, button, onSuccess){
-  if(!isLocationUsageEnabled()){
-    alert(t('location_app_disabled'));
+  if (DISABLE_GOSHUIN_LOCATION_CHECK) {
+    onSuccess(null, 0);
     return;
   }
+
+//御朱印取得を現在地から取得
+// function checkTempleProximity(no, button, onSuccess){
+//   if(!isLocationUsageEnabled()){
+//     alert(t('location_app_disabled'));
+//     return;
+//   }
   if(!navigator.geolocation){
     alert(t('zukan_locate_unsupported'));
     return;
