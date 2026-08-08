@@ -614,10 +614,21 @@
   }
   .nokyo-ok{ background:#E4EBDD; color:#3E5A2C; }
   .nokyo-warn{ background:var(--warn-bg); color:var(--vermillion); }
+  .weather-chip{
+    display:inline-block;
+    font-size:11px;
+    padding:3px 8px;
+    border-radius:2px;
+    font-family:'JetBrains Mono', monospace;
+    background:#E4EBDD;
+    color:#3E5A2C;
+  }
+  .weather-chip:empty{ display:none; }
+  .weather-chip.weather-warn{ background:var(--warn-bg); color:var(--vermillion); }
   @media(max-width:520px){
     .stop{grid-template-columns:52px minmax(0,1fr);gap:10px}
     .stop-title{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:baseline}
-    .stop-title .nokyo-badge{grid-column:2;justify-self:start;max-width:100%;margin-top:2px;line-height:1.45;white-space:normal}
+    .stop-title .nokyo-badge,.stop-title .weather-chip{grid-column:2;justify-self:start;max-width:100%;margin-top:2px;line-height:1.45;white-space:normal}
   }
 
   .segment-note{
@@ -1163,6 +1174,7 @@ const I18N = {
     summary_walk_total: '徒歩合計距離',
     summary_bus_segments: '区間',
     summary_bus_label: 'バス利用区間',
+    weather_label: 'この日の天気',
     summary_nokyo_label: '最終札所の納経所',
     summary_ok: 'OK',
     summary_warn: '要注意',
@@ -1270,6 +1282,7 @@ const I18N = {
     summary_walk_total: 'Total walking distance',
     summary_bus_segments: 'segment(s)',
     summary_bus_label: 'Bus legs used',
+    weather_label: 'Weather that day',
     summary_nokyo_label: 'Stamp office at final temple',
     summary_ok: 'OK',
     summary_warn: 'Check timing',
@@ -1377,6 +1390,7 @@ const I18N = {
     summary_walk_total: '총 도보 거리',
     summary_bus_segments: '구간',
     summary_bus_label: '버스 이용 구간',
+    weather_label: '이날의 날씨',
     summary_nokyo_label: '마지막 사찰 납경소',
     summary_ok: 'OK',
     summary_warn: '주의',
@@ -1484,6 +1498,7 @@ const I18N = {
     summary_walk_total: '徒步总距离',
     summary_bus_segments: '段',
     summary_bus_label: '使用公交的路段',
+    weather_label: '当日天气',
     summary_nokyo_label: '终点寺庙纳经所',
     summary_ok: 'OK',
     summary_warn: '请注意',
@@ -1591,6 +1606,7 @@ const I18N = {
     summary_walk_total: '徒步總距離',
     summary_bus_segments: '段',
     summary_bus_label: '使用公車的路段',
+    weather_label: '當日天氣',
     summary_nokyo_label: '終點寺廟納經所',
     summary_ok: 'OK',
     summary_warn: '請注意',
@@ -1698,6 +1714,7 @@ const I18N = {
     summary_walk_total: 'Gesamte Gehstrecke',
     summary_bus_segments: 'Abschnitt(e)',
     summary_bus_label: 'Genutzte Busabschnitte',
+    weather_label: 'Wetter an diesem Tag',
     summary_nokyo_label: 'Stempelbüro am Zieltempel',
     summary_ok: 'OK',
     summary_warn: 'Achtung',
@@ -1805,6 +1822,7 @@ const I18N = {
     summary_walk_total: 'Distância total a pé',
     summary_bus_segments: 'trecho(s)',
     summary_bus_label: 'Trechos de ônibus usados',
+    weather_label: 'Tempo neste dia',
     summary_nokyo_label: 'Escritório de carimbos no templo final',
     summary_ok: 'OK',
     summary_warn: 'Atenção',
@@ -2982,7 +3000,7 @@ async function runPlanner(){
     arrival.push({ no:seg.no, timeMin:currentMin, mode:chosen, note, distanceKm, missedBus, busResult: chosen==='bus' ? busResult : null });
   }
 
-  renderResult(arrival);
+  renderResult(arrival, startDateStr);
 
   // 詳細ページから戻った時に、再計算せずそのまま復元できるよう結果をキャッシュしておく
   try{
@@ -2994,7 +3012,7 @@ async function runPlanner(){
 }
 
 // 計算結果(arrival配列)を画面に描画する。新規計算時・キャッシュ復元時の両方から呼ばれる。
-function renderResult(arrival){
+function renderResult(arrival, dateStr){
   lastArrival = arrival;
   const NOKYO_CLOSE = toMinutes('17:00');
 
@@ -3038,6 +3056,7 @@ function renderResult(arrival){
       <div class="stop-card">
         <div class="stop-title"><span class="no">${String(temple.no).padStart(2,'0')}</span><span class="stop-name">${displayName}</span>
           <span class="nokyo-badge ${nokyoOver?'nokyo-warn':'nokyo-ok'}">${(nokyoOver? t('nokyo_warn') : t('nokyo_ok'))}${nokyoExtra}</span>
+          <span class="weather-chip" id="weather-chip-${idx}" title="${t('weather_label')}"></span>
         </div>
         <div class="stop-meta mono">${temple.kana}</div>
         <a class="official-link" href="/temple/${temple.no}?lang=${currentLang}" target="_blank" rel="noopener">${t('temple_detail_link')}</a>
@@ -3052,6 +3071,62 @@ function renderResult(arrival){
     </div>`;
   });
   document.getElementById('timeline').innerHTML = html;
+
+  if(dateStr) attachWeather(arrival, dateStr);
+}
+
+// 日付文字列("YYYY-MM-DD")に日数を加算する。区間の到着が日をまたぐ場合(timeMinが1440分超)に使う。
+function addDaysToDateStr(dateStr, days){
+  const [y,m,d] = dateStr.split('-').map(Number);
+  const dt = new Date(y, m-1, d);
+  dt.setDate(dt.getDate() + days);
+  return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+}
+
+// Open-Meteoの天気コード(WMO標準)を簡易アイコンに変換
+function weatherIconForCode(code){
+  if(code === 0) return '☀️';
+  if(code === 1 || code === 2) return '🌤️';
+  if(code === 3) return '☁️';
+  if(code === 45 || code === 48) return '🌫️';
+  if(code === 85 || code === 86) return '🌨️';
+  if(code >= 71 && code <= 77) return '❄️';
+  if(code === 95 || code === 96 || code === 99) return '⛈️';
+  if(code >= 51 && code <= 82) return '🌧️';
+  return '☁️';
+}
+
+// 経路上の各札所(区間ごと)の天気をまとめて取得し、対応するチップに反映する。
+// APIキー不要のOpen-Meteoを使用。予報対象外の日付(先すぎる等)は何も表示しない。
+async function attachWeather(arrival, dateStr){
+  const stops = arrival
+    .map((a, idx) => {
+      const temple = temples.find(t=>t.no===a.no);
+      if(!temple) return null;
+      return { idx, lat: temple.lat, lng: temple.lng, date: addDaysToDateStr(dateStr, Math.floor(a.timeMin/1440)) };
+    })
+    .filter(Boolean);
+  if(!stops.length) return;
+
+  const pointsParam = stops.map(s=>`${s.lat},${s.lng},${s.date}`).join(';');
+  let results;
+  try{
+    const res = await fetch(`${API_BASE}/weather-proxy?points=${encodeURIComponent(pointsParam)}`);
+    if(!res.ok) throw new Error(`weather-proxy failed (status ${res.status})`);
+    const data = await res.json();
+    results = data.results || [];
+  }catch(e){
+    console.warn('weather fetch failed', e);
+    return;
+  }
+
+  stops.forEach((s, i) => {
+    const chip = document.getElementById(`weather-chip-${s.idx}`);
+    const w = results[i];
+    if(!chip || !w || !w.available) return;
+    chip.textContent = `${weatherIconForCode(w.weathercode)} ${Math.round(w.maxTempC)}°C / ${Math.round(w.precipProbability)}%`;
+    chip.classList.toggle('weather-warn', w.precipProbability >= 50 || w.maxTempC >= 33);
+  });
 }
 
 // ---- 起動処理: 札所データを取得 → セレクト構築 → 初回計算 ----
@@ -3094,7 +3169,7 @@ function renderResult(arrival){
       && cached.time === getSelectedTimeStr()
       && cached.lang === currentLang
     ){
-      renderResult(cached.arrival);
+      renderResult(cached.arrival, cached.date);
       restoredFromCache = true;
     }
   }catch(e){ console.warn('キャッシュ結果の復元に失敗しました', e); }

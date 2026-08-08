@@ -269,6 +269,85 @@ app.get('/overpass-proxy', async (req, res) => {
   }
 });
 
+// 天気予報プロキシ（Open-Meteo, APIキー不要）。
+// ルート結果は複数の札所（区間ごと）を経由するため、区間ごとに個別の地点で天気を取得する。
+// 同じ緯度経度(小数点2桁=約1km格子)・日付の組み合わせはメモリ上に短時間(30分)キャッシュし、
+// 近接する札所をまとめて問い合わせた場合に外部APIへの重複リクエストを避ける。
+const weatherCache = new Map<string, { expires: number; data: any }>();
+const WEATHER_CACHE_TTL_MS = 30 * 60 * 1000;
+
+function weatherCacheKey(lat: number, lng: number, date: string): string {
+  return `${lat.toFixed(2)},${lng.toFixed(2)},${date}`;
+}
+
+async function fetchWeatherForPoint(lat: number, lng: number, date: string): Promise<any> {
+  const key = weatherCacheKey(lat, lng, date);
+  const cached = weatherCache.get(key);
+  if (cached && cached.expires > Date.now()) return cached.data;
+
+  let data: any = { available: false };
+  try {
+    const url =
+      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}` +
+      `&daily=weathercode,temperature_2m_max,precipitation_probability_max` +
+      `&timezone=Asia%2FTokyo&start_date=${date}&end_date=${date}`;
+    const apiRes = await fetch(url);
+    if (apiRes.ok) {
+      const json: any = await apiRes.json();
+      const idx = json?.daily?.time?.indexOf(date) ?? -1;
+      const weathercode = idx >= 0 ? json.daily.weathercode?.[idx] : undefined;
+      const maxTempC = idx >= 0 ? json.daily.temperature_2m_max?.[idx] : undefined;
+      const precipProbability = idx >= 0 ? json.daily.precipitation_probability_max?.[idx] : undefined;
+      if (weathercode != null && maxTempC != null) {
+        data = { available: true, weathercode, maxTempC, precipProbability: precipProbability ?? 0 };
+      }
+    }
+  } catch (e) {
+    console.error('[weather-proxy] fetch failed:', e);
+  }
+
+  weatherCache.set(key, { expires: Date.now() + WEATHER_CACHE_TTL_MS, data });
+  return data;
+}
+
+// points=lat,lng,date(YYYY-MM-DD);lat,lng,date;... の形式で、区間の数だけ地点を渡す。
+// レスポンスの results は points と同じ順序で返す（該当日が予報範囲外の場合は available:false）。
+app.get('/weather-proxy', async (req, res) => {
+  try {
+    const points = String(req.query.points ?? '')
+      .split(';')
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .map((s) => {
+        const [latStr, lngStr, date] = s.split(',');
+        return { lat: Number(latStr), lng: Number(lngStr), date };
+      });
+
+    const isValid =
+      points.length > 0 &&
+      points.every((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng) && /^\d{4}-\d{2}-\d{2}$/.test(p.date ?? ''));
+    if (!isValid) {
+      return res.status(400).json({ error: 'points=lat,lng,date(YYYY-MM-DD) の形式で1件以上必須です' });
+    }
+
+    // 同一の格子・日付は1回だけ問い合わせて使い回す
+    const uniqueKeys = [...new Set(points.map((p) => weatherCacheKey(p.lat, p.lng, p.date)))];
+    const uniqueResults = new Map<string, any>();
+    await Promise.all(
+      uniqueKeys.map(async (key) => {
+        const [latStr, lngStr, date] = key.split(',');
+        uniqueResults.set(key, await fetchWeatherForPoint(Number(latStr), Number(lngStr), date));
+      })
+    );
+
+    const results = points.map((p) => uniqueResults.get(weatherCacheKey(p.lat, p.lng, p.date)));
+    res.json({ results });
+  } catch (e) {
+    console.error('[weather-proxy] exception:', e);
+    res.status(500).json({ error: 'internal error' });
+  }
+});
+
 const PORT = Number(process.env.PORT ?? 3000);
 
 // デバッグ用: 環境変数が実際に読み込めているか確認（パスワード部分は伏せる）
