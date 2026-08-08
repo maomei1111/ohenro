@@ -780,6 +780,7 @@
   }
   .map-fab svg{width:23px;height:23px;display:block}
   #mapCompassBtn{visibility:hidden}
+  #mapCompassBtn.is-heading-up{background:#e8f0fe;box-shadow:0 0 0 2px rgba(66,133,244,.28),0 2px 6px rgba(0,0,0,.25)}
   #mapCompassBtn svg{width:25px;height:25px}
   #mapCompassBtn svg{transition:transform .18s ease}
   #mapLocateBtn{color:#1a73e8}
@@ -1102,7 +1103,7 @@
     <div class="map-canvas-wrap">
       <div id="mapCanvas"></div>
       <div class="map-fab-group">
-        <button type="button" class="map-fab" id="mapCompassBtn" onclick="mapResetNorth()" title="北向きにリセット" aria-label="北向きにリセット"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.25" fill="#fff" stroke="#dadce0"/><path d="M12 4.5 15.2 12 12 10.8 8.8 12Z" fill="#ea4335"/><path d="m12 19.5-3.2-7.5 3.2 1.2 3.2-1.2Z" fill="#5f6368"/></svg></button>
+        <button type="button" class="map-fab" id="mapCompassBtn" onclick="toggleMapHeadingMode()" title="向いている方向を上にする" aria-label="向いている方向を上にする"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.25" fill="#fff" stroke="#dadce0"/><path d="M12 4.5 15.2 12 12 10.8 8.8 12Z" fill="#ea4335"/><path d="m12 19.5-3.2-7.5 3.2 1.2 3.2-1.2Z" fill="#5f6368"/></svg></button>
         <button type="button" class="map-fab" id="mapLocateBtn" onclick="mapLocateMe()" title="現在地を表示" aria-label="現在地を表示"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v3M12 19v3M2 12h3M19 12h3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="2.25" fill="currentColor"/></svg></button>
       </div>
     </div>
@@ -1186,6 +1187,7 @@ const I18N = {
     elevation_stats: (gain,loss)=>`徒歩区間の高低差：⬆️獲得標高 ${gain}m／⬇️下り ${loss}m`,
     elevation_climb: (s,e,len,gain)=>`最大の上り：${s}km地点から${e}km地点まで（${len}km区間）で${gain}m上ります。`,
     current_location: '現在地',
+    compass_waiting: '端末の向きを取得中です。端末を8の字にゆっくり動かしてから、もう一度お試しください。',
     btn_locate: '📍 現在地から自動設定',
     locate_searching: '検索中…',
     locate_failed: '現在地を取得できませんでした',
@@ -1290,6 +1292,7 @@ const I18N = {
     elevation_stats: (gain,loss)=>`Elevation change on foot: ⬆️ ${gain}m climb / ⬇️ ${loss}m descent`,
     elevation_climb: (s,e,len,gain)=>`Biggest climb: ${gain}m over ${len}km, from the ${s}km point to the ${e}km point.`,
     current_location: 'Your location',
+    compass_waiting: 'Waiting for your device heading. Move your phone slowly in a figure eight, then try again.',
     btn_locate: '📍 Use my current location',
     locate_searching: 'Locating…',
     locate_failed: 'Could not get your current location',
@@ -1394,6 +1397,7 @@ const I18N = {
     elevation_stats: (gain,loss)=>`도보 구간 고저차: ⬆️상승고도 ${gain}m／⬇️하강 ${loss}m`,
     elevation_climb: (s,e,len,gain)=>`최대 오르막: ${s}km 지점부터 ${e}km 지점까지(${len}km 구간)에서 ${gain}m 상승합니다.`,
     current_location: '현재 위치',
+    compass_waiting: '기기의 방향을 확인 중입니다. 휴대전화를 8자 모양으로 천천히 움직인 후 다시 시도해 주세요.',
     btn_locate: '📍 현재 위치로 자동 설정',
     locate_searching: '검색 중…',
     locate_failed: '현재 위치를 가져올 수 없습니다',
@@ -1498,6 +1502,7 @@ const I18N = {
     elevation_stats: (gain,loss)=>`徒步路段高低差：⬆️爬升 ${gain}m／⬇️下降 ${loss}m`,
     elevation_climb: (s,e,len,gain)=>`最大爬坡路段：从${s}公里处到${e}公里处（共${len}公里），爬升${gain}米。`,
     current_location: '当前位置',
+    compass_waiting: '正在获取设备方向。请将手机缓慢画“8”字移动后重试。',
     btn_locate: '📍 使用当前位置自动设置',
     locate_searching: '定位中…',
     locate_failed: '无法获取当前位置',
@@ -1602,6 +1607,7 @@ const I18N = {
     elevation_stats: (gain,loss)=>`徒步路段高低差：⬆️爬升 ${gain}m／⬇️下降 ${loss}m`,
     elevation_climb: (s,e,len,gain)=>`最大爬坡路段：從${s}公里處到${e}公里處（共${len}公里），爬升${gain}公尺。`,
     current_location: '目前位置',
+    compass_waiting: '正在取得裝置方向。請將手機緩慢畫「8」字移動後再試一次。',
     btn_locate: '📍 使用目前位置自動設定',
     locate_searching: '定位中…',
     locate_failed: '無法取得目前位置',
@@ -1706,6 +1712,7 @@ const I18N = {
     elevation_stats: (gain,loss)=>`Höhenunterschied zu Fuß: ⬆️ ${gain}m Anstieg / ⬇️ ${loss}m Abstieg`,
     elevation_climb: (s,e,len,gain)=>`Größter Anstieg: ${gain}m auf ${len}km, vom ${s}km- bis zum ${e}km-Punkt.`,
     current_location: 'Ihr Standort',
+    compass_waiting: 'Geräterichtung wird ermittelt. Bewegen Sie das Smartphone langsam in Form einer Acht und versuchen Sie es erneut.',
     btn_locate: '📍 Aktuellen Standort verwenden',
     locate_searching: 'Standort wird ermittelt…',
     locate_failed: 'Standort konnte nicht ermittelt werden',
@@ -1810,6 +1817,7 @@ const I18N = {
     elevation_stats: (gain,loss)=>`Desnível a pé: ⬆️ ${gain}m de subida / ⬇️ ${loss}m de descida`,
     elevation_climb: (s,e,len,gain)=>`Maior subida: ${gain}m ao longo de ${len}km, do ponto ${s}km ao ponto ${e}km.`,
     current_location: 'Sua localização',
+    compass_waiting: 'Aguardando a direção do dispositivo. Mova o celular lentamente em forma de oito e tente novamente.',
     btn_locate: '📍 Usar minha localização atual',
     locate_searching: 'Localizando…',
     locate_failed: 'Não foi possível obter sua localização',
@@ -3410,6 +3418,13 @@ let currentLocationMarker = null;
 let currentDirectionMarker = null;
 let currentAccuracyCircle = null;
 let compassListenerAdded = false;
+let latestDeviceHeading = null;
+let headingVectorX = null;
+let headingVectorY = null;
+let lastHeadingUpdateAt = 0;
+let lastRenderedDeviceHeading = null;
+let absoluteHeadingSeen = false;
+let mapHeadingMode = 'north';
 
 // 上向きの矢印(向き0度=北)のGoogle Maps Symbol定義。rotationプロパティで回転させる。
 function currentLocationIcon(heading){
@@ -3471,6 +3486,7 @@ function renderCurrentLocation(pos){
   });
   mapOverlays.push(currentAccuracyCircle, currentDirectionMarker, currentLocationMarker);
   enableCompassHeading();
+  updateDirectionMarkerForMap();
   return position;
 }
 
@@ -3517,17 +3533,45 @@ function mapLocateMe(){
 }
 
 // 地図右下の「コンパス」ボタン：2本指ジェスチャー等で回転した地図の向きを北向きに戻す
-function mapResetNorth(){
+function normalizeHeading(value){
+  return (Number(value) % 360 + 360) % 360;
+}
+function headingDifference(a, b){
+  return Math.abs(((a - b + 540) % 360) - 180);
+}
+function updateDirectionMarkerForMap(){
+  if(!currentDirectionMarker || latestDeviceHeading == null) return;
+  const mapHeading = Number(googleMap?.getHeading?.() || 0);
+  currentDirectionMarker.setIcon(currentDirectionIcon(normalizeHeading(latestDeviceHeading - mapHeading)));
+  currentDirectionMarker.setVisible(true);
+}
+function toggleMapHeadingMode(){
   if(!googleMap) return;
-  try{ googleMap.setHeading(0); }catch(e){ /* 対応していない地図タイプの場合は何もしない */ }
+  if(mapHeadingMode === 'device'){
+    mapHeadingMode = 'north';
+    try{ googleMap.setHeading(0); }catch(e){}
+  }else if(latestDeviceHeading != null){
+    mapHeadingMode = 'device';
+    try{ googleMap.setHeading(latestDeviceHeading); }catch(e){}
+  }else{
+    alert(t('compass_waiting'));
+  }
   try{ googleMap.setTilt(0); }catch(e){}
   updateMapCompassIcon();
 }
 function updateMapCompassIcon(){
+  const btn = document.getElementById('mapCompassBtn');
   const icon = document.querySelector('#mapCompassBtn svg');
   if(!icon || !googleMap) return;
   const heading = Number(googleMap.getHeading?.() || 0);
   icon.style.transform = `rotate(${-heading}deg)`;
+  if(btn){
+    const headingUp = mapHeadingMode === 'device';
+    btn.classList.toggle('is-heading-up', headingUp);
+    btn.title = headingUp ? '北を上に戻す' : '向いている方向を上にする';
+    btn.setAttribute('aria-label', btn.title);
+  }
+  updateDirectionMarkerForMap();
 }
 
 function showCurrentLocation(){
@@ -3553,15 +3597,33 @@ function enableCompassHeading(){
   compassListenerAdded = true;
 
   const handleOrientation = (event)=>{
+    if(event.type === 'deviceorientationabsolute') absoluteHeadingSeen = true;
+    if(event.type === 'deviceorientation' && absoluteHeadingSeen) return;
     let heading = null;
     if(typeof event.webkitCompassHeading === 'number'){
       heading = event.webkitCompassHeading; // iOS Safari
     } else if(typeof event.alpha === 'number'){
       heading = 360 - event.alpha; // Android: alphaは反時計回りのため向きを反転
     }
-    if(heading == null || !currentDirectionMarker) return;
-    currentDirectionMarker.setIcon(currentDirectionIcon(heading));
-    currentDirectionMarker.setVisible(true);
+    if(heading == null) return;
+    const now = performance.now();
+    if(now - lastHeadingUpdateAt < 100) return;
+    lastHeadingUpdateAt = now;
+
+    const radians = normalizeHeading(heading) * Math.PI / 180;
+    const alpha = 0.14;
+    if(headingVectorX == null || headingVectorY == null){
+      headingVectorX = Math.cos(radians);
+      headingVectorY = Math.sin(radians);
+    }else{
+      headingVectorX = (1 - alpha) * headingVectorX + alpha * Math.cos(radians);
+      headingVectorY = (1 - alpha) * headingVectorY + alpha * Math.sin(radians);
+    }
+    const smoothed = normalizeHeading(Math.atan2(headingVectorY, headingVectorX) * 180 / Math.PI);
+    if(lastRenderedDeviceHeading != null && headingDifference(smoothed, lastRenderedDeviceHeading) < 2.5) return;
+    latestDeviceHeading = smoothed;
+    lastRenderedDeviceHeading = smoothed;
+    updateDirectionMarkerForMap();
   };
 
   // iOS 13+ ではジェスチャー起点での許可要求が必要。Androidでは通常不要。
@@ -3613,6 +3675,7 @@ async function openMap(fromNo, toNo, mode, note, distanceKm, busResult){
       zoomControl: true,
       gestureHandling: 'greedy', // 1本指パン・ピンチズーム・2本指回転を全て地図側で処理する
     });
+    mapHeadingMode = 'north';
     googleMap.addListener('heading_changed', updateMapCompassIcon);
     google.maps.event.addListenerOnce(googleMap, 'tilesloaded', ()=>{
       const compassBtn = document.getElementById('mapCompassBtn');
