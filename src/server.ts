@@ -275,6 +275,9 @@ app.get('/overpass-proxy', async (req, res) => {
 // 近接する札所をまとめて問い合わせた場合に外部APIへの重複リクエストを避ける。
 const weatherCache = new Map<string, { expires: number; data: any }>();
 const WEATHER_CACHE_TTL_MS = 30 * 60 * 1000;
+// 取得失敗(available:false)は一時的な要因(コールドスタート直後の名前解決失敗など)のことが多いため、
+// 成功結果より短い時間だけキャッシュし、次のリクエストで早めに再試行されるようにする。
+const WEATHER_FAILURE_CACHE_TTL_MS = 2 * 60 * 1000;
 
 function weatherCacheKey(lat: number, lng: number, date: string): string {
   return `${lat.toFixed(2)},${lng.toFixed(2)},${date}`;
@@ -311,7 +314,8 @@ async function fetchWeatherForPoint(lat: number, lng: number, date: string): Pro
     console.error('[weather-proxy] fetch failed:', e);
   }
 
-  weatherCache.set(key, { expires: Date.now() + WEATHER_CACHE_TTL_MS, data });
+  const ttl = data.available ? WEATHER_CACHE_TTL_MS : WEATHER_FAILURE_CACHE_TTL_MS;
+  weatherCache.set(key, { expires: Date.now() + ttl, data });
   return data;
 }
 
