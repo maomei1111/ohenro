@@ -779,6 +779,7 @@
     cursor:pointer;
   }
   .map-fab svg{width:23px;height:23px;display:block}
+  #mapCompassBtn{visibility:hidden}
   #mapCompassBtn svg{width:25px;height:25px}
   #mapCompassBtn svg{transition:transform .18s ease}
   #mapLocateBtn{color:#1a73e8}
@@ -3565,7 +3566,7 @@ async function openMap(fromNo, toNo, mode, note, distanceKm, busResult){
     googleMap = new google.maps.Map(document.getElementById('mapCanvas'), {
       center: { lat: from.lat, lng: from.lng },
       zoom: 13,
-      renderingType: google.maps.RenderingType.VECTOR,
+      mapId: '{{GOOGLE_MAPS_MAP_ID}}',
       headingInteractionEnabled: true,
       tiltInteractionEnabled: false,
       disableDefaultUI: true,
@@ -3573,6 +3574,12 @@ async function openMap(fromNo, toNo, mode, note, distanceKm, busResult){
       gestureHandling: 'greedy', // 1本指パン・ピンチズーム・2本指回転を全て地図側で処理する
     });
     googleMap.addListener('heading_changed', updateMapCompassIcon);
+    google.maps.event.addListenerOnce(googleMap, 'tilesloaded', ()=>{
+      const compassBtn = document.getElementById('mapCompassBtn');
+      const isVector = googleMap.getRenderingType?.() === google.maps.RenderingType.VECTOR;
+      if(compassBtn) compassBtn.style.visibility = isVector ? 'visible' : 'hidden';
+      if(isVector) googleMap.setHeadingInteractionEnabled?.(true);
+    });
 
     addPinMarker({lat:from.lat, lng:from.lng}, '#1D2B4F', String(from.no).padStart(2,'0'), templeDisplayName(from), 13);
     addPinMarker({lat:to.lat, lng:to.lng}, '#A63A2A', String(to.no).padStart(2,'0'), templeDisplayName(to), 13);

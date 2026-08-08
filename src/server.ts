@@ -159,6 +159,10 @@ app.get('/', (_req, res) => {
   try {
     let html = fs.readFileSync(indexTemplatePath, 'utf-8');
     html = html.replaceAll('{{GOOGLE_MAPS_API_KEY}}', process.env.GOOGLE_MAPS_API_KEY ?? '');
+    html = html.replaceAll(
+      '{{GOOGLE_MAPS_MAP_ID}}',
+      process.env.GOOGLE_MAPS_MAP_ID ?? '75b8f3f04b0ac15a904e6d31'
+    );
     // WebView/ブラウザによる古いバージョンのキャッシュを防ぐ
     res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
     res.type('html').send(html);
