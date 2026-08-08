@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>遍路みちしるべ ― 徒歩×公共交通 周遊プランナー</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script>
   // Google Mapsのスクリプトはasync読み込みのため、下部の本体スクリプトが
   // 実行される前にコールバックが呼ばれることがある。そのため、この受け皿だけは
@@ -785,9 +785,10 @@
   .hero-eyebrow,.lang-switch select,.tab-btn .tab-label,
   .settings-section-title,.settings-secondary-btn,.zukan-stamp .n,
   .stop-time,.stop-title .no,.badge-mode,.summary .figure .num{
-    font-family:'Noto Serif JP',serif !important;
+    font-family:'Shippori Mincho',serif !important;
   }
   body{font-weight:400;background:#ece5d8}
+  html body *{font-family:'Shippori Mincho',serif !important}
 
   #viewZukan,#viewSettings{
     max-width:640px;min-height:100vh;margin:0 auto;padding:0 0 100px;
@@ -805,12 +806,15 @@
     color:var(--sumi);text-align:left;border:1px solid rgba(43,40,37,.1);
     border-radius:18px;background:#fbf7ef;box-shadow:0 8px 22px rgba(13,23,43,.2);
   }
-  .zukan-progress-top{display:flex;align-items:flex-end;justify-content:space-between}
+  .zukan-progress-top{display:flex;align-items:center;justify-content:space-between}
+  .zukan-progress-heading{display:flex;align-items:center;gap:7px;font-size:14px;font-weight:600}
+  .zukan-progress-heading svg{width:18px;height:18px;fill:currentColor}
   .zukan-progress-label{font-size:12px;color:#625d54}
   .zukan-progress-count{font-size:26px;color:var(--sumi);line-height:1}
   .zukan-progress-count small{font-size:13px;color:#777064}
   .zukan-progress-track{height:5px;margin-top:11px;overflow:hidden;border-radius:8px;background:#ded6c9}
   .zukan-progress-fill{height:100%;border-radius:8px;background:var(--vermillion)}
+  .zukan-progress-detail{display:flex;justify-content:space-between;margin-top:9px;font-size:11px;color:#777064}
   #viewZukan .zukan-grid{
     grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;min-height:70vh;
     padding:54px 14px 28px;border-radius:24px 24px 0 0;background:var(--washi-panel);
@@ -839,16 +843,24 @@
   #viewSettings .settings-body{
     min-height:74vh;padding:28px 14px;border-radius:24px 24px 0 0;background:var(--washi-panel);
   }
-  #viewSettings .settings-section-title{margin:0 4px 8px;color:#5f5a51;font-size:12px;font-weight:500;letter-spacing:.08em}
-  #viewSettings .settings-section-desc{margin:0 4px 10px;color:#777064;font-size:12px}
-  #viewSettings .settings-select,#viewSettings .settings-toggle-row,#viewSettings .settings-secondary-btn{
-    min-height:66px;margin:0;padding:16px 18px;border:1px solid rgba(43,40,37,.11);
+  #viewSettings .settings-section-title{margin:0;color:var(--sumi);font-size:15px;font-weight:600;letter-spacing:.04em}
+  #viewSettings .settings-section-desc{margin:3px 0 0;color:#777064;font-size:11px}
+  #viewSettings .settings-reference-card,#viewSettings .settings-secondary-btn{
+    min-height:76px;margin:0 0 14px;padding:14px 16px;border:1px solid rgba(43,40,37,.11);
     border-radius:17px;background:#fbf7ef;color:var(--sumi);font-size:15px;
     box-shadow:0 4px 12px rgba(43,40,37,.08);
   }
-  #viewSettings .settings-toggle-row{margin-bottom:10px}
-  #viewSettings .settings-secondary-btn{margin-top:10px;color:var(--indigo-deep)}
-  #viewSettings .settings-divider{height:0;margin:24px 0;border:0}
+  #viewSettings .settings-reference-card{display:flex;align-items:center;gap:13px}
+  #viewSettings .settings-reference-icon{width:28px;height:28px;display:flex;align-items:center;justify-content:center;color:var(--sumi);flex:0 0 auto}
+  #viewSettings .settings-reference-icon svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  #viewSettings .settings-reference-content{min-width:0;flex:1}
+  #viewSettings #settingsLocationStatus{display:block;margin-top:4px;color:#777064;font-size:12px;font-weight:400}
+  #viewSettings .settings-reference-chevron{font-size:23px;color:#777064}
+  #viewSettings .settings-select{min-height:28px;padding:0;border:0;background:transparent;box-shadow:none;font-size:13px;color:#777064;appearance:none}
+  #viewSettings .settings-toggle-row{display:flex;align-items:center;margin:0;padding:0;border:0;background:transparent;box-shadow:none}
+  #viewSettings .settings-toggle-row>span{display:none}
+  #viewSettings .settings-secondary-btn{min-height:60px;margin-top:0;color:var(--indigo-deep)}
+  #viewSettings .settings-divider{display:none}
   #viewSettings .toggle-switch{width:48px;height:28px}
   #viewSettings .toggle-switch input:checked + .toggle-slider{background:var(--vermillion)}
   #viewSettings .toggle-switch input:checked + .toggle-slider::before{transform:translateX(20px)}
@@ -862,7 +874,7 @@
   .tab-btn .tab-icon{width:22px;height:22px;display:flex;align-items:center;justify-content:center}
   .tab-btn .tab-icon svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
   .tab-btn .tab-label{font-size:11px;font-weight:500}
-  .tab-btn.active{color:var(--vermillion);background:rgba(166,58,42,.06)}
+  .tab-btn.active{color:var(--vermillion);background:transparent}
   @media(min-width:700px){.bottom-tab-bar{max-width:612px;margin:0 auto}}
 </style>
 </head>
@@ -2035,6 +2047,8 @@ function updateProgressLabel(){
 // ---- 下部タブバー（HOME / 図鑑 / 設定の切り替え）----
 // ==================================================================
 function switchTab(tab){
+  const hero = document.querySelector('body > .hero');
+  if(hero) hero.style.display = tab==='home' ? '' : 'none';
   document.getElementById('viewHome').style.display = tab==='home' ? '' : 'none';
   document.getElementById('viewZukan').style.display = tab==='zukan' ? '' : 'none';
   document.getElementById('viewSettings').style.display = tab==='settings' ? '' : 'none';
@@ -2055,6 +2069,39 @@ function applyReferenceVisuals(){
     const icon = document.querySelector(`#${id} .tab-icon`);
     if(icon) icon.innerHTML = svg;
   });
+  decorateSettingsCards();
+}
+function decorateSettingsCards(){
+  const body = document.querySelector('#viewSettings .settings-body');
+  if(!body || body.dataset.decorated === 'true') return;
+  body.dataset.decorated = 'true';
+  const titles = [...body.querySelectorAll('.settings-section-title')];
+  const languageTitle = titles[0];
+  const locationTitle = titles[1];
+  const languageSelect = document.getElementById('langSelect');
+  const locationDesc = body.querySelector('.settings-section-desc');
+  const locationRow = body.querySelector('.settings-toggle-row');
+  const locationStatus = document.getElementById('settingsLocationStatus');
+
+  if(languageTitle && languageSelect){
+    const card = document.createElement('div');
+    card.className = 'settings-reference-card';
+    card.innerHTML = '<div class="settings-reference-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18"/></svg></div><div class="settings-reference-content"></div><div class="settings-reference-chevron">›</div>';
+    languageTitle.parentNode.insertBefore(card,languageTitle);
+    const content = card.querySelector('.settings-reference-content');
+    content.append(languageTitle,languageSelect);
+  }
+  if(locationTitle && locationRow){
+    const card = document.createElement('div');
+    card.className = 'settings-reference-card';
+    card.innerHTML = '<div class="settings-reference-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0z"/><circle cx="12" cy="10" r="2.5"/></svg></div><div class="settings-reference-content"></div>';
+    locationTitle.parentNode.insertBefore(card,locationTitle);
+    const content = card.querySelector('.settings-reference-content');
+    content.append(locationTitle);
+    if(locationDesc) content.append(locationDesc);
+    if(locationStatus) content.append(locationStatus);
+    card.append(locationRow);
+  }
 }
 
 // ==================================================================
@@ -2155,12 +2202,16 @@ function renderZukan(){
   const set = getVisitedSet();
 
   const progressPct = temples.length ? Math.round((set.size / temples.length) * 100) : 0;
+  const progressHeading = currentLang==='ja' ? '進捗' : t('zukan_title');
+  const visitedLabel = currentLang==='ja' ? `訪問済み ${set.size}ヶ所` : `${set.size} visited`;
+  const unvisitedLabel = currentLang==='ja' ? `未訪問 ${temples.length-set.size}ヶ所` : `${temples.length-set.size} remaining`;
   document.getElementById('zukanProgress').innerHTML = `
     <div class="zukan-progress-top">
-      <div class="zukan-progress-label">${t('progress_label', set.size, temples.length)}</div>
+      <div class="zukan-progress-heading"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4.5A3.5 3.5 0 0 1 7.5 1H12v20H7.5A3.5 3.5 0 0 0 4 24zM20 4.5A3.5 3.5 0 0 0 16.5 1H12v20h4.5A3.5 3.5 0 0 1 20 24z"/></svg>${progressHeading}</div>
       <div class="zukan-progress-count">${set.size}<small> / ${temples.length}</small></div>
     </div>
-    <div class="zukan-progress-track"><div class="zukan-progress-fill" style="width:${progressPct}%"></div></div>`;
+    <div class="zukan-progress-track"><div class="zukan-progress-fill" style="width:${progressPct}%"></div></div>
+    <div class="zukan-progress-detail"><span>${visitedLabel}</span><span>${unvisitedLabel}</span></div>`;
 
   const sorted = [...temples].sort((a,b)=>a.no-b.no);
   grid.innerHTML = sorted.map(temple=>{
