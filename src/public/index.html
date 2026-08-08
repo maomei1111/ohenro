@@ -3124,7 +3124,9 @@ async function attachWeather(arrival, dateStr){
     const chip = document.getElementById(`weather-chip-${s.idx}`);
     const w = results[i];
     if(!chip || !w || !w.available) return;
-    chip.textContent = `${weatherIconForCode(w.weathercode)} ${Math.round(w.maxTempC)}°C / ${Math.round(w.precipProbability)}%`;
+    const precipRounded = Math.round(w.precipProbability / 10) * 10; // 日本の天気予報に合わせて10%刻みで表示
+    const humidityText = w.humidity != null ? ` 💧${Math.round(w.humidity)}%` : '';
+    chip.textContent = `${weatherIconForCode(w.weathercode)} ${Math.round(w.maxTempC)}°C ☔${precipRounded}%${humidityText}`;
     chip.classList.toggle('weather-warn', w.precipProbability >= 50 || w.maxTempC >= 33);
   });
 }

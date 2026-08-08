@@ -292,7 +292,7 @@ async function fetchWeatherForPoint(lat: number, lng: number, date: string): Pro
   try {
     const url =
       `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}` +
-      `&daily=weathercode,temperature_2m_max,precipitation_probability_max` +
+      `&daily=weathercode,temperature_2m_max,precipitation_probability_max,relative_humidity_2m_mean` +
       `&timezone=Asia%2FTokyo&start_date=${date}&end_date=${date}`;
     const apiRes = await fetch(url);
     if (apiRes.ok) {
@@ -301,8 +301,15 @@ async function fetchWeatherForPoint(lat: number, lng: number, date: string): Pro
       const weathercode = idx >= 0 ? json.daily.weathercode?.[idx] : undefined;
       const maxTempC = idx >= 0 ? json.daily.temperature_2m_max?.[idx] : undefined;
       const precipProbability = idx >= 0 ? json.daily.precipitation_probability_max?.[idx] : undefined;
+      const humidity = idx >= 0 ? json.daily.relative_humidity_2m_mean?.[idx] : undefined;
       if (weathercode != null && maxTempC != null) {
-        data = { available: true, weathercode, maxTempC, precipProbability: precipProbability ?? 0 };
+        data = {
+          available: true,
+          weathercode,
+          maxTempC,
+          precipProbability: precipProbability ?? 0,
+          humidity: humidity ?? null,
+        };
       } else {
         console.warn(`[weather-proxy] no data for ${date} in response:`, JSON.stringify(json).slice(0, 300));
       }
