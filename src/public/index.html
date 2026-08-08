@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>遍路みちしるべ ― 徒歩×公共交通 周遊プランナー</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@500;700&family=BIZ+UDPGothic:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script>
   // Google Mapsのスクリプトはasync読み込みのため、下部の本体スクリプトが
   // 実行される前にコールバックが呼ばれることがある。そのため、この受け皿だけは
@@ -780,6 +780,90 @@
     color:#5a564f;
     line-height:1.7;
   }
+  /* Reference mockup: typography, album, settings, and floating tabs */
+  body,button,input,select,textarea,label,.mono,
+  .hero-eyebrow,.lang-switch select,.tab-btn .tab-label,
+  .settings-section-title,.settings-secondary-btn,.zukan-stamp .n,
+  .stop-time,.stop-title .no,.badge-mode,.summary .figure .num{
+    font-family:'Noto Serif JP',serif !important;
+  }
+  body{font-weight:400;background:#ece5d8}
+
+  #viewZukan,#viewSettings{
+    max-width:640px;min-height:100vh;margin:0 auto;padding:0 0 100px;
+    background:var(--indigo-deep);
+  }
+  #viewZukan .view-header,#viewSettings .view-header{
+    margin:0;padding:28px 18px 20px;text-align:center;color:var(--washi-panel);
+    background:radial-gradient(circle at 12% 20%,rgba(173,138,80,.12),transparent 28%),var(--indigo-deep);
+  }
+  #viewZukan .view-header h2,#viewSettings .view-header h2{
+    margin:0;color:#fff;font-size:24px;font-weight:600;letter-spacing:.12em;
+  }
+  #viewZukan .view-header .sub{
+    margin:18px 0 -38px;padding:14px 16px 13px;position:relative;z-index:2;
+    color:var(--sumi);text-align:left;border:1px solid rgba(43,40,37,.1);
+    border-radius:18px;background:#fbf7ef;box-shadow:0 8px 22px rgba(13,23,43,.2);
+  }
+  .zukan-progress-top{display:flex;align-items:flex-end;justify-content:space-between}
+  .zukan-progress-label{font-size:12px;color:#625d54}
+  .zukan-progress-count{font-size:26px;color:var(--sumi);line-height:1}
+  .zukan-progress-count small{font-size:13px;color:#777064}
+  .zukan-progress-track{height:5px;margin-top:11px;overflow:hidden;border-radius:8px;background:#ded6c9}
+  .zukan-progress-fill{height:100%;border-radius:8px;background:var(--vermillion)}
+  #viewZukan .zukan-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;min-height:70vh;
+    padding:54px 14px 28px;border-radius:24px 24px 0 0;background:var(--washi-panel);
+  }
+  #viewZukan .zukan-card{
+    aspect-ratio:1/1.12;border-radius:15px;background:#ded6c8;
+    border:1px solid rgba(43,40,37,.12);box-shadow:0 3px 9px rgba(43,40,37,.12);
+  }
+  #viewZukan .zukan-card .zukan-photo,#viewZukan .zukan-card .zukan-noimg{height:64%}
+  #viewZukan .zukan-card .zukan-info{padding:8px 10px 10px;background:#fbf7ef}
+  #viewZukan .zukan-card .zukan-no{
+    position:absolute;top:0;left:0;z-index:3;display:flex;align-items:center;justify-content:center;
+    min-width:38px;height:34px;padding:0 9px;color:#fff;background:var(--vermillion);
+    border-radius:14px 0 10px 0;font-size:16px;font-weight:600;
+  }
+  #viewZukan .zukan-card.unvisited .zukan-no{color:#fff;background:#77746d}
+  #viewZukan .zukan-card .zukan-name{font-size:16px;font-weight:600;line-height:1.45}
+  #viewZukan .zukan-stamp{
+    top:auto;right:8px;bottom:8px;width:46px;height:46px;color:var(--vermillion);
+    background:rgba(251,247,239,.94);border:2px solid var(--vermillion);box-shadow:none;
+  }
+  #viewZukan .zukan-stamp .kanji{font-size:9px}
+  #viewZukan .zukan-stamp .n{font-size:13px}
+  #viewZukan .zukan-visited-star{top:7px;right:7px;left:auto;width:29px;height:29px;font-size:14px}
+
+  #viewSettings .settings-body{
+    min-height:74vh;padding:28px 14px;border-radius:24px 24px 0 0;background:var(--washi-panel);
+  }
+  #viewSettings .settings-section-title{margin:0 4px 8px;color:#5f5a51;font-size:12px;font-weight:500;letter-spacing:.08em}
+  #viewSettings .settings-section-desc{margin:0 4px 10px;color:#777064;font-size:12px}
+  #viewSettings .settings-select,#viewSettings .settings-toggle-row,#viewSettings .settings-secondary-btn{
+    min-height:66px;margin:0;padding:16px 18px;border:1px solid rgba(43,40,37,.11);
+    border-radius:17px;background:#fbf7ef;color:var(--sumi);font-size:15px;
+    box-shadow:0 4px 12px rgba(43,40,37,.08);
+  }
+  #viewSettings .settings-toggle-row{margin-bottom:10px}
+  #viewSettings .settings-secondary-btn{margin-top:10px;color:var(--indigo-deep)}
+  #viewSettings .settings-divider{height:0;margin:24px 0;border:0}
+  #viewSettings .toggle-switch{width:48px;height:28px}
+  #viewSettings .toggle-switch input:checked + .toggle-slider{background:var(--vermillion)}
+  #viewSettings .toggle-switch input:checked + .toggle-slider::before{transform:translateX(20px)}
+
+  .bottom-tab-bar{
+    left:14px;right:14px;bottom:12px;min-height:68px;padding:5px 8px calc(5px + env(safe-area-inset-bottom,0));
+    border:1px solid rgba(43,40,37,.13);border-radius:23px;background:rgba(251,247,239,.96);
+    box-shadow:0 10px 30px rgba(29,43,79,.2);backdrop-filter:blur(16px);overflow:hidden;
+  }
+  .tab-btn{min-height:56px;gap:4px;padding:7px 0 5px;border-radius:17px}
+  .tab-btn .tab-icon{width:22px;height:22px;display:flex;align-items:center;justify-content:center}
+  .tab-btn .tab-icon svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .tab-btn .tab-label{font-size:11px;font-weight:500}
+  .tab-btn.active{color:var(--vermillion);background:rgba(166,58,42,.06)}
+  @media(min-width:700px){.bottom-tab-bar{max-width:612px;margin:0 auto}}
 </style>
 </head>
 <body>
@@ -1961,6 +2045,17 @@ function switchTab(tab){
   if(tab==='settings') refreshLocationStatus();
   window.scrollTo(0,0);
 }
+function applyReferenceVisuals(){
+  const icons = {
+    tabHomeBtn:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V20h13v-9.5M9.5 20v-6h5v6"/></svg>',
+    tabZukanBtn:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H12v18H7.5A3.5 3.5 0 0 0 4 23z"/><path d="M20 5.5A3.5 3.5 0 0 0 16.5 2H12v18h4.5A3.5 3.5 0 0 1 20 23z"/></svg>',
+    tabSettingsBtn:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>'
+  };
+  Object.entries(icons).forEach(([id,svg])=>{
+    const icon = document.querySelector(`#${id} .tab-icon`);
+    if(icon) icon.innerHTML = svg;
+  });
+}
 
 // ==================================================================
 // ---- デジタル御朱印モーダル ----
@@ -2059,7 +2154,13 @@ function renderZukan(){
   if(!grid || !temples.length) return;
   const set = getVisitedSet();
 
-  document.getElementById('zukanProgress').textContent = t('progress_label', set.size, temples.length);
+  const progressPct = temples.length ? Math.round((set.size / temples.length) * 100) : 0;
+  document.getElementById('zukanProgress').innerHTML = `
+    <div class="zukan-progress-top">
+      <div class="zukan-progress-label">${t('progress_label', set.size, temples.length)}</div>
+      <div class="zukan-progress-count">${set.size}<small> / ${temples.length}</small></div>
+    </div>
+    <div class="zukan-progress-track"><div class="zukan-progress-fill" style="width:${progressPct}%"></div></div>`;
 
   const sorted = [...temples].sort((a,b)=>a.no-b.no);
   grid.innerHTML = sorted.map(temple=>{
@@ -2072,11 +2173,11 @@ function renderZukan(){
     // スタンプに刻む1文字は、寺名の頭文字(表意文字であれば分かりやすいため日本語名から取る)
     const kanjiChar = (temple.name || '').charAt(0) || '寺';
     return `<div class="zukan-card ${visited?'visited':'unvisited'}" onclick="zukanCardTap(event, ${temple.no})">
+      <div class="zukan-no">${temple.no}</div>
       ${photoHtml}
       ${visited ? `<div class="zukan-stamp" title="${t('zukan_stamp_alt')}"><div class="kanji">${kanjiChar}</div><div class="n">${String(temple.no).padStart(2,'0')}</div></div>` : ''}
       <button type="button" class="zukan-visited-star" onclick="zukanToggleVisited(event, ${temple.no})" title="${visited ? t('visited_unmark') : t('visited_mark')}">${visited ? '★' : '☆'}</button>
       <div class="zukan-info">
-        <div class="zukan-no">${String(temple.no).padStart(2,'0')}</div>
         <div class="zukan-name">${displayName}</div>
       </div>
     </div>`;
@@ -2594,6 +2695,7 @@ function renderResult(arrival){
 // ---- 起動処理: 札所データを取得 → セレクト構築 → 初回計算 ----
 (async function init(){
   applyStaticTranslations();
+  applyReferenceVisuals();
   document.getElementById('timeline').innerHTML = `<div class="segment-note">${t('loading_temples')}</div>`;
   try{
     await loadTemples();
