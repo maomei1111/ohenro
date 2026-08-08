@@ -770,10 +770,26 @@
     border:1px solid rgba(43,40,37,0.15);
     box-shadow:0 2px 6px rgba(0,0,0,0.25);
     font-size:18px;
+    color:#3c4043;
     display:flex; align-items:center; justify-content:center;
     cursor:pointer;
   }
+  .map-fab svg{width:23px;height:23px;display:block}
+  #mapCompassBtn svg{width:25px;height:25px}
+  #mapLocateBtn{color:#1a73e8}
   .map-fab:active{ background:#f0ece0; }
+  .goshuin-action-wrap{
+    padding:14px 18px calc(16px + env(safe-area-inset-bottom,0));
+    background:#fbf7ef;border-top:1px solid rgba(43,40,37,.1);
+  }
+  .goshuin-visit-btn{
+    width:100%;min-height:50px;border:0;border-radius:12px;
+    color:#fff;background:var(--vermillion);font-size:15px;font-weight:700;
+    cursor:pointer;box-shadow:0 3px 8px rgba(166,58,42,.2);
+  }
+  .goshuin-visit-btn.is-visited{
+    color:var(--vermillion);background:#fbf7ef;border:1px solid var(--vermillion);box-shadow:none;
+  }
   .map-modal-foot{
     padding:12px 18px 16px;
     font-size:12px;
@@ -896,7 +912,6 @@
 <div class="view" id="viewHome">
 <div class="wrap">
   <div class="panel">
-    <div class="progress-bar" id="progressLabel"></div>
     <div class="controls">
       <div>
         <label data-i18n="label_start"></label>
@@ -997,7 +1012,7 @@
 <div class="map-overlay" id="goshuinOverlay">
   <div class="map-modal goshuin-modal">
     <div class="map-modal-head">
-      <div><h3 data-i18n="goshuin_title"></h3><div class="sub" id="goshuinVisitedOn"></div></div>
+      <div><h3 id="goshuinTempleName" data-i18n="goshuin_title"></h3><div class="sub" id="goshuinVisitedOn"></div></div>
       <button class="map-close" onclick="closeGoshuin()">&times;</button>
     </div>
     <div class="goshuin-viewer">
@@ -1005,6 +1020,9 @@
         <img class="goshuin-img" id="goshuinImg" src="" alt="">
       </div>
       <div class="goshuin-placeholder" id="goshuinPlaceholder"></div>
+    </div>
+    <div class="goshuin-action-wrap">
+      <button type="button" class="goshuin-visit-btn" id="goshuinVisitBtn" onclick="toggleVisitedFromDetail()"></button>
     </div>
   </div>
 </div>
@@ -1021,8 +1039,8 @@
     <div class="map-canvas-wrap">
       <div id="mapCanvas"></div>
       <div class="map-fab-group">
-        <button type="button" class="map-fab" id="mapCompassBtn" onclick="mapResetNorth()" title="北向きにリセット">🧭</button>
-        <button type="button" class="map-fab" id="mapLocateBtn" onclick="mapLocateMe()" title="現在地を表示">📍</button>
+        <button type="button" class="map-fab" id="mapCompassBtn" onclick="mapResetNorth()" title="北向きにリセット" aria-label="北向きにリセット"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.25" fill="#fff" stroke="#dadce0"/><path d="M12 4.5 15.2 12 12 10.8 8.8 12Z" fill="#ea4335"/><path d="m12 19.5-3.2-7.5 3.2 1.2 3.2-1.2Z" fill="#5f6368"/></svg></button>
+        <button type="button" class="map-fab" id="mapLocateBtn" onclick="mapLocateMe()" title="現在地を表示" aria-label="現在地を表示"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v3M12 19v3M2 12h3M19 12h3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="2.25" fill="currentColor"/></svg></button>
       </div>
     </div>
     <div class="map-modal-foot" id="mapFoot"></div>
@@ -2112,16 +2130,27 @@ function decorateSettingsCards(){
 // 画像のオリジナルサイズ(1024×1536)をベースに座標を定義し、
 // 表示サイズ(320×480)へは CSS scale() で一括変換する。
 // ==================================================================
+let activeZukanTempleNo = null;
 function openGoshuin(no){
+  activeZukanTempleNo = no;
+  const temple = temples.find(item=>item.no===no);
+  const visited = getVisitedSet().has(no);
   const dateStr   = getVisitedDate(no);
   const overlay   = document.getElementById('goshuinOverlay');
   const frame     = document.getElementById('goshuinFrame');
   const img       = document.getElementById('goshuinImg');
   const placeholder = document.getElementById('goshuinPlaceholder');
   const visitedEl = document.getElementById('goshuinVisitedOn');
+  const nameEl = document.getElementById('goshuinTempleName');
+  const visitBtn = document.getElementById('goshuinVisitBtn');
+
+  if(nameEl) nameEl.textContent = temple ? `${String(no).padStart(2,'0')} ${templeDisplayName(temple)}` : t('goshuin_title');
+  visitBtn.textContent = visited ? t('visited_unmark') : t('visited_mark');
+  visitBtn.classList.toggle('is-visited', visited);
 
   const imgPath = `/goshuin/${String(no).padStart(2,'0')}.png`;
-  img.src = imgPath;
+  if(visited) img.src = imgPath;
+  else img.removeAttribute('src');
   img.onerror = ()=>{
     frame.style.display = 'none';
     placeholder.textContent = t('goshuin_no_image');
@@ -2132,8 +2161,19 @@ function openGoshuin(no){
     placeholder.classList.remove('show');
   };
 
+  if(!visited){
+    frame.style.display = 'none';
+    placeholder.textContent = t('goshuin_not_visited');
+    placeholder.classList.add('show');
+  }
   visitedEl.textContent = dateStr ? t('goshuin_visited_on', dateStr) : t('goshuin_not_visited');
   overlay.classList.add('open');
+}
+function toggleVisitedFromDetail(){
+  if(activeZukanTempleNo == null) return;
+  toggleVisited(activeZukanTempleNo, null);
+  renderZukan();
+  openGoshuin(activeZukanTempleNo);
 }
 function closeGoshuin(){
   document.getElementById('goshuinOverlay').classList.remove('open');
@@ -2228,7 +2268,6 @@ function renderZukan(){
       <div class="zukan-no">${temple.no}</div>
       ${photoHtml}
       ${visited ? `<div class="zukan-stamp" title="${t('zukan_stamp_alt')}"><div class="kanji">${kanjiChar}</div><div class="n">${String(temple.no).padStart(2,'0')}</div></div>` : ''}
-      <button type="button" class="zukan-visited-star" onclick="zukanToggleVisited(event, ${temple.no})" title="${visited ? t('visited_unmark') : t('visited_mark')}">${visited ? '★' : '☆'}</button>
       <div class="zukan-info">
         <div class="zukan-name">${displayName}</div>
       </div>
@@ -3163,13 +3202,12 @@ let compassListenerAdded = false;
 // 上向きの矢印(向き0度=北)のGoogle Maps Symbol定義。rotationプロパティで回転させる。
 function currentLocationIcon(heading){
   return {
-    path: 'M 0,-9 L 6,7 L 0,3 L -6,7 Z',
-    fillColor: '#2F6FED',
+    path: google.maps.SymbolPath.CIRCLE,
+    fillColor: '#4285F4',
     fillOpacity: 1,
     strokeColor: '#fff',
-    strokeWeight: 2,
-    scale: 1.4,
-    rotation: heading || 0,
+    strokeWeight: 3,
+    scale: 8,
   };
 }
 
@@ -3193,11 +3231,11 @@ function mapLocateMe(){
     return;
   }
   const btn = document.getElementById('mapLocateBtn');
-  const original = btn.textContent;
+  const original = btn.innerHTML;
   btn.textContent = '…';
   navigator.geolocation.getCurrentPosition(
     (pos)=>{
-      btn.textContent = original;
+      btn.innerHTML = original;
       const { latitude, longitude } = pos.coords;
       if(currentLocationMarker) currentLocationMarker.setMap(null);
       currentLocationMarker = new google.maps.Marker({
@@ -3212,7 +3250,7 @@ function mapLocateMe(){
       enableCompassHeading();
     },
     (err)=>{
-      btn.textContent = original;
+      btn.innerHTML = original;
       console.warn('現在地の取得に失敗しました', err);
       alert(t('zukan_locate_failed'));
     },
