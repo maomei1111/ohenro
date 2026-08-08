@@ -623,6 +623,8 @@
     border-radius:2px;
     padding:12px 14px;
     line-height:1.7;
+    color:var(--indigo-deep);
+    font-weight:500;
     cursor:pointer;
     transition:border-color 0.15s, box-shadow 0.15s;
   }
@@ -778,6 +780,7 @@
   }
   .map-fab svg{width:23px;height:23px;display:block}
   #mapCompassBtn svg{width:25px;height:25px}
+  #mapCompassBtn svg{transition:transform .18s ease}
   #mapLocateBtn{color:#1a73e8}
   .map-fab:active{ background:#f0ece0; }
   .goshuin-action-wrap{
@@ -1185,6 +1188,7 @@ const I18N = {
     btn_locate: '📍 現在地から自動設定',
     locate_searching: '検索中…',
     locate_failed: '現在地を取得できませんでした',
+    locate_outside_area: (km)=>`現在地は四国の札所から約${km}km離れています。四国外では出発札所を自動設定できません。`,
     locate_unsupported: 'この端末では位置情報が使えません',
     btn_share: 'この計画を共有',
     share_copied: 'リンクをコピーしました',
@@ -1288,6 +1292,7 @@ const I18N = {
     btn_locate: '📍 Use my current location',
     locate_searching: 'Locating…',
     locate_failed: 'Could not get your current location',
+    locate_outside_area: (km)=>`You are about ${km}km from the nearest Shikoku temple. The starting temple cannot be set automatically outside Shikoku.`,
     locate_unsupported: 'Location is not supported on this device',
     btn_share: 'Share this plan',
     share_copied: 'Link copied',
@@ -1391,6 +1396,7 @@ const I18N = {
     btn_locate: '📍 현재 위치로 자동 설정',
     locate_searching: '검색 중…',
     locate_failed: '현재 위치를 가져올 수 없습니다',
+    locate_outside_area: (km)=>`현재 위치는 가장 가까운 시코쿠 사찰에서 약 ${km}km 떨어져 있습니다. 시코쿠 밖에서는 출발 사찰을 자동 설정할 수 없습니다.`,
     locate_unsupported: '이 기기에서는 위치 정보를 사용할 수 없습니다',
     btn_share: '이 일정 공유하기',
     share_copied: '링크가 복사되었습니다',
@@ -1494,6 +1500,7 @@ const I18N = {
     btn_locate: '📍 使用当前位置自动设置',
     locate_searching: '定位中…',
     locate_failed: '无法获取当前位置',
+    locate_outside_area: (km)=>`当前位置距离最近的四国寺院约${km}公里。在四国以外无法自动设置出发寺院。`,
     locate_unsupported: '此设备不支持位置信息',
     btn_share: '分享此行程',
     share_copied: '链接已复制',
@@ -1597,6 +1604,7 @@ const I18N = {
     btn_locate: '📍 使用目前位置自動設定',
     locate_searching: '定位中…',
     locate_failed: '無法取得目前位置',
+    locate_outside_area: (km)=>`目前位置距離最近的四國寺院約${km}公里。在四國以外無法自動設定出發寺院。`,
     locate_unsupported: '此裝置不支援位置資訊',
     btn_share: '分享此行程',
     share_copied: '連結已複製',
@@ -1700,6 +1708,7 @@ const I18N = {
     btn_locate: '📍 Aktuellen Standort verwenden',
     locate_searching: 'Standort wird ermittelt…',
     locate_failed: 'Standort konnte nicht ermittelt werden',
+    locate_outside_area: (km)=>`Sie sind etwa ${km} km vom nächsten Shikoku-Tempel entfernt. Außerhalb Shikokus kann der Starttempel nicht automatisch festgelegt werden.`,
     locate_unsupported: 'Standortdienste werden auf diesem Gerät nicht unterstützt',
     btn_share: 'Diesen Plan teilen',
     share_copied: 'Link kopiert',
@@ -1803,6 +1812,7 @@ const I18N = {
     btn_locate: '📍 Usar minha localização atual',
     locate_searching: 'Localizando…',
     locate_failed: 'Não foi possível obter sua localização',
+    locate_outside_area: (km)=>`Você está a cerca de ${km} km do templo mais próximo em Shikoku. Fora de Shikoku, o templo inicial não pode ser definido automaticamente.`,
     locate_unsupported: 'Localização não é compatível com este dispositivo',
     btn_share: 'Compartilhar este plano',
     share_copied: 'Link copiado',
@@ -2515,6 +2525,7 @@ function zukanCardTap(evt, no){
   openGoshuin(no);
 }
 
+const MAX_AUTO_START_DISTANCE_M = 50000;
 function setStartFromLocation(){
   if(!isLocationUsageEnabled()){
     alert(t('location_app_disabled'));
@@ -2540,6 +2551,10 @@ function setStartFromLocation(){
       btn.textContent = originalText;
       btn.disabled = false;
       if(nearest){
+        if(minDist > MAX_AUTO_START_DISTANCE_M){
+          alert(t('locate_outside_area', Math.round(minDist / 1000)));
+          return;
+        }
         startSel.value = nearest.no;
         runPlanner();
       }
@@ -3449,6 +3464,13 @@ function mapResetNorth(){
   if(!googleMap) return;
   try{ googleMap.setHeading(0); }catch(e){ /* 対応していない地図タイプの場合は何もしない */ }
   try{ googleMap.setTilt(0); }catch(e){}
+  updateMapCompassIcon();
+}
+function updateMapCompassIcon(){
+  const icon = document.querySelector('#mapCompassBtn svg');
+  if(!icon || !googleMap) return;
+  const heading = Number(googleMap.getHeading?.() || 0);
+  icon.style.transform = `rotate(${-heading}deg)`;
 }
 
 function showCurrentLocation(){
@@ -3534,10 +3556,14 @@ async function openMap(fromNo, toNo, mode, note, distanceKm, busResult){
     googleMap = new google.maps.Map(document.getElementById('mapCanvas'), {
       center: { lat: from.lat, lng: from.lng },
       zoom: 13,
+      renderingType: google.maps.RenderingType.VECTOR,
+      headingInteractionEnabled: true,
+      tiltInteractionEnabled: false,
       disableDefaultUI: true,
       zoomControl: true,
       gestureHandling: 'greedy', // 1本指パン・ピンチズーム・2本指回転を全て地図側で処理する
     });
+    googleMap.addListener('heading_changed', updateMapCompassIcon);
 
     addPinMarker({lat:from.lat, lng:from.lng}, '#1D2B4F', String(from.no).padStart(2,'0'), templeDisplayName(from), 13);
     addPinMarker({lat:to.lat, lng:to.lng}, '#A63A2A', String(to.no).padStart(2,'0'), templeDisplayName(to), 13);
