@@ -300,7 +300,12 @@ async function fetchWeatherForPoint(lat: number, lng: number, date: string): Pro
       const precipProbability = idx >= 0 ? json.daily.precipitation_probability_max?.[idx] : undefined;
       if (weathercode != null && maxTempC != null) {
         data = { available: true, weathercode, maxTempC, precipProbability: precipProbability ?? 0 };
+      } else {
+        console.warn(`[weather-proxy] no data for ${date} in response:`, JSON.stringify(json).slice(0, 300));
       }
+    } else {
+      const bodyText = await apiRes.text().catch(() => '');
+      console.warn(`[weather-proxy] open-meteo responded ${apiRes.status} for ${url}: ${bodyText.slice(0, 300)}`);
     }
   } catch (e) {
     console.error('[weather-proxy] fetch failed:', e);
