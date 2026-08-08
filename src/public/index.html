@@ -799,6 +799,20 @@
     color:#111;background:transparent;font-size:clamp(15px,4.6vw,20px);
     line-height:1;letter-spacing:.03em;white-space:nowrap;
   }
+  .zukan-goshuin-area{width:100%;height:82%;display:flex;align-items:center;justify-content:center;background:#fff}
+  .zukan-goshuin-sheet{position:relative;height:100%;aspect-ratio:2/3;max-width:100%;background:#fff}
+  .zukan-goshuin-sheet .zukan-photo{width:100%;height:100%;object-fit:contain}
+  .zukan-card-date-overlay{
+    position:absolute;left:4.8%;bottom:5.2%;writing-mode:vertical-rl;text-orientation:upright;
+    padding:3px 2px;border:1px solid rgba(190,47,33,.8);border-radius:2px;
+    color:#111;background:rgba(255,255,255,.9);font-family:'Yuji Syuku',serif !important;
+    font-size:clamp(7px,2vw,10px);line-height:1.05;letter-spacing:.04em;white-space:nowrap;
+  }
+  .zukan-card-date-overlay.goshuin-date-01{
+    left:5.7%;top:56%;bottom:auto;padding:0;border:0;background:transparent;
+    font-size:clamp(7px,1.9vw,9px);line-height:1;letter-spacing:.02em;
+  }
+  .zukan-goshuin-area>.zukan-hidden-goshuin{height:100%}
   .zukan-hidden-goshuin{
     width:100%;height:82%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
     color:#80796e;background:linear-gradient(145deg,#e9e2d5,#d8d0c1);
@@ -867,7 +881,8 @@
     aspect-ratio:3/4.65;border-radius:15px;background:#ded6c8;
     border:1px solid rgba(43,40,37,.12);box-shadow:0 3px 9px rgba(43,40,37,.12);
   }
-  #viewZukan .zukan-card .zukan-photo,#viewZukan .zukan-card .zukan-noimg,#viewZukan .zukan-hidden-goshuin{height:78%}
+  #viewZukan .zukan-card .zukan-goshuin-area,#viewZukan .zukan-card .zukan-noimg,#viewZukan .zukan-hidden-goshuin{height:78%}
+  #viewZukan .zukan-goshuin-area>.zukan-hidden-goshuin{height:100%}
   #viewZukan .zukan-card .zukan-info{padding:8px 10px 10px;background:#fbf7ef}
   #viewZukan .zukan-card .zukan-no{
     position:absolute;top:0;left:0;z-index:3;display:flex;align-items:center;justify-content:center;
@@ -2334,10 +2349,12 @@ function renderZukan(){
     const visited = set.has(temple.no);
     const displayName = templeDisplayName(temple);
     const no = String(temple.no).padStart(2,'0');
-    const visitDate = visited ? formatVisitDate(getVisitedDate(temple.no)) : '';
+    const savedVisitDate = visited ? getVisitedDate(temple.no) : '';
+    const visitDate = savedVisitDate ? formatVisitDate(savedVisitDate) : '';
+    const warekiVisitDate = savedVisitDate ? getWarekiDate(savedVisitDate) : '';
     const hiddenHtml = `<div class="zukan-hidden-goshuin"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span>${t('zukan_unvisited_badge')}</span></div>`;
     const photoHtml = visited
-      ? `<img class="zukan-photo" src="/goshuin/${no}.png" alt="${displayName}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="zukan-hidden-goshuin" style="display:none"><span>${t('goshuin_no_image')}</span></div>`
+      ? `<div class="zukan-goshuin-area"><div class="zukan-goshuin-sheet"><img class="zukan-photo" src="/goshuin/${no}.png" alt="${displayName}" loading="lazy" onerror="this.parentElement.style.display='none';this.parentElement.nextElementSibling.style.display='flex'">${warekiVisitDate ? `<div class="zukan-card-date-overlay goshuin-date-${no}">${warekiVisitDate}</div>` : ''}</div><div class="zukan-hidden-goshuin" style="display:none"><span>${t('goshuin_no_image')}</span></div></div>`
       : hiddenHtml;
     return `<div class="zukan-card ${visited?'visited':'unvisited'}" onclick="zukanCardTap(event, ${temple.no})">
       <div class="zukan-no">${temple.no}</div>
