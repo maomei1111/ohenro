@@ -923,6 +923,13 @@
   #viewSettings .toggle-switch{width:48px;height:28px}
   #viewSettings .toggle-switch input:checked + .toggle-slider{background:var(--vermillion)}
   #viewSettings .toggle-switch input:checked + .toggle-slider::before{transform:translateX(20px)}
+  #viewSettings .settings-theme-card{cursor:pointer}
+  html[data-theme="dark"] body{background:#161c28;color:#f4eee5}
+  html[data-theme="dark"] #viewSettings{background:#101a2d}
+  html[data-theme="dark"] #viewSettings .settings-body{background:#202631}
+  html[data-theme="dark"] #viewSettings .settings-reference-card{background:#2a313d;color:#f4eee5;border-color:rgba(255,255,255,.1)}
+  html[data-theme="dark"] #viewSettings .settings-section-title{color:#f4eee5}
+  html[data-theme="dark"] #viewSettings .settings-select,html[data-theme="dark"] #viewSettings #settingsLocationStatus{color:#cfc8bd}
 
   .bottom-tab-bar{
     left:14px;right:14px;bottom:12px;min-height:68px;padding:5px 8px calc(5px + env(safe-area-inset-bottom,0));
@@ -1037,6 +1044,14 @@
       </label>
     </div>
     <button type="button" class="settings-secondary-btn" onclick="settingsOpenAppSettings()" data-i18n="settings_location_opensettings_btn"></button>
+
+    <div class="settings-divider"></div>
+    <div class="settings-section-title" data-i18n="settings_theme_section"></div>
+    <select class="settings-select" onchange="setTheme(this.value)" id="themeSelect">
+      <option value="auto" data-i18n="theme_auto"></option>
+      <option value="light" data-i18n="theme_light"></option>
+      <option value="dark" data-i18n="theme_dark"></option>
+    </select>
   </div>
 </div>
 
@@ -1100,6 +1115,22 @@
 const __urlLang = new URLSearchParams(location.search).get('lang');
 let currentLang = __urlLang || localStorage.getItem('ohenro_lang') || 'ja';
 if(__urlLang) localStorage.setItem('ohenro_lang', __urlLang);
+let currentTheme = localStorage.getItem('ohenro_theme') || 'auto';
+function applyTheme(theme){
+  currentTheme = theme;
+  const dark = theme === 'dark' || (theme === 'auto' && window.matchMedia?.('(prefers-color-scheme: dark)').matches);
+  document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+}
+function setTheme(theme){
+  localStorage.setItem('ohenro_theme', theme);
+  applyTheme(theme);
+}
+applyTheme(currentTheme);
+if(window.matchMedia){
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', ()=>{
+    if(currentTheme === 'auto') applyTheme('auto');
+  });
+}
 
 const I18N = {
   ja: {
@@ -1175,6 +1206,7 @@ const I18N = {
     tab_zukan: '御朱印',
     tab_settings: '設定',
     settings_language_section: '言語',
+    settings_theme_section: '表示テーマ', theme_auto: '自動', theme_light: 'ライト', theme_dark: 'ダーク',
     goshuin_title: 'デジタル御朱印',
     goshuin_guide: '札所を開き、「訪問済みにする」を押すと御朱印が追加されます。',
     goshuin_not_visited: 'この札所はまだ参拝されていません。',
@@ -1187,6 +1219,7 @@ const I18N = {
     settings_location_granted: '✅ 許可されています',
     settings_location_denied: '❌ 許可されていません',
     settings_location_unknown: '状態を確認できません（ブラウザ版など）',
+    settings_location_prompt: '位置情報はまだ許可されていません',
     settings_location_request_btn: '位置情報の利用を許可する',
     settings_location_opensettings_btn: '端末の設定画面を開く',
     visited_mark: '訪問済みにする',
@@ -1275,6 +1308,7 @@ const I18N = {
     tab_zukan: 'Goshuin',
     tab_settings: 'Settings',
     settings_language_section: 'Language',
+    settings_theme_section: 'Theme', theme_auto: 'Automatic', theme_light: 'Light', theme_dark: 'Dark',
     goshuin_title: 'Digital Goshuin',
     goshuin_guide: 'Open a temple and tap “Mark as visited” to add its goshuin.',
     goshuin_not_visited: 'You have not visited this temple yet.',
@@ -1287,6 +1321,7 @@ const I18N = {
     settings_location_granted: '✅ Allowed',
     settings_location_denied: '❌ Not allowed',
     settings_location_unknown: 'Status unavailable (e.g. in a browser)',
+    settings_location_prompt: 'Location access has not been allowed yet',
     settings_location_request_btn: 'Allow location access',
     settings_location_opensettings_btn: 'Open device settings',
     visited_mark: 'Mark as visited',
@@ -1375,6 +1410,7 @@ const I18N = {
     tab_zukan: '고슈인',
     tab_settings: '설정',
     settings_language_section: '언어',
+    settings_theme_section: '표시 테마', theme_auto: '자동', theme_light: '라이트', theme_dark: '다크',
     goshuin_title: '디지털 어인',
     goshuin_guide: '사찰을 열고 “방문 완료로 표시”를 누르면 고슈인이 추가됩니다.',
     goshuin_not_visited: '이 사찰은 아직 참배하지 않으셨습니다.',
@@ -1387,6 +1423,7 @@ const I18N = {
     settings_location_granted: '✅ 허용됨',
     settings_location_denied: '❌ 허용되지 않음',
     settings_location_unknown: '상태를 확인할 수 없습니다(브라우저 버전 등)',
+    settings_location_prompt: '위치 정보가 아직 허용되지 않았습니다',
     settings_location_request_btn: '위치 정보 사용 허용하기',
     settings_location_opensettings_btn: '기기 설정 화면 열기',
     visited_mark: '방문 완료로 표시',
@@ -1475,6 +1512,7 @@ const I18N = {
     tab_zukan: '御朱印',
     tab_settings: '设置',
     settings_language_section: '语言',
+    settings_theme_section: '显示主题', theme_auto: '自动', theme_light: '浅色', theme_dark: '深色',
     goshuin_title: '数字御朱印',
     goshuin_guide: '打开寺院并点击“标记为已参拜”，即可添加御朱印。',
     goshuin_not_visited: '您尚未参拜此寺院。',
@@ -1487,6 +1525,7 @@ const I18N = {
     settings_location_granted: '✅ 已允许',
     settings_location_denied: '❌ 未允许',
     settings_location_unknown: '无法确认状态（如浏览器版本）',
+    settings_location_prompt: '尚未允许位置信息访问',
     settings_location_request_btn: '允许使用位置信息',
     settings_location_opensettings_btn: '打开设备设置界面',
     visited_mark: '标记为已参拜',
@@ -1575,6 +1614,7 @@ const I18N = {
     tab_zukan: '御朱印',
     tab_settings: '設定',
     settings_language_section: '語言',
+    settings_theme_section: '顯示主題', theme_auto: '自動', theme_light: '淺色', theme_dark: '深色',
     goshuin_title: '數位御朱印',
     goshuin_guide: '開啟寺院並點擊「標記為已參拜」，即可新增御朱印。',
     goshuin_not_visited: '您尚未參拜此寺院。',
@@ -1587,6 +1627,7 @@ const I18N = {
     settings_location_granted: '✅ 已允許',
     settings_location_denied: '❌ 未允許',
     settings_location_unknown: '無法確認狀態（如瀏覽器版本）',
+    settings_location_prompt: '尚未允許位置資訊存取',
     settings_location_request_btn: '允許使用位置資訊',
     settings_location_opensettings_btn: '開啟裝置設定畫面',
     visited_mark: '標記為已參拜',
@@ -1675,6 +1716,7 @@ const I18N = {
     tab_zukan: 'Goshuin',
     tab_settings: 'Einstellungen',
     settings_language_section: 'Sprache',
+    settings_theme_section: 'Darstellung', theme_auto: 'Automatisch', theme_light: 'Hell', theme_dark: 'Dunkel',
     goshuin_title: 'Digitaler Goshuin',
     goshuin_guide: 'Öffnen Sie einen Tempel und tippen Sie auf „Als besucht markieren“, um den Goshuin hinzuzufügen.',
     goshuin_not_visited: 'Sie haben diesen Tempel noch nicht besucht.',
@@ -1687,6 +1729,7 @@ const I18N = {
     settings_location_granted: '✅ Erlaubt',
     settings_location_denied: '❌ Nicht erlaubt',
     settings_location_unknown: 'Status nicht verfügbar (z. B. im Browser)',
+    settings_location_prompt: 'Standortzugriff wurde noch nicht erlaubt',
     settings_location_request_btn: 'Standortzugriff erlauben',
     settings_location_opensettings_btn: 'Geräteeinstellungen öffnen',
     visited_mark: 'Als besucht markieren',
@@ -1775,6 +1818,7 @@ const I18N = {
     tab_zukan: 'Goshuin',
     tab_settings: 'Configurações',
     settings_language_section: 'Idioma',
+    settings_theme_section: 'Tema', theme_auto: 'Automático', theme_light: 'Claro', theme_dark: 'Escuro',
     goshuin_title: 'Goshuin Digital',
     goshuin_guide: 'Abra um templo e toque em “Marcar como visitado” para adicionar o goshuin.',
     goshuin_not_visited: 'Você ainda não visitou este templo.',
@@ -1787,6 +1831,7 @@ const I18N = {
     settings_location_granted: '✅ Permitido',
     settings_location_denied: '❌ Não permitido',
     settings_location_unknown: 'Status indisponível (ex.: versão do navegador)',
+    settings_location_prompt: 'O acesso à localização ainda não foi permitido',
     settings_location_request_btn: 'Permitir acesso à localização',
     settings_location_opensettings_btn: 'Abrir configurações do dispositivo',
     visited_mark: 'Marcar como visitado',
@@ -1843,6 +1888,8 @@ function applyStaticTranslations(){
   });
   const langSelect = document.getElementById('langSelect');
   if(langSelect) langSelect.value = currentLang;
+  const themeSelect = document.getElementById('themeSelect');
+  if(themeSelect) themeSelect.value = currentTheme;
   // 既に日付が選択されていればその値を保持したまま、表示言語(月名・並び順)だけ作り直す
   const existing = document.getElementById('dateFields')?.childElementCount ? getSelectedDateObj() : null;
   buildDateFields(existing);
@@ -2148,7 +2195,9 @@ function decorateSettingsCards(){
   const titles = [...body.querySelectorAll('.settings-section-title')];
   const languageTitle = titles[0];
   const locationTitle = titles[1];
+  const themeTitle = titles[2];
   const languageSelect = document.getElementById('langSelect');
+  const themeSelect = document.getElementById('themeSelect');
   const locationDesc = body.querySelector('.settings-section-desc');
   const locationRow = body.querySelector('.settings-toggle-row');
   const locationStatus = document.getElementById('settingsLocationStatus');
@@ -2171,6 +2220,13 @@ function decorateSettingsCards(){
     if(locationDesc) content.append(locationDesc);
     if(locationStatus) content.append(locationStatus);
     card.append(locationRow);
+  }
+  if(themeTitle && themeSelect){
+    const card = document.createElement('div');
+    card.className = 'settings-reference-card settings-theme-card';
+    card.innerHTML = '<div class="settings-reference-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 15.5A9 9 0 0 1 8.5 3.5 9 9 0 1 0 20.5 15.5z"/></svg></div><div class="settings-reference-content"></div><div class="settings-reference-chevron">›</div>';
+    themeTitle.parentNode.insertBefore(card,themeTitle);
+    card.querySelector('.settings-reference-content').append(themeTitle,themeSelect);
   }
 }
 
@@ -2271,32 +2327,36 @@ function closeGoshuin(){
 // ==================================================================
 // ---- 設定タブ（言語切替・位置情報のトグル）----
 // ==================================================================
-function refreshLocationStatus(){
+async function getLocationPermissionState(){
+  let nativeGranted = false;
+  try{
+    nativeGranted = !!(window.AndroidBridge && typeof window.AndroidBridge.hasLocationPermission === 'function' && window.AndroidBridge.hasLocationPermission());
+  }catch(e){ console.warn('Android permission check failed', e); }
+  if(nativeGranted) return 'granted';
+  if(navigator.permissions?.query){
+    try{ return (await navigator.permissions.query({name:'geolocation'})).state; }
+    catch(e){ console.warn('Browser permission check failed', e); }
+  }
+  return 'unknown';
+}
+async function refreshLocationStatus(){
   const statusEl = document.getElementById('settingsLocationStatus');
   const toggle = document.getElementById('locationToggle');
   if(!statusEl || !toggle) return;
-  // Androidアプリ内であればAndroidBridge経由で正確な許可状態を確認できる。
-  // 通常のブラウザ版では、この方法では確認できないため「不明」と表示し、トグルは操作不可にする。
-  if(window.AndroidBridge && typeof window.AndroidBridge.hasLocationPermission === 'function'){
-    const granted = window.AndroidBridge.hasLocationPermission();
-    statusEl.textContent = granted ? t('settings_location_granted') : t('settings_location_denied');
-    toggle.disabled = false;
-    toggle.checked = granted;
-  }else{
-    statusEl.textContent = t('settings_location_unknown');
-    toggle.disabled = true;
-    toggle.checked = false;
-  }
+  const state = await getLocationPermissionState();
+  toggle.disabled = !navigator.geolocation;
+  toggle.checked = state === 'granted';
+  statusEl.textContent = state === 'granted' ? t('settings_location_granted')
+    : state === 'denied' ? t('settings_location_denied')
+    : state === 'prompt' ? t('settings_location_prompt')
+    : t('settings_location_unknown');
 }
 // トグルON: まだ許可されていなければ、ダミーの位置情報取得を1回行い、許可ダイアログを呼び出す。
 // トグルOFF: JSからは権限を取り消せない仕様(Android/ブラウザ共通)のため、
 //            端末の設定画面を開くよう案内し、トグル自体は実際の状態に戻す。
 function onLocationToggleChange(el){
   const wantsOn = el.checked;
-  const currentlyGranted = window.AndroidBridge && window.AndroidBridge.hasLocationPermission
-    ? window.AndroidBridge.hasLocationPermission() : false;
-
-  if(wantsOn && !currentlyGranted){
+  if(wantsOn){
     if(!navigator.geolocation){
       alert(t('zukan_locate_unsupported'));
       refreshLocationStatus();
@@ -2304,18 +2364,32 @@ function onLocationToggleChange(el){
     }
     navigator.geolocation.getCurrentPosition(
       ()=> refreshLocationStatus(),
-      ()=> refreshLocationStatus(),
+      (err)=>{
+        refreshLocationStatus();
+        handleLocationFailure(err, 'locate_failed');
+      },
       { enableHighAccuracy:false, timeout:8000, maximumAge:0 }
     );
-  }else if(!wantsOn && currentlyGranted){
+  }else{
     // 取り消しはアプリ側からはできないため、設定画面を開くか確認する
     if(window.AndroidBridge && typeof window.AndroidBridge.openAppSettings === 'function'){
       if(confirm(t('location_open_settings_confirm'))){
         window.AndroidBridge.openAppSettings();
       }
     }
-    refreshLocationStatus(); // 実際にはまだ許可されたままなので、トグルを実状態に戻す
+    refreshLocationStatus();
   }
+}
+function handleLocationFailure(err, messageKey){
+  const denied = err && err.code === 1;
+  const canOpenSettings = window.AndroidBridge && typeof window.AndroidBridge.openAppSettings === 'function';
+  if(denied && canOpenSettings){
+    if(confirm(t(messageKey) + '\n\n' + t('location_open_settings_confirm'))){
+      window.AndroidBridge.openAppSettings();
+    }
+    return;
+  }
+  alert(t(messageKey));
 }
 function settingsOpenAppSettings(){
   if(window.AndroidBridge && typeof window.AndroidBridge.openAppSettings === 'function'){
@@ -2457,7 +2531,7 @@ function setStartFromLocation(){
       console.warn('現在地の取得に失敗しました', err);
       btn.textContent = originalText;
       btn.disabled = false;
-      alert(t('locate_failed'));
+      handleLocationFailure(err, 'locate_failed');
     },
     { enableHighAccuracy:true, timeout:8000, maximumAge:30000 }
   );
