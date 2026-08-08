@@ -1823,6 +1823,7 @@ function setLanguage(lang){
   if(endSel.value) params.set('to', endSel.value);
   params.set('date', getSelectedDateStr());
   params.set('time', getSelectedTimeStr());
+  params.set('lang', lang);
   location.search = params.toString();
 }
 
@@ -3112,7 +3113,7 @@ function buildElevationSvg(elevations, distances){
   yTicks.forEach(e=>{
     const y = yForE(e);
     yGrid += `<line x1="${chartLeft}" y1="${y.toFixed(1)}" x2="${w-padX}" y2="${y.toFixed(1)}" stroke="rgba(43,40,37,0.08)" stroke-width="1"></line>`;
-    yLabels += `<text x="${(chartLeft-4).toFixed(1)}" y="${(y+3).toFixed(1)}" font-size="8.5" fill="#8a8578" font-family="JetBrains Mono, monospace" text-anchor="end">${Math.round(e)}m</text>`;
+        yLabels += `<text x="${(chartLeft-4).toFixed(1)}" y="${(y+3).toFixed(1)}" font-size="8.5" fill="#8a8578" font-family="Noto Sans JP, sans-serif" text-anchor="end">${Math.round(e)}m</text>`;
   });
 
   // 距離(X軸)目盛り: 基本は1km刻み。区間が長い場合はラベルが重ならないよう間隔を自動で広げる(2/5/10/20km)
@@ -3126,11 +3127,11 @@ function buildElevationSvg(elevations, distances){
     const x = xForKm(km);
     xGrid += `<line x1="${x.toFixed(1)}" y1="${padY}" x2="${x.toFixed(1)}" y2="${chartH}" stroke="rgba(43,40,37,0.08)" stroke-width="1"></line>`;
     const anchor = km===0 ? 'start' : (km>=totalKm-0.001 ? 'end' : 'middle');
-    xLabels += `<text x="${x.toFixed(1)}" y="${h-2}" font-size="9" fill="#8a8578" font-family="JetBrains Mono, monospace" text-anchor="${anchor}">${km}km</text>`;
+      xLabels += `<text x="${x.toFixed(1)}" y="${h-2}" font-size="9" fill="#8a8578" font-family="Noto Sans JP, sans-serif" text-anchor="${anchor}">${km}km</text>`;
   }
   if(totalKm - Math.floor(totalKm/stepKm)*stepKm > stepKm*0.3){
     const x = xForKm(totalKm);
-    xLabels += `<text x="${x.toFixed(1)}" y="${h-2}" font-size="9" fill="#8a8578" font-family="JetBrains Mono, monospace" text-anchor="end">${totalKm.toFixed(1)}km</text>`;
+    xLabels += `<text x="${x.toFixed(1)}" y="${h-2}" font-size="9" fill="#8a8578" font-family="Noto Sans JP, sans-serif" text-anchor="end">${totalKm.toFixed(1)}km</text>`;
   }
 
   // このアプリらしい演出: 最高地点に金色のマーカーと標高ラベルを表示する
@@ -3141,7 +3142,7 @@ function buildElevationSvg(elevations, distances){
     const labelAbove = py > 16; // 上端に近い場合はラベルを下に出す
     peakMark = `
       <circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="3.2" fill="#AD8A50" stroke="#fff" stroke-width="1.2"></circle>
-      <text x="${px.toFixed(1)}" y="${(labelAbove ? py-7 : py+13).toFixed(1)}" font-size="9" fill="#AD8A50" font-family="JetBrains Mono, monospace" font-weight="700" text-anchor="middle">${Math.round(maxE)}m</text>`;
+        <text x="${px.toFixed(1)}" y="${(labelAbove ? py-7 : py+13).toFixed(1)}" font-size="9" fill="#AD8A50" font-family="Noto Sans JP, sans-serif" font-weight="700" text-anchor="middle">${Math.round(maxE)}m</text>`;
   }
 
   return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" style="display:block;margin-top:6px;">
