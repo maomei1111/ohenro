@@ -478,15 +478,6 @@
     z-index:2;
     box-shadow:0 1px 4px rgba(0,0,0,0.25);
   }
-  .visited-toggle{
-    background:none;
-    border:none;
-    cursor:pointer;
-    font-size:15px;
-    margin-left:6px;
-    vertical-align:middle;
-    color:var(--gold);
-  }
   .honzon-toggle{
     display:inline-block;
     font-size:11px;
@@ -1206,6 +1197,7 @@ const I18N = {
     zukan_checking_location: '現在地を確認中…',
     zukan_too_far: (m)=>`この札所からまだ${m}m離れています。近くまで来てから訪問済みにできます。`,
     zukan_locate_failed: '現在地を取得できませんでした。位置情報の許可を確認してください。',
+    zukan_accuracy_poor: '現在地の精度が低いため確認できませんでした。空が見える場所で、もう一度お試しください。',
     zukan_locate_unsupported: 'この端末では位置情報が利用できません。',
     location_open_settings_confirm: '設定画面を開いて位置情報を許可しますか？',
     settings_open_btn: '⚙️ 設定',
@@ -1311,6 +1303,7 @@ const I18N = {
     zukan_checking_location: 'Checking your location…',
     zukan_too_far: (m)=>`You're still ${m}m from this temple. Get closer to mark it as visited.`,
     zukan_locate_failed: 'Could not get your location. Please check location permissions.',
+    zukan_accuracy_poor: 'Your location is not accurate enough. Move to an open area and try again.',
     zukan_locate_unsupported: 'Location services are not available on this device.',
     location_open_settings_confirm: 'Open app settings to allow location access?',
     settings_open_btn: '⚙️ Settings',
@@ -1416,6 +1409,7 @@ const I18N = {
     zukan_checking_location: '현재 위치 확인 중…',
     zukan_too_far: (m)=>`이 사찰에서 아직 ${m}m 떨어져 있습니다. 가까이 가면 방문 완료로 표시할 수 있습니다.`,
     zukan_locate_failed: '현재 위치를 가져올 수 없었습니다. 위치 정보 권한을 확인해 주세요.',
+    zukan_accuracy_poor: '현재 위치의 정확도가 낮습니다. 하늘이 잘 보이는 곳에서 다시 시도해 주세요.',
     zukan_locate_unsupported: '이 기기에서는 위치 정보를 사용할 수 없습니다.',
     location_open_settings_confirm: '설정 화면을 열어 위치 정보를 허용하시겠습니까?',
     settings_open_btn: '⚙️ 설정',
@@ -1521,6 +1515,7 @@ const I18N = {
     zukan_checking_location: '正在确认当前位置…',
     zukan_too_far: (m)=>`您距离这座寺庙还有${m}米。请靠近后再标记为已参拜。`,
     zukan_locate_failed: '无法获取当前位置。请确认位置信息权限设置。',
+    zukan_accuracy_poor: '当前位置精度不足。请移至开阔处后重试。',
     zukan_locate_unsupported: '此设备无法使用位置信息功能。',
     location_open_settings_confirm: '是否打开设置界面以允许位置信息访问？',
     settings_open_btn: '⚙️ 设置',
@@ -1626,6 +1621,7 @@ const I18N = {
     zukan_checking_location: '正在確認目前位置…',
     zukan_too_far: (m)=>`您距離這座寺廟還有${m}公尺。請靠近後再標記為已參拜。`,
     zukan_locate_failed: '無法取得目前位置。請確認位置資訊權限設定。',
+    zukan_accuracy_poor: '目前位置精度不足。請移至空曠處後再試一次。',
     zukan_locate_unsupported: '此裝置無法使用位置資訊功能。',
     location_open_settings_confirm: '是否開啟設定畫面以允許位置資訊存取？',
     settings_open_btn: '⚙️ 設定',
@@ -1731,6 +1727,7 @@ const I18N = {
     zukan_checking_location: 'Standort wird überprüft…',
     zukan_too_far: (m)=>`Sie sind noch ${m}m von diesem Tempel entfernt. Kommen Sie näher, um ihn als besucht zu markieren.`,
     zukan_locate_failed: 'Standort konnte nicht ermittelt werden. Bitte Standortberechtigung prüfen.',
+    zukan_accuracy_poor: 'Der Standort ist zu ungenau. Gehen Sie an einen freien Ort und versuchen Sie es erneut.',
     zukan_locate_unsupported: 'Standortdienste sind auf diesem Gerät nicht verfügbar.',
     location_open_settings_confirm: 'App-Einstellungen öffnen, um den Standortzugriff zu erlauben?',
     settings_open_btn: '⚙️ Einstellungen',
@@ -1836,6 +1833,7 @@ const I18N = {
     zukan_checking_location: 'Verificando sua localização…',
     zukan_too_far: (m)=>`Você ainda está a ${m}m deste templo. Aproxime-se para marcá-lo como visitado.`,
     zukan_locate_failed: 'Não foi possível obter sua localização. Verifique as permissões de localização.',
+    zukan_accuracy_poor: 'A localização não está precisa o suficiente. Vá para uma área aberta e tente novamente.',
     zukan_locate_unsupported: 'Os serviços de localização não estão disponíveis neste dispositivo.',
     location_open_settings_confirm: 'Abrir as configurações do aplicativo para permitir o acesso à localização?',
     settings_open_btn: '⚙️ Configurações',
@@ -2342,9 +2340,13 @@ function openGoshuin(no){
 function toggleVisitedFromDetail(){
   if(activeZukanTempleNo == null) return;
   if(getVisitedSet().has(activeZukanTempleNo)) return;
-  toggleVisited(activeZukanTempleNo, null);
-  renderZukan();
-  openGoshuin(activeZukanTempleNo);
+  const no = activeZukanTempleNo;
+  const visitBtn = document.getElementById('goshuinVisitBtn');
+  checkTempleProximity(no, visitBtn, ()=>{
+    toggleVisited(no, null);
+    renderZukan();
+    openGoshuin(no);
+  });
 }
 function closeGoshuin(){
   document.getElementById('goshuinOverlay').classList.remove('open');
@@ -2480,10 +2482,70 @@ function renderZukan(){
     </div>`;
   }).join('');
 }
-const ZUKAN_VISIT_RADIUS_M = 500; // この距離以内にいる場合のみ「訪問済み」にできる
-// ⚠️暫定フラグ：デジタル御朱印の日付表示テストのため、一時的に現在地確認をスキップする。
-// テストが終わったら false に戻すこと。
-const ZUKAN_SKIP_LOCATION_CHECK = true;
+const ZUKAN_VISIT_MIN_RADIUS_M = 100;
+const ZUKAN_VISIT_MAX_RADIUS_M = 200;
+
+function checkTempleProximity(no, button, onSuccess){
+  if(!isLocationUsageEnabled()){
+    alert(t('location_app_disabled'));
+    return;
+  }
+  if(!navigator.geolocation){
+    alert(t('zukan_locate_unsupported'));
+    return;
+  }
+  const temple = temples.find(item=>item.no===no);
+  if(!temple || !Number.isFinite(Number(temple.lat)) || !Number.isFinite(Number(temple.lng))){
+    alert(t('zukan_locate_failed'));
+    return;
+  }
+
+  const originalLabel = button ? button.textContent : '';
+  if(button){
+    button.textContent = t('zukan_checking_location');
+    button.disabled = true;
+    button.title = t('zukan_checking_location');
+  }
+  const restoreButton = ()=>{
+    if(!button) return;
+    button.textContent = originalLabel;
+    button.disabled = false;
+    button.title = t('visited_mark');
+  };
+
+  navigator.geolocation.getCurrentPosition(
+    (pos)=>{
+      const accuracy = Number(pos.coords.accuracy);
+      if(!Number.isFinite(accuracy) || accuracy > ZUKAN_VISIT_MAX_RADIUS_M){
+        restoreButton();
+        alert(t('zukan_accuracy_poor'));
+        return;
+      }
+      const allowedDistance = Math.min(
+        ZUKAN_VISIT_MAX_RADIUS_M,
+        Math.max(ZUKAN_VISIT_MIN_RADIUS_M, accuracy)
+      );
+      const distance = Math.round(metersBetween(
+        pos.coords.latitude,
+        pos.coords.longitude,
+        Number(temple.lat),
+        Number(temple.lng)
+      ));
+      if(distance <= allowedDistance){
+        onSuccess(pos, distance);
+      }else{
+        restoreButton();
+        alert(t('zukan_too_far', distance));
+      }
+    },
+    (err)=>{
+      console.warn('現在地の取得に失敗しました', err);
+      restoreButton();
+      alert(t('zukan_locate_failed'));
+    },
+    { enableHighAccuracy:true, timeout:15000, maximumAge:0 }
+  );
+}
 
 function zukanToggleVisited(evt, no){
   evt.stopPropagation(); // カード全体のタップ(詳細ページを開く)と競合しないようにする
@@ -2496,46 +2558,11 @@ function zukanToggleVisited(evt, no){
     return;
   }
 
-  // ⚠️暫定：テスト目的で現在地確認そのものをスキップする
-  if(ZUKAN_SKIP_LOCATION_CHECK){
+  const starBtn = evt.currentTarget;
+  checkTempleProximity(no, starBtn, ()=>{
     toggleVisited(no, null);
     renderZukan();
-    return;
-  }
-
-  // 新たに訪問済みにする場合だけ、現在地を1回だけ取得して近くにいるか確認する
-  // (常時監視ではなく、ボタンを押した瞬間の単発取得なので電池消費は最小限)
-  if(!navigator.geolocation){
-    alert(t('zukan_locate_unsupported'));
-    return;
-  }
-  const starBtn = evt.currentTarget;
-  const originalLabel = starBtn.textContent;
-  starBtn.textContent = '…';
-  starBtn.disabled = true;
-  starBtn.title = t('zukan_checking_location');
-
-  navigator.geolocation.getCurrentPosition(
-    (pos)=>{
-      const temple = temples.find(x=>x.no===no);
-      const dist = Math.round(metersBetween(pos.coords.latitude, pos.coords.longitude, temple.lat, temple.lng));
-      starBtn.disabled = false;
-      if(dist <= ZUKAN_VISIT_RADIUS_M){
-        toggleVisited(no, null);
-        renderZukan();
-      }else{
-        starBtn.textContent = originalLabel;
-        alert(t('zukan_too_far', dist));
-      }
-    },
-    (err)=>{
-      console.warn('現在地の取得に失敗しました', err);
-      starBtn.textContent = originalLabel;
-      starBtn.disabled = false;
-      alert(t('zukan_locate_failed'));
-    },
-    { enableHighAccuracy:true, timeout:10000, maximumAge:0 }
-  );
+  });
 }
 function zukanCardTap(evt, no){
   // 訪問済みかどうかに関わらず、御朱印モーダルを開く
@@ -2980,7 +3007,6 @@ function renderResult(arrival){
       </div>
       <div class="stop-card">
         <div class="stop-title"><span class="no">${String(temple.no).padStart(2,'0')}</span>${displayName}
-          <button type="button" class="visited-toggle" onclick="toggleVisited(${temple.no}, this)" title="${isVisited(temple.no) ? t('visited_unmark') : t('visited_mark')}">${isVisited(temple.no) ? '★' : '☆'}</button>
           <span class="nokyo-badge ${nokyoOver?'nokyo-warn':'nokyo-ok'}">${(nokyoOver? t('nokyo_warn') : t('nokyo_ok'))}${nokyoExtra}</span>
         </div>
         <div class="stop-meta mono">${temple.kana}</div>
