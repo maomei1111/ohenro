@@ -324,7 +324,10 @@
     background:#fff;
     font-size:14px;
     margin-bottom:6px;
+    outline:none;
+    -webkit-tap-highlight-color:transparent;
   }
+  .settings-select:focus,.settings-select:focus-visible{outline:none!important;box-shadow:none!important}
   .settings-divider{
     height:1px;
     background:rgba(43,40,37,0.12);
@@ -591,6 +594,7 @@
     align-items:baseline;
     flex-wrap:wrap;
     gap:4px 8px;
+    color:var(--sumi);
   }
   .stop-title .no{
     color:var(--vermillion);
@@ -1028,7 +1032,7 @@
   <div class="view-header"><h2 data-i18n="settings_title"></h2></div>
   <div class="settings-body">
     <div class="settings-section-title" data-i18n="settings_language_section"></div>
-    <select class="settings-select" onchange="setLanguage(this.value)" id="langSelect">
+    <select class="settings-select" onchange="setLanguage(this.value); this.blur()" id="langSelect">
       <option value="ja">日本語</option>
       <option value="en">English</option>
       <option value="ko">한국어</option>
@@ -1053,7 +1057,7 @@
 
     <div class="settings-divider"></div>
     <div class="settings-section-title" data-i18n="settings_theme_section"></div>
-    <select class="settings-select" onchange="setTheme(this.value)" id="themeSelect">
+    <select class="settings-select" onchange="setTheme(this.value); this.blur()" id="themeSelect">
       <option value="auto" data-i18n="theme_auto"></option>
       <option value="light" data-i18n="theme_light"></option>
       <option value="dark" data-i18n="theme_dark"></option>
