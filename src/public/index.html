@@ -3068,6 +3068,7 @@ function clearMapOverlays(){
   mapOverlays.forEach(o=> o.setMap(null));
   mapOverlays = [];
   currentLocationMarker = null;
+  currentLocationHaloMarker = null;
   currentDirectionMarker = null;
   currentAccuracyCircle = null;
 }
@@ -3415,6 +3416,7 @@ function buildElevationSvg(elevations, distances){
 }
 
 let currentLocationMarker = null;
+let currentLocationHaloMarker = null;
 let currentDirectionMarker = null;
 let currentAccuracyCircle = null;
 let compassListenerAdded = false;
@@ -3437,6 +3439,17 @@ function currentLocationIcon(heading){
     scale: 8,
   };
 }
+function currentLocationHaloIcon(){
+  return {
+    path: google.maps.SymbolPath.CIRCLE,
+    fillColor: '#4285F4',
+    fillOpacity: 0.18,
+    strokeColor: '#4285F4',
+    strokeOpacity: 0.3,
+    strokeWeight: 1,
+    scale: 18,
+  };
+}
 function currentDirectionIcon(heading){
   return {
     path: 'M 0,0 L -12,-28 A 31,31 0 0 1 12,-28 Z',
@@ -3454,6 +3467,7 @@ function renderCurrentLocation(pos){
   const { latitude, longitude, accuracy } = pos.coords;
   const position = {lat:latitude, lng:longitude};
   if(currentLocationMarker) currentLocationMarker.setMap(null);
+  if(currentLocationHaloMarker) currentLocationHaloMarker.setMap(null);
   if(currentDirectionMarker) currentDirectionMarker.setMap(null);
   if(currentAccuracyCircle) currentAccuracyCircle.setMap(null);
 
@@ -3477,6 +3491,13 @@ function renderCurrentLocation(pos){
     visible: false,
     zIndex: 998,
   });
+  currentLocationHaloMarker = new google.maps.Marker({
+    position,
+    map: googleMap,
+    icon: currentLocationHaloIcon(),
+    clickable: false,
+    zIndex: 997,
+  });
   currentLocationMarker = new google.maps.Marker({
     position,
     map: googleMap,
@@ -3484,7 +3505,7 @@ function renderCurrentLocation(pos){
     title: t('current_location'),
     zIndex: 999,
   });
-  mapOverlays.push(currentAccuracyCircle, currentDirectionMarker, currentLocationMarker);
+  mapOverlays.push(currentAccuracyCircle, currentLocationHaloMarker, currentDirectionMarker, currentLocationMarker);
   enableCompassHeading();
   updateDirectionMarkerForMap();
   return position;
