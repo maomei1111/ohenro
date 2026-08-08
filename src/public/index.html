@@ -478,15 +478,6 @@
     z-index:2;
     box-shadow:0 1px 4px rgba(0,0,0,0.25);
   }
-  .visited-toggle{
-    background:none;
-    border:none;
-    cursor:pointer;
-    font-size:15px;
-    margin-left:6px;
-    vertical-align:middle;
-    color:var(--gold);
-  }
   .honzon-toggle{
     display:inline-block;
     font-size:11px;
@@ -2998,7 +2989,6 @@ function renderResult(arrival){
       </div>
       <div class="stop-card">
         <div class="stop-title"><span class="no">${String(temple.no).padStart(2,'0')}</span>${displayName}
-          <button type="button" class="visited-toggle" onclick="zukanToggleVisited(event, ${temple.no})" title="${isVisited(temple.no) ? t('visited_unmark') : t('visited_mark')}">${isVisited(temple.no) ? '★' : '☆'}</button>
           <span class="nokyo-badge ${nokyoOver?'nokyo-warn':'nokyo-ok'}">${(nokyoOver? t('nokyo_warn') : t('nokyo_ok'))}${nokyoExtra}</span>
         </div>
         <div class="stop-meta mono">${temple.kana}</div>
