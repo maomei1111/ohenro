@@ -2365,7 +2365,8 @@ async function refreshLocationStatus(){
   if(!statusEl || !toggle) return;
   const state = await getLocationPermissionState();
   const appEnabled = isLocationUsageEnabled();
-  toggle.disabled = !navigator.geolocation;
+  const nativeRequestAvailable = window.AndroidBridge && typeof window.AndroidBridge.requestLocationPermission === 'function';
+  toggle.disabled = !navigator.geolocation && !nativeRequestAvailable;
   toggle.checked = appEnabled && state === 'granted';
   statusEl.textContent = !appEnabled ? t('settings_location_app_off')
     : state === 'granted' ? t('settings_location_granted')
@@ -2380,6 +2381,10 @@ function onLocationToggleChange(el){
   const wantsOn = el.checked;
   if(wantsOn){
     localStorage.setItem('ohenro_location_enabled', '1');
+    if(window.AndroidBridge && typeof window.AndroidBridge.requestLocationPermission === 'function'){
+      window.AndroidBridge.requestLocationPermission();
+      return;
+    }
     if(!navigator.geolocation){
       alert(t('zukan_locate_unsupported'));
       refreshLocationStatus();
@@ -2403,6 +2408,10 @@ function onLocationToggleChange(el){
     refreshLocationStatus();
   }
 }
+window.__onNativeLocationPermissionResult = function(granted){
+  localStorage.setItem('ohenro_location_enabled', granted ? '1' : '0');
+  refreshLocationStatus();
+};
 function handleLocationFailure(err, messageKey){
   const denied = err && err.code === 1;
   const canOpenSettings = window.AndroidBridge && typeof window.AndroidBridge.openAppSettings === 'function';
