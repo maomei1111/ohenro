@@ -918,7 +918,7 @@
   #viewSettings .settings-select{min-height:28px;padding:0;border:0;background:transparent;box-shadow:none;font-size:13px;color:#777064;appearance:none}
   #viewSettings .settings-toggle-row{display:flex;align-items:center;margin:0;padding:0;border:0;background:transparent;box-shadow:none}
   #viewSettings .settings-toggle-row>span{display:none}
-  #viewSettings .settings-secondary-btn{min-height:60px;margin-top:0;color:var(--indigo-deep)}
+  #viewSettings .settings-secondary-btn{display:none}
   #viewSettings .settings-divider{display:none}
   #viewSettings .toggle-switch{width:48px;height:28px}
   #viewSettings .toggle-switch input:checked + .toggle-slider{background:var(--vermillion)}
@@ -1220,6 +1220,7 @@ const I18N = {
     settings_location_denied: '❌ 許可されていません',
     settings_location_unknown: '状態を確認できません（ブラウザ版など）',
     settings_location_prompt: '位置情報はまだ許可されていません',
+    settings_location_app_off: 'アプリ内でOFFになっています', location_app_disabled: '設定画面で位置情報をONにしてください。',
     settings_location_request_btn: '位置情報の利用を許可する',
     settings_location_opensettings_btn: '端末の設定画面を開く',
     visited_mark: '訪問済みにする',
@@ -1322,6 +1323,7 @@ const I18N = {
     settings_location_denied: '❌ Not allowed',
     settings_location_unknown: 'Status unavailable (e.g. in a browser)',
     settings_location_prompt: 'Location access has not been allowed yet',
+    settings_location_app_off: 'Turned off in the app', location_app_disabled: 'Turn on Location in Settings first.',
     settings_location_request_btn: 'Allow location access',
     settings_location_opensettings_btn: 'Open device settings',
     visited_mark: 'Mark as visited',
@@ -1424,6 +1426,7 @@ const I18N = {
     settings_location_denied: '❌ 허용되지 않음',
     settings_location_unknown: '상태를 확인할 수 없습니다(브라우저 버전 등)',
     settings_location_prompt: '위치 정보가 아직 허용되지 않았습니다',
+    settings_location_app_off: '앱에서 꺼져 있습니다', location_app_disabled: '설정에서 위치 정보를 켜 주세요.',
     settings_location_request_btn: '위치 정보 사용 허용하기',
     settings_location_opensettings_btn: '기기 설정 화면 열기',
     visited_mark: '방문 완료로 표시',
@@ -1526,6 +1529,7 @@ const I18N = {
     settings_location_denied: '❌ 未允许',
     settings_location_unknown: '无法确认状态（如浏览器版本）',
     settings_location_prompt: '尚未允许位置信息访问',
+    settings_location_app_off: '已在应用内关闭', location_app_disabled: '请先在设置中开启位置信息。',
     settings_location_request_btn: '允许使用位置信息',
     settings_location_opensettings_btn: '打开设备设置界面',
     visited_mark: '标记为已参拜',
@@ -1628,6 +1632,7 @@ const I18N = {
     settings_location_denied: '❌ 未允許',
     settings_location_unknown: '無法確認狀態（如瀏覽器版本）',
     settings_location_prompt: '尚未允許位置資訊存取',
+    settings_location_app_off: '已在應用程式內關閉', location_app_disabled: '請先在設定中開啟位置資訊。',
     settings_location_request_btn: '允許使用位置資訊',
     settings_location_opensettings_btn: '開啟裝置設定畫面',
     visited_mark: '標記為已參拜',
@@ -1730,6 +1735,7 @@ const I18N = {
     settings_location_denied: '❌ Nicht erlaubt',
     settings_location_unknown: 'Status nicht verfügbar (z. B. im Browser)',
     settings_location_prompt: 'Standortzugriff wurde noch nicht erlaubt',
+    settings_location_app_off: 'In der App ausgeschaltet', location_app_disabled: 'Aktivieren Sie zuerst den Standort in den Einstellungen.',
     settings_location_request_btn: 'Standortzugriff erlauben',
     settings_location_opensettings_btn: 'Geräteeinstellungen öffnen',
     visited_mark: 'Als besucht markieren',
@@ -1832,6 +1838,7 @@ const I18N = {
     settings_location_denied: '❌ Não permitido',
     settings_location_unknown: 'Status indisponível (ex.: versão do navegador)',
     settings_location_prompt: 'O acesso à localização ainda não foi permitido',
+    settings_location_app_off: 'Desativado no aplicativo', location_app_disabled: 'Ative primeiro a localização nas Configurações.',
     settings_location_request_btn: 'Permitir acesso à localização',
     settings_location_opensettings_btn: 'Abrir configurações do dispositivo',
     visited_mark: 'Marcar como visitado',
@@ -2339,14 +2346,19 @@ async function getLocationPermissionState(){
   }
   return 'unknown';
 }
+function isLocationUsageEnabled(){
+  return localStorage.getItem('ohenro_location_enabled') !== '0';
+}
 async function refreshLocationStatus(){
   const statusEl = document.getElementById('settingsLocationStatus');
   const toggle = document.getElementById('locationToggle');
   if(!statusEl || !toggle) return;
   const state = await getLocationPermissionState();
+  const appEnabled = isLocationUsageEnabled();
   toggle.disabled = !navigator.geolocation;
-  toggle.checked = state === 'granted';
-  statusEl.textContent = state === 'granted' ? t('settings_location_granted')
+  toggle.checked = appEnabled && state === 'granted';
+  statusEl.textContent = !appEnabled ? t('settings_location_app_off')
+    : state === 'granted' ? t('settings_location_granted')
     : state === 'denied' ? t('settings_location_denied')
     : state === 'prompt' ? t('settings_location_prompt')
     : t('settings_location_unknown');
@@ -2357,26 +2369,27 @@ async function refreshLocationStatus(){
 function onLocationToggleChange(el){
   const wantsOn = el.checked;
   if(wantsOn){
+    localStorage.setItem('ohenro_location_enabled', '1');
     if(!navigator.geolocation){
       alert(t('zukan_locate_unsupported'));
       refreshLocationStatus();
       return;
     }
     navigator.geolocation.getCurrentPosition(
-      ()=> refreshLocationStatus(),
+      ()=>{
+        localStorage.setItem('ohenro_location_enabled', '1');
+        refreshLocationStatus();
+      },
       (err)=>{
+        localStorage.setItem('ohenro_location_enabled', '0');
         refreshLocationStatus();
         handleLocationFailure(err, 'locate_failed');
       },
       { enableHighAccuracy:false, timeout:8000, maximumAge:0 }
     );
   }else{
-    // 取り消しはアプリ側からはできないため、設定画面を開くか確認する
-    if(window.AndroidBridge && typeof window.AndroidBridge.openAppSettings === 'function'){
-      if(confirm(t('location_open_settings_confirm'))){
-        window.AndroidBridge.openAppSettings();
-      }
-    }
+    // OS権限は残したまま、このアプリからの位置情報利用だけを停止する。
+    localStorage.setItem('ohenro_location_enabled', '0');
     refreshLocationStatus();
   }
 }
@@ -2503,6 +2516,10 @@ function zukanCardTap(evt, no){
 }
 
 function setStartFromLocation(){
+  if(!isLocationUsageEnabled()){
+    alert(t('location_app_disabled'));
+    return;
+  }
   if(!navigator.geolocation){
     alert(t('locate_unsupported'));
     return;
@@ -3391,6 +3408,10 @@ window.__onLocationPermanentlyDenied = function(){
 // 地図右下の「現在地」ボタン：押した瞬間だけ現在地を取得して地図を移動する(常時監視はしない)
 function mapLocateMe(){
   if(!googleMap) return;
+  if(!isLocationUsageEnabled()){
+    alert(t('location_app_disabled'));
+    return;
+  }
   if(!navigator.geolocation){
     alert(t('zukan_locate_unsupported'));
     return;
@@ -3431,6 +3452,7 @@ function mapResetNorth(){
 }
 
 function showCurrentLocation(){
+  if(!isLocationUsageEnabled()) return;
   if(!navigator.geolocation) return;
   navigator.geolocation.getCurrentPosition(
     (pos)=>{
