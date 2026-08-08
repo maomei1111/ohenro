@@ -587,13 +587,18 @@
     font-weight:700;
     font-size:17px;
     margin:2px 0 4px;
+    display:flex;
+    align-items:baseline;
+    flex-wrap:wrap;
+    gap:4px 8px;
   }
   .stop-title .no{
     color:var(--vermillion);
     font-family:'BIZ UDPGothic', 'Noto Sans JP', sans-serif;
     font-size:13px;
-    margin-right:8px;
+    flex:0 0 auto;
   }
+  .stop-name{min-width:0;flex:1 1 120px;overflow-wrap:anywhere}
   .stop-meta{ font-size:12.5px; color:#5a564f; margin-bottom:8px; }
   .nokyo-badge{
     display:inline-block;
@@ -605,6 +610,11 @@
   }
   .nokyo-ok{ background:#E4EBDD; color:#3E5A2C; }
   .nokyo-warn{ background:var(--warn-bg); color:var(--vermillion); }
+  @media(max-width:520px){
+    .stop{grid-template-columns:52px minmax(0,1fr);gap:10px}
+    .stop-title{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:baseline}
+    .stop-title .nokyo-badge{grid-column:2;justify-self:start;max-width:100%;margin-top:2px;line-height:1.45;white-space:normal}
+  }
 
   .segment-note{
     margin-top:8px;
@@ -1195,7 +1205,7 @@ const I18N = {
     zukan_unvisited_badge: '未参拝',
     zukan_stamp_alt: '御朱印風スタンプ',
     zukan_checking_location: '現在地を確認中…',
-    zukan_too_far: (m)=>`この札所から現在地まで${m}m離れています。札所の近くで再度お試しください。`,
+    zukan_too_far: (d)=>`この札所から現在地まで${d}離れています。札所の近くで再度お試しください。`,
     zukan_locate_failed: '現在地を正確に取得できませんでした。位置情報をONにし、しばらく待ってからもう一度お試しください。',
     zukan_locate_unsupported: 'この端末では位置情報が利用できません。',
     location_open_settings_confirm: '設定画面を開いて位置情報を許可しますか？',
@@ -1224,7 +1234,9 @@ const I18N = {
     visited_mark: '訪問済みにする',
     visited_unmark: '訪問済みを解除',
     nokyo_countdown: (min)=>`納経受付終了まであと${min}分`,
-    nokyo_over: (min)=>`納経受付終了時刻を${min}分超過`,
+    nokyo_over: (d)=>`納経受付終了時刻を${d}超過`,
+    duration_hm: (h,m)=>`${h}時間${m}分`,
+    duration_m: (m)=>`${m}分`,
     temple_info_toggle: '御本尊を見る',
     label_honzon: '御本尊',
     temple_detail_link: '由来・見どころを見る →',
@@ -1300,7 +1312,7 @@ const I18N = {
     zukan_unvisited_badge: 'Not yet visited',
     zukan_stamp_alt: 'Goshuin-style stamp',
     zukan_checking_location: 'Checking your location…',
-    zukan_too_far: (m)=>`Your current location is ${m}m from this temple. Please try again near the temple.`,
+    zukan_too_far: (d)=>`Your current location is ${d} from this temple. Please try again near the temple.`,
     zukan_locate_failed: 'Could not determine your location accurately. Turn on location services, wait a moment, and try again.',
     zukan_locate_unsupported: 'Location services are not available on this device.',
     location_open_settings_confirm: 'Open app settings to allow location access?',
@@ -1329,7 +1341,9 @@ const I18N = {
     visited_mark: 'Mark as visited',
     visited_unmark: 'Unmark as visited',
     nokyo_countdown: (min)=>`${min} min until the stamp office closes`,
-    nokyo_over: (min)=>`${min} min past stamp office closing time`,
+    nokyo_over: (d)=>`${d} past stamp office closing time`,
+    duration_hm: (h,m)=>`${h} hr${h===1?'':'s'} ${m} min`,
+    duration_m: (m)=>`${m} min`,
     temple_info_toggle: 'View principal deity',
     label_honzon: 'Principal image',
     temple_detail_link: 'History & highlights →',
@@ -1405,7 +1419,7 @@ const I18N = {
     zukan_unvisited_badge: '미참배',
     zukan_stamp_alt: '고슈인 스타일 스탬프',
     zukan_checking_location: '현재 위치 확인 중…',
-    zukan_too_far: (m)=>`현재 위치는 이 사찰에서 ${m}m 떨어져 있습니다. 사찰 근처에서 다시 시도해 주세요.`,
+    zukan_too_far: (d)=>`현재 위치는 이 사찰에서 ${d} 떨어져 있습니다. 사찰 근처에서 다시 시도해 주세요.`,
     zukan_locate_failed: '현재 위치를 정확하게 가져올 수 없습니다. 위치 정보를 켜고 잠시 기다린 후 다시 시도해 주세요.',
     zukan_locate_unsupported: '이 기기에서는 위치 정보를 사용할 수 없습니다.',
     location_open_settings_confirm: '설정 화면을 열어 위치 정보를 허용하시겠습니까?',
@@ -1434,7 +1448,9 @@ const I18N = {
     visited_mark: '방문 완료로 표시',
     visited_unmark: '방문 완료 해제',
     nokyo_countdown: (min)=>`납경소 마감까지 ${min}분`,
-    nokyo_over: (min)=>`납경소 마감 시간 ${min}분 초과`,
+    nokyo_over: (d)=>`납경소 마감 시간 ${d} 초과`,
+    duration_hm: (h,m)=>`${h}시간 ${m}분`,
+    duration_m: (m)=>`${m}분`,
     temple_info_toggle: '본존불 보기',
     label_honzon: '본존불',
     temple_detail_link: '유래・볼거리 보기 →',
@@ -1510,7 +1526,7 @@ const I18N = {
     zukan_unvisited_badge: '未参拜',
     zukan_stamp_alt: '御朱印风印章',
     zukan_checking_location: '正在确认当前位置…',
-    zukan_too_far: (m)=>`当前位置距离这座寺庙${m}米。请在寺庙附近重试。`,
+    zukan_too_far: (d)=>`当前位置距离这座寺庙${d}。请在寺庙附近重试。`,
     zukan_locate_failed: '无法准确获取当前位置。请开启位置信息，稍等片刻后重试。',
     zukan_locate_unsupported: '此设备无法使用位置信息功能。',
     location_open_settings_confirm: '是否打开设置界面以允许位置信息访问？',
@@ -1539,7 +1555,9 @@ const I18N = {
     visited_mark: '标记为已参拜',
     visited_unmark: '取消已参拜标记',
     nokyo_countdown: (min)=>`距纳经所关闭还有${min}分钟`,
-    nokyo_over: (min)=>`已超过纳经所关闭时间${min}分钟`,
+    nokyo_over: (d)=>`已超过纳经所关闭时间${d}`,
+    duration_hm: (h,m)=>`${h}小时${m}分钟`,
+    duration_m: (m)=>`${m}分钟`,
     temple_info_toggle: '查看本尊',
     label_honzon: '本尊',
     temple_detail_link: '查看历史与看点 →',
@@ -1615,7 +1633,7 @@ const I18N = {
     zukan_unvisited_badge: '未參拜',
     zukan_stamp_alt: '御朱印風印章',
     zukan_checking_location: '正在確認目前位置…',
-    zukan_too_far: (m)=>`目前位置距離這座寺廟${m}公尺。請在寺廟附近再試一次。`,
+    zukan_too_far: (d)=>`目前位置距離這座寺廟${d}。請在寺廟附近再試一次。`,
     zukan_locate_failed: '無法準確取得目前位置。請開啟位置資訊，稍候片刻後再試一次。',
     zukan_locate_unsupported: '此裝置無法使用位置資訊功能。',
     location_open_settings_confirm: '是否開啟設定畫面以允許位置資訊存取？',
@@ -1644,7 +1662,9 @@ const I18N = {
     visited_mark: '標記為已參拜',
     visited_unmark: '取消已參拜標記',
     nokyo_countdown: (min)=>`距納經所關閉還有${min}分鐘`,
-    nokyo_over: (min)=>`已超過納經所關閉時間${min}分鐘`,
+    nokyo_over: (d)=>`已超過納經所關閉時間${d}`,
+    duration_hm: (h,m)=>`${h}小時${m}分鐘`,
+    duration_m: (m)=>`${m}分鐘`,
     temple_info_toggle: '查看本尊',
     label_honzon: '本尊',
     temple_detail_link: '查看歷史與看點 →',
@@ -1720,7 +1740,7 @@ const I18N = {
     zukan_unvisited_badge: 'Noch nicht besucht',
     zukan_stamp_alt: 'Goshuin-Stempel',
     zukan_checking_location: 'Standort wird überprüft…',
-    zukan_too_far: (m)=>`Ihr aktueller Standort ist ${m}m von diesem Tempel entfernt. Versuchen Sie es in der Nähe des Tempels erneut.`,
+    zukan_too_far: (d)=>`Ihr aktueller Standort ist ${d} von diesem Tempel entfernt. Versuchen Sie es in der Nähe des Tempels erneut.`,
     zukan_locate_failed: 'Ihr Standort konnte nicht genau ermittelt werden. Aktivieren Sie die Standortdienste, warten Sie kurz und versuchen Sie es erneut.',
     zukan_locate_unsupported: 'Standortdienste sind auf diesem Gerät nicht verfügbar.',
     location_open_settings_confirm: 'App-Einstellungen öffnen, um den Standortzugriff zu erlauben?',
@@ -1749,7 +1769,9 @@ const I18N = {
     visited_mark: 'Als besucht markieren',
     visited_unmark: 'Markierung entfernen',
     nokyo_countdown: (min)=>`Noch ${min} Min. bis das Stempelbüro schließt`,
-    nokyo_over: (min)=>`${min} Min. nach Schließung des Stempelbüros`,
+    nokyo_over: (d)=>`${d} nach Schließung des Stempelbüros`,
+    duration_hm: (h,m)=>`${h} Std. ${m} Min.`,
+    duration_m: (m)=>`${m} Min.`,
     temple_info_toggle: 'Hauptgottheit anzeigen',
     label_honzon: 'Hauptgottheit',
     temple_detail_link: 'Geschichte & Highlights →',
@@ -1825,7 +1847,7 @@ const I18N = {
     zukan_unvisited_badge: 'Não visitado',
     zukan_stamp_alt: 'Selo estilo Goshuin',
     zukan_checking_location: 'Verificando sua localização…',
-    zukan_too_far: (m)=>`Sua localização atual está a ${m}m deste templo. Tente novamente perto do templo.`,
+    zukan_too_far: (d)=>`Sua localização atual está a ${d} deste templo. Tente novamente perto do templo.`,
     zukan_locate_failed: 'Não foi possível determinar sua localização com precisão. Ative a localização, aguarde um momento e tente novamente.',
     zukan_locate_unsupported: 'Os serviços de localização não estão disponíveis neste dispositivo.',
     location_open_settings_confirm: 'Abrir as configurações do aplicativo para permitir o acesso à localização?',
@@ -1854,7 +1876,9 @@ const I18N = {
     visited_mark: 'Marcar como visitado',
     visited_unmark: 'Desmarcar visitado',
     nokyo_countdown: (min)=>`Faltam ${min} min para o escritório de carimbos fechar`,
-    nokyo_over: (min)=>`${min} min após o fechamento do escritório de carimbos`,
+    nokyo_over: (d)=>`${d} após o fechamento do escritório de carimbos`,
+    duration_hm: (h,m)=>`${h} h ${m} min`,
+    duration_m: (m)=>`${m} min`,
     temple_info_toggle: 'Ver divindade principal',
     label_honzon: 'Divindade principal',
     temple_detail_link: 'História e destaques →',
@@ -1869,6 +1893,17 @@ const I18N = {
 function t(key, ...args){
   const entry = I18N[currentLang][key] ?? I18N.ja[key];
   return typeof entry === 'function' ? entry(...args) : entry;
+}
+function formatDistance(meters){
+  const value = Math.max(0, Math.round(Number(meters) || 0));
+  if(value < 1000) return `${value}m`;
+  const km = Number((value / 1000).toFixed(1));
+  return `${km}km`;
+}
+function formatDurationMinutes(minutes){
+  const value = Math.max(0, Math.round(Number(minutes) || 0));
+  if(value < 60) return t('duration_m', value);
+  return t('duration_hm', Math.floor(value / 60), value % 60);
 }
 
 // 88札所の英語表記（標準的なヘボン式ローマ字表記に基づく）
@@ -2528,7 +2563,7 @@ function checkTempleProximity(no, button, onSuccess){
         onSuccess(pos, distance);
       }else{
         restoreButton();
-        alert(t('zukan_too_far', distance));
+        alert(t('zukan_too_far', formatDistance(distance)));
       }
     },
     (err)=>{
@@ -2963,13 +2998,11 @@ function renderResult(arrival){
   const busSegments = arrival.filter(a=>a.mode==='bus').length;
 
   const finalMin = arrival[arrival.length-1].timeMin;
-  const overClose = finalMin > NOKYO_CLOSE;
   document.getElementById('summary').innerHTML = `
     <div class="summary">
       <div class="figure"><div class="num">${toHHMM(finalMin)}</div><div class="lbl">${t('summary_arrival')}</div></div>
       <div class="figure"><div class="num">${totalWalkKm.toFixed(1)}km</div><div class="lbl">${t('summary_walk_total')}</div></div>
       <div class="figure"><div class="num">${busSegments}${currentLang==='en' ? ' ' : ''}${t('summary_bus_segments')}</div><div class="lbl">${t('summary_bus_label')}</div></div>
-      <div class="figure"><div class="num" style="color:${overClose?'#E39A82':'#fff'}">${overClose? t('summary_warn'):t('summary_ok')}</div><div class="lbl">${t('summary_nokyo_label')}</div></div>
     </div>
   `;
 
@@ -2981,7 +3014,7 @@ function renderResult(arrival){
     const nokyoDiff = NOKYO_CLOSE - a.timeMin; // 正=まだ余裕あり、負=超過
     let nokyoExtra = '';
     if(nokyoOver){
-      nokyoExtra = ` ${t('nokyo_over', Math.abs(Math.round(nokyoDiff)))}`;
+      nokyoExtra = ` ${t('nokyo_over', formatDurationMinutes(Math.abs(nokyoDiff)))}`;
     } else if(nokyoDiff <= 30){
       nokyoExtra = ` ${t('nokyo_countdown', Math.round(nokyoDiff))}`;
     }
@@ -2999,7 +3032,7 @@ function renderResult(arrival){
         ${!isLast ? `<div class="stop-connector ${nextEntry && nextEntry.mode==='bus' ? 'bus':''}"></div>` : ''}
       </div>
       <div class="stop-card">
-        <div class="stop-title"><span class="no">${String(temple.no).padStart(2,'0')}</span>${displayName}
+        <div class="stop-title"><span class="no">${String(temple.no).padStart(2,'0')}</span><span class="stop-name">${displayName}</span>
           <span class="nokyo-badge ${nokyoOver?'nokyo-warn':'nokyo-ok'}">${(nokyoOver? t('nokyo_warn') : t('nokyo_ok'))}${nokyoExtra}</span>
         </div>
         <div class="stop-meta mono">${temple.kana}</div>
