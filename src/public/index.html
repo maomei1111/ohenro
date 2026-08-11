@@ -720,6 +720,7 @@
     width:100%;
     max-width:400px;
     position:relative;
+    container-type:inline-size;
   }
   .goshuin-img{
     width:100%;
@@ -830,7 +831,46 @@
   }
   .zukan-goshuin-area{width:100%;height:82%;display:flex;align-items:center;justify-content:center;background:#fff}
   .zukan-goshuin-sheet{position:relative;height:100%;aspect-ratio:2/3;max-width:100%;background:#fff}
+  .zukan-goshuin-sheet{container-type:inline-size}
   .zukan-goshuin-sheet .zukan-photo{width:100%;height:100%;object-fit:contain}
+  /* Trial: render No.1's pilgrimage number as a reusable overlay instead of
+     baking it into each goshuin image. Container units keep modal/card output identical. */
+  .goshuin-number-plaque{
+    position:absolute;
+    z-index:3;
+    top:5.2%;
+    right:4.25%;
+    width:11%;
+    height:36.4%;
+    box-sizing:border-box;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+    background:#f2e8d5;
+    border:.72cqw solid #c95732;
+    border-radius:1.45cqw;
+    box-shadow:inset 0 0 0 .55cqw #f2e8d5,inset 0 0 0 .88cqw #c95732;
+    color:#bd4829;
+    writing-mode:vertical-rl;
+    text-orientation:upright;
+    font-family:'Noto Serif JP','Yu Mincho','Hiragino Mincho ProN',serif;
+    font-size:4.4cqw;
+    font-weight:700;
+    line-height:1;
+    letter-spacing:.34cqw;
+    white-space:nowrap;
+    pointer-events:none;
+  }
+  .goshuin-number-plaque::after{
+    content:'';
+    position:absolute;
+    inset:.25cqw;
+    border:.12cqw dashed rgba(189,72,41,.55);
+    border-radius:1cqw;
+    pointer-events:none;
+  }
+  .goshuin-number-plaque[hidden]{display:none}
   .zukan-card-date-overlay{
     position:absolute;left:4.8%;bottom:5.2%;writing-mode:vertical-rl;text-orientation:upright;
     padding:0;border:0;border-radius:0;
@@ -1129,6 +1169,7 @@
     <div class="goshuin-viewer">
       <div class="goshuin-frame" id="goshuinFrame">
         <img class="goshuin-img" id="goshuinImg" src="" alt="">
+        <div class="goshuin-number-plaque" id="goshuinNumberPlaque" hidden aria-hidden="true">四国八十八箇所第一番</div>
         <div class="goshuin-date-overlay" id="goshuinDateOverlay"></div>
       </div>
       <div class="goshuin-placeholder" id="goshuinPlaceholder"></div>
@@ -2386,6 +2427,7 @@ function openGoshuin(no){
   const nameEl = document.getElementById('goshuinTempleName');
   const visitBtn = document.getElementById('goshuinVisitBtn');
   const dateOverlay = document.getElementById('goshuinDateOverlay');
+  const numberPlaque = document.getElementById('goshuinNumberPlaque');
 
   if(nameEl) nameEl.textContent = temple ? `${String(no).padStart(2,'0')} ${templeDisplayName(temple)}` : t('goshuin_title');
   visitBtn.textContent = visited ? t('zukan_visited_badge') : t('visited_mark');
@@ -2394,8 +2436,11 @@ function openGoshuin(no){
   dateOverlay.textContent = getWarekiDate(dateStr);
   dateOverlay.className = `goshuin-date-overlay goshuin-date-${String(no).padStart(2,'0')}`;
   dateOverlay.style.display = visited && dateStr ? '' : 'none';
+  numberPlaque.hidden = no !== 1;
 
-  const imgPath = `/goshuin/${String(no).padStart(2,'0')}.png`;
+  const imgPath = no === 1
+    ? '/goshuin/01-css-trial.png'
+    : `/goshuin/${String(no).padStart(2,'0')}.png`;
   if(visited) img.src = imgPath;
   else img.removeAttribute('src');
   img.onerror = ()=>{
@@ -2551,9 +2596,15 @@ function renderZukan(){
     const savedVisitDate = visited ? getVisitedDate(temple.no) : '';
     const visitDate = savedVisitDate ? formatVisitDate(savedVisitDate) : '';
     const warekiVisitDate = savedVisitDate ? getWarekiDate(savedVisitDate) : '';
+    const goshuinImagePath = temple.no === 1
+      ? '/goshuin/01-css-trial.png'
+      : `/goshuin/${no}.png`;
     const hiddenHtml = `<div class="zukan-hidden-goshuin"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span>${t('zukan_unvisited_badge')}</span></div>`;
+    const numberPlaqueHtml = temple.no === 1
+      ? '<div class="goshuin-number-plaque" aria-hidden="true">四国八十八箇所第一番</div>'
+      : '';
     const photoHtml = visited
-      ? `<div class="zukan-goshuin-area"><div class="zukan-goshuin-sheet"><img class="zukan-photo" src="/goshuin/${no}.png" alt="${displayName}" loading="lazy" onerror="this.parentElement.style.display='none';this.parentElement.nextElementSibling.style.display='flex'">${warekiVisitDate ? `<div class="zukan-card-date-overlay goshuin-date-${no}">${warekiVisitDate}</div>` : ''}</div><div class="zukan-hidden-goshuin" style="display:none"><span>${t('goshuin_no_image')}</span></div></div>`
+      ? `<div class="zukan-goshuin-area"><div class="zukan-goshuin-sheet"><img class="zukan-photo" src="${goshuinImagePath}" alt="${displayName}" loading="lazy" onerror="this.parentElement.style.display='none';this.parentElement.nextElementSibling.style.display='flex'">${numberPlaqueHtml}${warekiVisitDate ? `<div class="zukan-card-date-overlay goshuin-date-${no}">${warekiVisitDate}</div>` : ''}</div><div class="zukan-hidden-goshuin" style="display:none"><span>${t('goshuin_no_image')}</span></div></div>`
       : hiddenHtml;
     return `<div class="zukan-card ${visited?'visited':'unvisited'}" onclick="zukanCardTap(event, ${temple.no})">
       <div class="zukan-no">${temple.no}</div>
