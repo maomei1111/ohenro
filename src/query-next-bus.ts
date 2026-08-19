@@ -35,7 +35,7 @@ const NEGLIGIBLE_DIFF_MIN = 3; // 到着時刻の差がこの範囲内なら「�
 // その中では歩く距離が一番短いものを優先して選ぶ。
 // (例: ループ運行するバスで、同じ便がたまたま1分早く別の停留所にも停まる場合、
 //  何も考えずに「1分早い」方だけを見ると、実際には遠回りな停留所を選んでしまうことがあるため)
-function pickBestCandidate(candidates: any[]): any | null {
+export function pickBestCandidate(candidates: any[]): any | null {
   if (!candidates.length) return null;
   const sorted = [...candidates].sort((a, b) => a.arrivalMin - b.arrivalMin);
   const best = sorted[0];
@@ -44,12 +44,12 @@ function pickBestCandidate(candidates: any[]): any | null {
   return nearlyBest[0];
 }
 
-function gtfsTimeToMinutes(hhmmss: string): number {
+export function gtfsTimeToMinutes(hhmmss: string): number {
   const [h, m] = hhmmss.split(':').map(Number);
   return h * 60 + m;
 }
 
-function walkMinutesForMeters(meters: number): number {
+export function walkMinutesForMeters(meters: number): number {
   return (meters / 1000 / WALK_KMH) * 60;
 }
 
@@ -57,7 +57,7 @@ const WEEKDAY_COLUMNS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday',
 
 // 「そのtrip(=service_id)が指定日に運行しているか」を判定するSQL条件のひな形。
 // gtfs_trips trip を参照している前提で使う（agency_key・service_idのカラムが必要）。
-function serviceRunsOnDateClause(tripAlias: string, dayColumn: string): string {
+export function serviceRunsOnDateClause(tripAlias: string, dayColumn: string): string {
   return `
     (
       EXISTS (

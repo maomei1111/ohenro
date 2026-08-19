@@ -25,6 +25,9 @@ app.use('/goshuin', express.static(path.join(__dirname, 'public', 'goshuin')));
 // Serve the bundled font used for dates on goshuin images.
 app.use('/fonts', express.static(path.join(__dirname, 'public', 'fonts')));
 
+// index.htmlから切り出した純粋関数・辞書(src/public/js/ 配下)を配信
+app.use('/js', express.static(path.join(__dirname, 'public', 'js')));
+
 // 88札所のマスタデータ（番号・名前・都道府県・市区町村・緯度経度）
 // src/data/temples_88.json に配置。アプリ側はこのAPIから取得し、
 // サーバー側の停留所マッチング(match-temple-stops.ts)とも同じデータを共有する。
