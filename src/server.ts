@@ -19,7 +19,7 @@ app.use(cors()); // WebView(file://やhttps://)からのアクセスを許可
 app.use('/temple-images', express.static(path.join(__dirname, 'public', 'temple-images')));
 
 // デジタル御朱印画像（src/public/goshuin/ 配下）を配信
-// ファイル名は {札所番号2桁}.png（例: 01.png, 02.png）
+// ファイル名は {札所番号2桁}.webp（例: 01.webp, 02.webp）
 app.use('/goshuin', express.static(path.join(__dirname, 'public', 'goshuin')));
 
 // Serve the bundled font used for dates on goshuin images.

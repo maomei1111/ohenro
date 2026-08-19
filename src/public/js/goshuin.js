@@ -84,7 +84,7 @@ function decorateSettingsCards(){
 
 // ==================================================================
 // ---- デジタル御朱印モーダル ----
-// 御朱印画像はサーバー側 /goshuin/{no}.png として管理。
+// 御朱印画像はサーバー側 /goshuin/{no}.webp として管理。
 // 訪問日は localStorage から取得し、画像上のCSS座標に合漢数字で重ねる。
 // 画像のオリジナルサイズ(1024×1536)をベースに座標を定義し、
 // 表示サイズ(320×480)へは CSS scale() で一括変換する。
@@ -124,7 +124,7 @@ function openGoshuin(no){
   dateOverlay.className = `goshuin-date-overlay goshuin-date-${String(no).padStart(2,'0')}`;
   dateOverlay.style.display = visited && dateStr ? '' : 'none';
 
-  const imgPath = `/goshuin/${String(no).padStart(2,'0')}.png`;
+  const imgPath = `/goshuin/${String(no).padStart(2,'0')}.webp`;
   if(visited) img.src = imgPath;
   else img.removeAttribute('src');
   img.onerror = ()=>{
