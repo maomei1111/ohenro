@@ -69,11 +69,26 @@ GTFS-JPデータを取り込んで、`src/query-next-bus.ts` の経路検索と�
 「オープンデータ」「GTFS」ページから確認するのが確実（データセット一覧ページは
 JavaScript描画のことが多く、機械的な網羅取得はしづらい）。
 
+- **取得日**: 上表50事業者は2026年8月時点でのダウンロード・取り込みを基準にしている。
+  GTFSは事業者側で不定期に更新されるため、ダイヤ改正時期などは再ダウンロード・
+  再取り込みを検討すること（`import-gtfs.ts` は同じagency_keyへの再取り込みで
+  最新データに上書きできる）。
+- **ライセンス・クレジット表記**: 各事業者のライセンス（多くはCC BY 4.0）は
+  `src/public/credits.html` に一覧化している。新規事業者を追加した場合は
+  ここにも追記すること。
+
+`downloads/` は `.gitignore` 対象のため、GTFS ZIP自体はリポジトリに含まれない。
+初回セットアップ時は、上表のagency_keyに対応するZIPを上記の公開元から
+ダウンロードして `downloads/` に配置してから次節の取り込みコマンドを実行する。
+
 ## 2. セットアップ
 
 ```bash
 npm install
 ```
+
+`node_modules/` も `.gitignore` 対象。`npm install`（またはCIでは `npm ci`）で
+`package-lock.json` から再現される。
 
 PostgreSQLの接続情報は環境変数で指定する。ローカル開発時は個別変数
 （未設定時はlocalhost想定）、クラウド（Railway等）では `DATABASE_URL` 1本:
