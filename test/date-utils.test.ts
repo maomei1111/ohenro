@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { toKanjiNumber, getWarekiDate, toMinutes, toHHMM } from '../src/public/js/date-utils.js';
+import { toKanjiNumber, getWarekiDate, toMinutes, toHHMM, warekiDateLengthClass } from '../src/public/js/date-utils.js';
 
 describe('toKanjiNumber', () => {
   it('renders 1 as 一', () => {
@@ -16,6 +16,15 @@ describe('toKanjiNumber', () => {
   });
   it('renders 31 as 三十一', () => {
     expect(toKanjiNumber(31)).toBe('三十一');
+  });
+  it('renders 100 as 百 (no leading 一)', () => {
+    expect(toKanjiNumber(100)).toBe('百');
+  });
+  it('renders 108 as 百八', () => {
+    expect(toKanjiNumber(108)).toBe('百八');
+  });
+  it('renders 119 as 百十九', () => {
+    expect(toKanjiNumber(119)).toBe('百十九');
   });
 });
 
@@ -35,6 +44,28 @@ describe('getWarekiDate', () => {
   });
   it('returns an empty string for a falsy input', () => {
     expect(getWarekiDate('')).toBe('');
+  });
+  it('formats a 3-digit era year (令和百年) correctly', () => {
+    expect(getWarekiDate('2118-12-31')).toBe('令和百年十二月三十一日');
+  });
+});
+
+describe('warekiDateLengthClass', () => {
+  // 仕様書(docs/CSS_AND_SERVER_PROTECTION_SPEC.md 23節)の確認日付4件。
+  it('does not flag a short date (令和八年八月八日, 8 chars)', () => {
+    expect(warekiDateLengthClass(getWarekiDate('2026-08-08'))).toBe('');
+  });
+  it('flags 令和十一年十二月三十一日 (12 chars) as extra-long', () => {
+    expect(warekiDateLengthClass(getWarekiDate('2029-12-31'))).toBe('goshuin-date-extra-long');
+  });
+  it('flags 令和十九年十二月三十一日 (12 chars) as extra-long', () => {
+    expect(warekiDateLengthClass(getWarekiDate('2037-12-31'))).toBe('goshuin-date-extra-long');
+  });
+  it('flags 令和百年十二月三十一日 (11 chars) as long', () => {
+    expect(warekiDateLengthClass(getWarekiDate('2118-12-31'))).toBe('goshuin-date-long');
+  });
+  it('returns an empty string for an empty input', () => {
+    expect(warekiDateLengthClass('')).toBe('');
   });
 });
 

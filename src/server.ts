@@ -14,6 +14,7 @@ import path from 'path';
 import { findNextBus } from './query-next-bus';
 import { AppDataSource } from './data-source';
 import { parseBooleanEnv, parseAllowedOrigins, parseTrustProxyHops } from './env-utils';
+import { selectHourlyForecast, selectDailyForecastFallback } from './weather-utils';
 
 // 起動時に一度だけ評価する。値が不正な場合の警告ログもここで1回だけ出す
 // （リクエストごとに再評価すると、不正値の警告が毎回出てログが埋まってしまうため）。
@@ -227,7 +228,20 @@ export function createApp() {
     <p>${desc.history}</p>
     ${spotsHtml ? `<h2>${ui.highlights}</h2><div class="spots-grid">${spotsHtml}</div>` : ''}
   ` : `<p class="empty">${ui.empty}</p>`}
-  <a class="back" href="javascript:history.back()">${ui.back}</a>
+  <a class="back" href="/" id="templeBackLink">${ui.back}</a>
+  <script>
+    // 履歴があれば同じWebView内で戻る(Androidの物理戻るボタンでもこのページの
+    // 履歴エントリが解消されて直前のルート結果へ戻れるようにするため)。
+    // document.referrerが同一オリジンでない場合(新規タブで開かれた・深いリンクで
+    // 直接開かれた等、戻り先の履歴が無い場合)は、通常のリンク遷移(href="/")へ
+    // フォールバックする(仕様書25節)。
+    document.getElementById('templeBackLink').addEventListener('click', function(e){
+      if (document.referrer && document.referrer.indexOf(location.origin) === 0) {
+        e.preventDefault();
+        history.back();
+      }
+    });
+  </script>
 </body>
 </html>`;
     res.type('html').send(html);
@@ -366,43 +380,56 @@ export function createApp() {
   // 同時リクエスト数を有限に保つための上限（15節）。
   const WEATHER_MAX_POINTS = 100;
 
-  function weatherCacheKey(lat: number, lng: number, date: string): string {
-    return `${lat.toFixed(2)},${lng.toFixed(2)},${date}`;
+  // キャッシュキーに予報時刻を含める(時刻が異なれば別の予報になるため)。
+  // 時刻無し(日次フォールバック)は固定の'daily'を使う。
+  function weatherCacheKey(lat: number, lng: number, date: string, time: string | null): string {
+    return `${lat.toFixed(2)},${lng.toFixed(2)},${date},${time ?? 'daily'}`;
   }
 
-  async function fetchWeatherForPoint(lat: number, lng: number, date: string): Promise<any> {
-    const key = weatherCacheKey(lat, lng, date);
+  async function fetchWeatherForPoint(lat: number, lng: number, date: string, time: string | null): Promise<any> {
+    const key = weatherCacheKey(lat, lng, date, time);
     const cached = weatherCache.get(key);
     if (cached && cached.expires > Date.now()) return cached.data;
 
     let data: any = { available: false };
     try {
-      const url =
-        `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}` +
-        `&daily=weathercode,temperature_2m_max,precipitation_probability_max,relative_humidity_2m_mean` +
-        `&timezone=Asia%2FTokyo&start_date=${date}&end_date=${date}`;
-      const apiRes = await fetch(url, { signal: AbortSignal.timeout(WEATHER_FETCH_TIMEOUT_MS) });
-      if (apiRes.ok) {
-        const json: any = await apiRes.json();
-        const idx = json?.daily?.time?.indexOf(date) ?? -1;
-        const weathercode = idx >= 0 ? json.daily.weathercode?.[idx] : undefined;
-        const maxTempC = idx >= 0 ? json.daily.temperature_2m_max?.[idx] : undefined;
-        const precipProbability = idx >= 0 ? json.daily.precipitation_probability_max?.[idx] : undefined;
-        const humidity = idx >= 0 ? json.daily.relative_humidity_2m_mean?.[idx] : undefined;
-        if (weathercode != null && maxTempC != null) {
-          data = {
-            available: true,
-            weathercode,
-            maxTempC,
-            precipProbability: precipProbability ?? 0,
-            humidity: humidity ?? null,
-          };
+      if (time) {
+        // 到着予定時刻が分かる場合: 天気コード・気温・降水確率・湿度をすべて
+        // 同じ時間帯(到着予定時刻に最も近い1時間単位)の値に揃える(24節)。
+        const url =
+          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}` +
+          `&hourly=weather_code,temperature_2m,precipitation_probability,relative_humidity_2m` +
+          `&timezone=Asia%2FTokyo&start_date=${date}&end_date=${date}`;
+        const apiRes = await fetch(url, { signal: AbortSignal.timeout(WEATHER_FETCH_TIMEOUT_MS) });
+        if (apiRes.ok) {
+          const json: any = await apiRes.json();
+          data = selectHourlyForecast(json, date, time);
+          if (!data.available) {
+            console.warn(`[weather-proxy] no hourly data for ${date} ${time} in response:`, JSON.stringify(json).slice(0, 300));
+          }
         } else {
-          console.warn(`[weather-proxy] no data for ${date} in response:`, JSON.stringify(json).slice(0, 300));
+          const bodyText = await apiRes.text().catch(() => '');
+          console.warn(`[weather-proxy] open-meteo responded ${apiRes.status} for ${url}: ${bodyText.slice(0, 300)}`);
         }
-      } else {
-        const bodyText = await apiRes.text().catch(() => '');
-        console.warn(`[weather-proxy] open-meteo responded ${apiRes.status} for ${url}: ${bodyText.slice(0, 300)}`);
+      }
+      // 到着予定時刻が無い、または時間帯予報の取得に失敗した場合のみ日次予報へフォールバックする。
+      // この場合 precipProbability は「その日の最高降水確率」であることをクライアント側で明示する。
+      if (!data.available) {
+        const url =
+          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}` +
+          `&daily=weathercode,temperature_2m_max,precipitation_probability_max,relative_humidity_2m_mean` +
+          `&timezone=Asia%2FTokyo&start_date=${date}&end_date=${date}`;
+        const apiRes = await fetch(url, { signal: AbortSignal.timeout(WEATHER_FETCH_TIMEOUT_MS) });
+        if (apiRes.ok) {
+          const json: any = await apiRes.json();
+          data = selectDailyForecastFallback(json, date);
+          if (!data.available) {
+            console.warn(`[weather-proxy] no daily data for ${date} in response:`, JSON.stringify(json).slice(0, 300));
+          }
+        } else {
+          const bodyText = await apiRes.text().catch(() => '');
+          console.warn(`[weather-proxy] open-meteo responded ${apiRes.status} for ${url}: ${bodyText.slice(0, 300)}`);
+        }
       }
     } catch (e) {
       console.error('[weather-proxy] fetch failed:', e);
@@ -413,7 +440,8 @@ export function createApp() {
     return data;
   }
 
-  // points=lat,lng,date(YYYY-MM-DD);lat,lng,date;... の形式で、区間の数だけ地点を渡す。
+  // points=lat,lng,date(YYYY-MM-DD)[,HH:MM];lat,lng,date,HH:MM;... の形式で、区間の数だけ地点を渡す。
+  // 4番目(到着予定時刻)は省略可能(省略時は日次予報にフォールバックする)。
   // レスポンスの results は points と同じ順序で返す（該当日が予報範囲外の場合は available:false）。
   app.get('/weather-proxy', weatherProxyLimiter, async (req, res) => {
     try {
@@ -422,8 +450,8 @@ export function createApp() {
         .map((s) => s.trim())
         .filter(Boolean)
         .map((s) => {
-          const [latStr, lngStr, date] = s.split(',');
-          return { lat: Number(latStr), lng: Number(lngStr), date };
+          const [latStr, lngStr, date, time] = s.split(',');
+          return { lat: Number(latStr), lng: Number(lngStr), date, time: time || null };
         });
 
       if (points.length > WEATHER_MAX_POINTS) {
@@ -432,22 +460,31 @@ export function createApp() {
 
       const isValid =
         points.length > 0 &&
-        points.every((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng) && /^\d{4}-\d{2}-\d{2}$/.test(p.date ?? ''));
+        points.every(
+          (p) =>
+            Number.isFinite(p.lat) &&
+            Number.isFinite(p.lng) &&
+            /^\d{4}-\d{2}-\d{2}$/.test(p.date ?? '') &&
+            (p.time == null || /^\d{2}:\d{2}$/.test(p.time))
+        );
       if (!isValid) {
-        return res.status(400).json({ error: 'points=lat,lng,date(YYYY-MM-DD) の形式で1件以上必須です' });
+        return res.status(400).json({ error: 'points=lat,lng,date(YYYY-MM-DD)[,HH:MM] の形式で1件以上必須です' });
       }
 
-      // 同一の格子・日付は1回だけ問い合わせて使い回す
-      const uniqueKeys = [...new Set(points.map((p) => weatherCacheKey(p.lat, p.lng, p.date)))];
+      // 同一の格子・日付・時刻は1回だけ問い合わせて使い回す
+      const uniqueKeys = [...new Set(points.map((p) => weatherCacheKey(p.lat, p.lng, p.date, p.time)))];
       const uniqueResults = new Map<string, any>();
       await Promise.all(
         uniqueKeys.map(async (key) => {
-          const [latStr, lngStr, date] = key.split(',');
-          uniqueResults.set(key, await fetchWeatherForPoint(Number(latStr), Number(lngStr), date));
+          const [latStr, lngStr, date, time] = key.split(',');
+          uniqueResults.set(
+            key,
+            await fetchWeatherForPoint(Number(latStr), Number(lngStr), date, time === 'daily' ? null : time)
+          );
         })
       );
 
-      const results = points.map((p) => uniqueResults.get(weatherCacheKey(p.lat, p.lng, p.date)));
+      const results = points.map((p) => uniqueResults.get(weatherCacheKey(p.lat, p.lng, p.date, p.time)));
       res.json({ results });
     } catch (e) {
       console.error('[weather-proxy] exception:', e);

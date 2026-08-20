@@ -164,6 +164,21 @@
     left:5.7%;top:56%;bottom:auto;padding:0;border:0;background:transparent;
     font-size:clamp(7px,1.9vw,9px);line-height:1;letter-spacing:.02em;
   }
+  /* 長い和暦日付(例:令和十一年十二月三十一日)が縦書きで画像下端からはみ出さないよう、
+     文字数に応じてフォントサイズ・行間・字間を段階的に縮小する。位置(left/top/bottom)は
+     goshuin-date-01等の個別指定を優先させたいため、ここではサイズ関連のみ上書きする。 */
+  .goshuin-date-overlay.goshuin-date-long{
+    font-size:clamp(12px,4vw,18px);line-height:1.08;letter-spacing:.05em;
+  }
+  .goshuin-date-overlay.goshuin-date-extra-long{
+    font-size:clamp(10px,3.4vw,15px);line-height:1.02;letter-spacing:.02em;
+  }
+  .zukan-card-date-overlay.goshuin-date-long{
+    font-size:clamp(5.5px,1.7vw,8px);line-height:1;letter-spacing:.02em;
+  }
+  .zukan-card-date-overlay.goshuin-date-extra-long{
+    font-size:clamp(4.5px,1.4vw,6.5px);line-height:.98;letter-spacing:0;
+  }
   .zukan-goshuin-area>.zukan-hidden-goshuin{height:100%}
   .zukan-hidden-goshuin{
     width:100%;height:82%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;

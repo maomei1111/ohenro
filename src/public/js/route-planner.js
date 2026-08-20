@@ -160,7 +160,7 @@ function renderResult(arrival, dateStr){
           <span class="weather-chip" id="weather-chip-${idx}" title="${t('weather_label')}"></span>
         </div>
         <div class="stop-meta mono">${temple.kana}</div>
-        <a class="official-link" href="/temple/${temple.no}?lang=${currentLang}" target="_blank" rel="noopener">${t('temple_detail_link')}</a>
+        <a class="official-link" href="/temple/${temple.no}?lang=${currentLang}">${t('temple_detail_link')}</a>
         ${nextEntry ? `
           <div class="segment-note" onclick="openMapForIndex(${idx+1})">
             <span class="badge-mode ${nextEntry.mode}">${nextEntry.mode==='bus'?'BUS':'WALK'}</span>
@@ -204,12 +204,14 @@ async function attachWeather(arrival, dateStr){
     .map((a, idx) => {
       const temple = temples.find(t=>t.no===a.no);
       if(!temple) return null;
-      return { idx, lat: temple.lat, lng: temple.lng, date: addDaysToDateStr(dateStr, Math.floor(a.timeMin/1440)) };
+      // 到着予定時刻(toHHMMは24hで折り返す)を渡し、天気コード・気温・降水確率・湿度が
+      // 同じ時間帯の値になるようにする(以前はdailyの異なる集計を混在させていた)。
+      return { idx, lat: temple.lat, lng: temple.lng, date: addDaysToDateStr(dateStr, Math.floor(a.timeMin/1440)), time: toHHMM(a.timeMin) };
     })
     .filter(Boolean);
   if(!stops.length) return;
 
-  const pointsParam = stops.map(s=>`${s.lat},${s.lng},${s.date}`).join(';');
+  const pointsParam = stops.map(s=>`${s.lat},${s.lng},${s.date},${s.time}`).join(';');
   let results;
   try{
     const res = await fetch(`${API_BASE}/weather-proxy?points=${encodeURIComponent(pointsParam)}`);
@@ -227,7 +229,11 @@ async function attachWeather(arrival, dateStr){
     if(!chip || !w || !w.available) return;
     const precipRounded = Math.round(w.precipProbability / 10) * 10; // 日本の天気予報に合わせて10%刻みで表示
     const humidityText = w.humidity != null ? ` 💧${Math.round(w.humidity)}%` : '';
-    chip.textContent = `${weatherIconForCode(w.weathercode)} ${Math.round(w.maxTempC)}°C ☔${precipRounded}%${humidityText}`;
+    // 到着予定時刻の予報が取得できず日次予報にフォールバックした場合、
+    // precipProbabilityは「その日の最高降水確率」なのでその旨を明示する(24節)。
+    const precipLabel = w.isDailyMax ? `☔${t('weather_daily_max_short')}${precipRounded}%` : `☔${precipRounded}%`;
+    chip.title = w.isDailyMax ? t('weather_daily_max_note') : '';
+    chip.textContent = `${weatherIconForCode(w.weathercode)} ${Math.round(w.maxTempC)}°C ${precipLabel}${humidityText}`;
     chip.classList.toggle('weather-warn', w.precipProbability >= 50 || w.maxTempC >= 33);
   });
 }
