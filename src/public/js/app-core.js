@@ -10,8 +10,8 @@
 // 宣言順の影響を受けない。
 const { I18N, createTranslator, metersBetween, distToPolyline, formatDistance,
   evaluateVisitProximity, toKanjiNumber, getWarekiDate, toMinutes, toHHMM,
-  nokyoStatus, durationParts, TEMPLE_NAMES_EN, ROMANIZED_LANGS, TEMPLE_HONZON,
-  HONZON_EN, MAX_AUTO_START_DISTANCE_M, DATE_FIELD_ORDER, INTL_LOCALES,
+  warekiDateLengthClass, nokyoStatus, durationParts, TEMPLE_NAMES_EN, ROMANIZED_LANGS,
+  TEMPLE_HONZON, HONZON_EN, MAX_AUTO_START_DISTANCE_M, DATE_FIELD_ORDER, INTL_LOCALES,
   AGENCY_NAMES } = window.OhenroApp;
 // 共有されたリンクを開いた場合は、URLのlangパラメータ(送信者が選んだ言語)を優先する。
 // 通常のアクセスでは、端末に保存済みの言語設定(localStorage)を使う。

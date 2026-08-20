@@ -120,8 +120,10 @@ function openGoshuin(no){
   visitBtn.textContent = visited ? t('zukan_visited_badge') : t('visited_mark');
   visitBtn.classList.toggle('is-visited', visited);
   visitBtn.disabled = visited;
-  dateOverlay.textContent = getWarekiDate(dateStr);
-  dateOverlay.className = `goshuin-date-overlay goshuin-date-${String(no).padStart(2,'0')}`;
+  const warekiText = getWarekiDate(dateStr);
+  dateOverlay.textContent = warekiText;
+  dateOverlay.className =
+    `goshuin-date-overlay goshuin-date-${String(no).padStart(2,'0')} ${warekiDateLengthClass(warekiText)}`.trim();
   dateOverlay.style.display = visited && dateStr ? '' : 'none';
 
   const imgPath = `/goshuin/${String(no).padStart(2,'0')}.webp`;
