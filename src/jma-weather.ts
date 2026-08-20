@@ -25,6 +25,23 @@ export interface TempleJmaArea {
 const TEMPLE_AREAS: TempleJmaArea[] = templeAreasRaw as TempleJmaArea[];
 const TEMPLE_AREA_BY_NO = new Map<number, TempleJmaArea>(TEMPLE_AREAS.map((a) => [a.templeNo, a]));
 
+// 気象台コード→都道府県名。表示用の区域名(例:「徳島県北部」)を組み立てるためだけに使う
+// (仕様書10節: 「霊山寺の降水確率」ではなく「徳島県北部・12〜18時」のように区域を明示する)。
+const OFFICE_PREFECTURE_NAME: Record<string, string> = {
+  '360000': '徳島県',
+  '370000': '香川県',
+  '380000': '愛媛県',
+  '390000': '高知県',
+};
+
+// 区域の表示名を組み立てる。香川県のように区域が県全体1つだけの場合は
+// forecastAreaNameが既に「香川県」なのでそのまま使い、二重表記("香川県香川県")を避ける。
+function displayAreaName(officeCode: string, areaName: string): string {
+  const prefName = OFFICE_PREFECTURE_NAME[officeCode] ?? '';
+  if (!prefName || areaName.startsWith(prefName)) return areaName || prefName;
+  return `${prefName}${areaName}`;
+}
+
 // 起動時に一度だけ検証する。1〜88番が過不足なく揃っていなければ即座に落とす
 // (仕様書8.3「登録されていない区域コードを検出した場合、起動時またはテスト時に失敗する」)。
 export function validateTempleAreas(areas: TempleJmaArea[] = TEMPLE_AREAS): void {
@@ -299,7 +316,9 @@ function selectTempForDate(points: TempPoint[], dateStr: string): { minC: number
  */
 export function selectShortTermForecast(
   parsed: ParsedAreaReport,
+  forecastOfficeCode: string,
   forecastAreaCode: string,
+  forecastAreaName: string,
   temperatureAreaCode: string,
   targetDateTime: Date
 ): NormalizedWeather {
@@ -320,7 +339,7 @@ export function selectShortTermForecast(
     available: true,
     source: 'JMA',
     publishedAt: parsed.publishedAt,
-    forecastAreaName: parsed.publishingOffice,
+    forecastAreaName: displayAreaName(forecastOfficeCode, forecastAreaName),
     weatherCode: weather?.weatherCode ?? null,
     weatherText: weather?.weatherText ?? null,
     temperature: { maxC: temp.maxC, minC: temp.minC },
@@ -360,7 +379,7 @@ export function selectWeeklyForecast(
     available: true,
     source: 'JMA',
     publishedAt: parsed.publishedAt,
-    forecastAreaName: parsed.publishingOffice,
+    forecastAreaName: OFFICE_PREFECTURE_NAME[forecastOfficeCode] ?? parsed.publishingOffice,
     weatherCode: weather?.weatherCode ?? null,
     weatherText: weather?.weatherText ?? null,
     temperature: { maxC: temp.maxC, minC: temp.minC },
@@ -515,7 +534,14 @@ export async function getForecastForTemple(
   if (daysOut <= 2) {
     const parsed = await getReport('VPFD51', area.forecastOfficeCode);
     if (!parsed || isTooStale(parsed)) return { available: false };
-    return selectShortTermForecast(parsed, area.forecastAreaCode, area.temperatureAreaCode, targetDateTime);
+    return selectShortTermForecast(
+      parsed,
+      area.forecastOfficeCode,
+      area.forecastAreaCode,
+      area.forecastAreaName,
+      area.temperatureAreaCode,
+      targetDateTime
+    );
   }
 
   const parsed = await getReport('VPFW50', area.forecastOfficeCode);

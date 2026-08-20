@@ -226,7 +226,7 @@ describe('selectShortTermForecast', () => {
 
   it('selects the period and station values containing the target date/time (today, morning)', () => {
     const target = new Date(`${dateStrPlusDays(0)}T09:00:00+09:00`);
-    const result = selectShortTermForecast(parsed, '360010', '71106', target);
+    const result = selectShortTermForecast(parsed, '360000', '360010', '北部', '71106', target);
     expect(result.available).toBe(true);
     expect(result.weatherText).toBe('晴れ');
     expect(result.precipitationProbability).toBe(10);
@@ -234,15 +234,27 @@ describe('selectShortTermForecast', () => {
     expect(result.isDailyForecast).toBe(false);
   });
 
+  it('builds a prefecture-qualified area name instead of "寺の降水確率"-style wording (spec section 10)', () => {
+    const target = new Date(`${dateStrPlusDays(0)}T09:00:00+09:00`);
+    const result = selectShortTermForecast(parsed, '360000', '360010', '北部', '71106', target);
+    expect(result.forecastAreaName).toBe('徳島県北部');
+  });
+
+  it('does not duplicate the prefecture name when the area name already includes it (e.g. Kagawa)', () => {
+    const target = new Date(`${dateStrPlusDays(0)}T09:00:00+09:00`);
+    const result = selectShortTermForecast(parsed, '370000', '360010', '香川県', '71106', target);
+    expect(result.forecastAreaName).toBe('香川県');
+  });
+
   it('selects a different period for a later time the same day (afternoon)', () => {
     const target = new Date(`${dateStrPlusDays(0)}T15:00:00+09:00`);
-    const result = selectShortTermForecast(parsed, '360010', '71106', target);
+    const result = selectShortTermForecast(parsed, '360000', '360010', '北部', '71106', target);
     expect(result.precipitationProbability).toBe(20);
   });
 
   it('rolls over to the next day forecast when the route crosses midnight', () => {
     const target = new Date(`${dateStrPlusDays(1)}T09:00:00+09:00`);
-    const result = selectShortTermForecast(parsed, '360010', '71106', target);
+    const result = selectShortTermForecast(parsed, '360000', '360010', '北部', '71106', target);
     expect(result.weatherText).toBe('くもり時々雨');
     expect(result.temperature?.minC).toBeNull(); // condition="値なし" のまま
   });
@@ -264,6 +276,12 @@ describe('selectWeeklyForecast', () => {
     const target = new Date(`${dateStrPlusDays(1)}T09:00:00+09:00`);
     const result = selectWeeklyForecast(parsed, '360000', target);
     expect(result.precipitationProbability).toBeNull();
+  });
+
+  it('uses the prefecture name (whole-prefecture forecast, no sub-area) as forecastAreaName', () => {
+    const target = new Date(`${dateStrPlusDays(3)}T09:00:00+09:00`);
+    const result = selectWeeklyForecast(parsed, '360000', target);
+    expect(result.forecastAreaName).toBe('徳島県');
   });
 });
 
