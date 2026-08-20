@@ -1,0 +1,13 @@
+
+  /* 出発する札所・到着したい札所だけは横幅に余裕があるので2列で並べる */
+  @media (min-width:640px){
+    .controls{ grid-template-columns:1fr 1fr; }
+    .controls .field-full{ grid-column:1/-1; }
+  }
+  @media(max-width:520px){
+    .stop{grid-template-columns:52px minmax(0,1fr);gap:10px}
+    .stop-title{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:baseline}
+    .stop-title .nokyo-badge{grid-column:1/-1;justify-self:start;max-width:100%;margin-top:2px;line-height:1.45;white-space:normal}
+    .stop-title .weather-chip{grid-column:1/-1;justify-self:stretch;margin-top:2px;white-space:nowrap}
+  }
+  @media(min-width:700px){.bottom-tab-bar{max-width:612px;margin:0 auto}}

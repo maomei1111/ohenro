@@ -1,0 +1,175 @@
+
+  .temple-photo{
+    display:block;
+    width:100%;
+    max-width:280px;
+    border-radius:2px;
+    margin-bottom:2px;
+  }
+  .photo-credit{
+    font-size:9.5px;
+    color:#b0aa9c;
+    margin-bottom:6px;
+  }
+  .places-summary{
+    margin-top:6px;
+    font-size:12px;
+    line-height:1.7;
+    color:#5a564f;
+  }
+  .google-credit{
+    color:#b0aa9c;
+    font-size:10px;
+  }
+  .official-link{
+    display:inline-block;
+    font-size:11px;
+    color:var(--vermillion);
+    text-decoration:underline;
+    margin-top:4px;
+    margin-left:10px;
+  }
+
+  .timeline{ margin:18px 0 40px; position:relative; }
+  .stop{
+    display:grid;
+    grid-template-columns:64px 1fr;
+    gap:18px;
+    position:relative;
+  }
+  .stop-rail{
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+  }
+  .stop-dot{
+    width:14px; height:14px;
+    border-radius:50%;
+    background:var(--indigo-deep);
+    border:3px solid var(--washi-panel);
+    outline:1px solid rgba(43,40,37,0.2);
+    z-index:2;
+    margin-top:6px;
+  }
+  .stop-connector{
+    flex:1;
+    width:0;
+    border-left:2px solid var(--line-walk);
+    margin:2px 0;
+  }
+  .stop-connector.bus{
+    border-left:2px dashed var(--line-bus);
+  }
+  .stop-time{
+    font-family:'BIZ UDPGothic', 'Noto Sans JP', sans-serif;
+    font-size:11px;
+    color:var(--indigo-mid);
+    margin-top:4px;
+  }
+
+  .stop-card{
+    padding:14px 0 26px;
+  }
+  .stop-title{
+    font-family:'Noto Serif JP', serif;
+    font-weight:700;
+    font-size:17px;
+    margin:2px 0 4px;
+    display:flex;
+    align-items:baseline;
+    flex-wrap:wrap;
+    gap:4px 8px;
+    color:var(--sumi);
+  }
+  .stop-title .no{
+    color:var(--vermillion);
+    font-family:'BIZ UDPGothic', 'Noto Sans JP', sans-serif;
+    font-size:13px;
+    flex:0 0 auto;
+  }
+  .stop-name{min-width:0;flex:1 1 120px;overflow-wrap:anywhere}
+  .stop-meta{ font-size:12.5px; color:#5a564f; margin-bottom:8px; }
+  .nokyo-badge{
+    display:inline-block;
+    font-size:11px;
+    padding:3px 8px;
+    border-radius:2px;
+    font-weight:700;
+    letter-spacing:0.02em;
+  }
+  .nokyo-ok{ background:#E4EBDD; color:#3E5A2C; }
+  .nokyo-warn{ background:var(--warn-bg); color:var(--vermillion); }
+  .weather-chip{
+    display:inline-block;
+    font-size:11px;
+    padding:3px 8px;
+    border-radius:2px;
+    font-family:'JetBrains Mono', monospace;
+    background:#E4EBDD;
+    color:#3E5A2C;
+  }
+  .weather-chip:empty{ display:none; }
+  .weather-chip.weather-warn{ background:var(--warn-bg); color:var(--vermillion); }
+
+  .segment-note{
+    margin-top:8px;
+    font-size:13px;
+    background:#fff;
+    border:1px solid rgba(43,40,37,0.1);
+    border-radius:2px;
+    padding:12px 14px;
+    line-height:1.7;
+    color:var(--indigo-deep);
+    font-weight:500;
+    cursor:pointer;
+    transition:border-color 0.15s, box-shadow 0.15s;
+  }
+  .segment-note:hover{
+    border-color:var(--indigo-mid);
+    box-shadow:0 3px 10px rgba(29,43,79,0.1);
+  }
+  .segment-note .map-link{
+    margin-top:8px;
+    font-size:11px;
+    color:var(--indigo-mid);
+    font-family:'BIZ UDPGothic', 'Noto Sans JP', sans-serif;
+    text-align:right;
+  }
+  .segment-note b{ color:var(--indigo-deep); }
+  .badge-mode{
+    font-family:'BIZ UDPGothic', 'Noto Sans JP', sans-serif;
+    font-size:10.5px;
+    padding:2px 6px;
+    border-radius:2px;
+    margin-right:6px;
+    font-weight:700;
+  }
+  .badge-mode.walk{ background:#E7EBE0; color:var(--line-walk); }
+  .badge-mode.bus{ background:#F4E2DA; color:var(--line-bus); }
+  .badge-mode.transfer{ background:#EFE3C8; color:var(--gold); margin-left:4px; }
+
+  .summary{
+    background:var(--indigo-deep);
+    color:var(--washi);
+    border-radius:4px;
+    padding:22px 24px;
+    margin-bottom:44px;
+    display:flex;
+    gap:32px;
+    flex-wrap:wrap;
+  }
+  .summary .figure{ min-width:120px; }
+  .summary .figure .num{
+    font-family:'BIZ UDPGothic', 'Noto Sans JP', sans-serif;
+    font-size:26px;
+    font-weight:700;
+    color:#fff;
+  }
+  .summary .figure .lbl{
+    font-size:11px;
+    letter-spacing:0.06em;
+    color:rgba(239,230,214,0.7);
+    text-transform:uppercase;
+    margin-top:2px;
+  }

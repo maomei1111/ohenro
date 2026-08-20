@@ -1,0 +1,19 @@
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--washi);
+    color:var(--sumi);
+    font-family:'BIZ UDPGothic', 'Noto Sans JP', sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{ font-family:'BIZ UDPGothic', 'Noto Sans JP', sans-serif; }
+  /* Reference mockup: typography, album, settings, and floating tabs */
+  body,button,input,select,textarea,label,.mono,
+  .hero-eyebrow,.lang-switch select,.tab-btn .tab-label,
+  .settings-section-title,.settings-secondary-btn,.zukan-stamp .n,
+  .stop-time,.stop-title .no,.badge-mode,.summary .figure .num{
+    font-family:'Noto Sans JP',sans-serif !important;
+  }
+  body{font-weight:400;background:#ece5d8}
+  html body *{font-family:'Noto Sans JP',sans-serif !important}
