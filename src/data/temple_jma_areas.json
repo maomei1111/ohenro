@@ -1,0 +1,706 @@
+[
+  {
+    "templeNo": 1,
+    "forecastOfficeCode": "360000",
+    "forecastAreaCode": "360010",
+    "forecastAreaName": "北部",
+    "temperatureAreaCode": "71106",
+    "temperatureAreaName": "徳島"
+  },
+  {
+    "templeNo": 2,
+    "forecastOfficeCode": "360000",
+    "forecastAreaCode": "360010",
+    "forecastAreaName": "北部",
+    "temperatureAreaCode": "71106",
+    "temperatureAreaName": "徳島"
+  },
+  {
+    "templeNo": 3,
+    "forecastOfficeCode": "360000",
+    "forecastAreaCode": "360010",
+    "forecastAreaName": "北部",
+    "temperatureAreaCode": "71106",
+    "temperatureAreaName": "徳島"
+  },
+  {
+    "templeNo": 4,
+    "forecastOfficeCode": "360000",
+    "forecastAreaCode": "360010",
+    "forecastAreaName": "北部",
+    "temperatureAreaCode": "71106",
+    "temperatureAreaName": "徳島"
+  },
+  {
+    "templeNo": 5,
+    "forecastOfficeCode": "360000",
+    "forecastAreaCode": "360010",
+    "forecastAreaName": "北部",
+    "temperatureAreaCode": "71106",
+    "temperatureAreaName": "徳島"
+  },
+  {
+    "templeNo": 6,
+    "forecastOfficeCode": "360000",
+    "forecastAreaCode": "360010",
+    "forecastAreaName": "北部",
+    "temperatureAreaCode": "71106",
+    "temperatureAreaName": "徳島"
+  },
+  {
+    "templeNo": 7,
+    "forecastOfficeCode": "360000",
+    "forecastAreaCode": "360010",
+    "forecastAreaName": "北部",
+    "temperatureAreaCode": "71106",
+    "temperatureAreaName": "徳島"
+  },
+  {
+    "templeNo": 8,
+    "forecastOfficeCode": "360000",
+    "forecastAreaCode": "360010",
+    "forecastAreaName": "北部",
+    "temperatureAreaCode": "71106",
+    "temperatureAreaName": "徳島"
+  },
+  {
+    "templeNo": 9,
+    "forecastOfficeCode": "360000",
+    "forecastAreaCode": "360010",
+    "forecastAreaName": "北部",
+    "temperatureAreaCode": "71106",
+    "temperatureAreaName": "徳島"
+  },
+  {
+    "templeNo": 10,
+    "forecastOfficeCode": "360000",
+    "forecastAreaCode": "360010",
+    "forecastAreaName": "北部",
+    "temperatureAreaCode": "71106",
+    "temperatureAreaName": "徳島"
+  },
+  {
+    "templeNo": 11,
+    "forecastOfficeCode": "360000",
+    "forecastAreaCode": "360010",
+    "forecastAreaName": "北部",
+    "temperatureAreaCode": "71106",
+    "temperatureAreaName": "徳島"
+  },
+  {
+    "templeNo": 12,
+    "forecastOfficeCode": "360000",
+    "forecastAreaCode": "360010",
+    "forecastAreaName": "北部",
+    "temperatureAreaCode": "71106",
+    "temperatureAreaName": "徳島"
+  },
+  {
+    "templeNo": 13,
+    "forecastOfficeCode": "360000",
+    "forecastAreaCode": "360010",
+    "forecastAreaName": "北部",
+    "temperatureAreaCode": "71106",
+    "temperatureAreaName": "徳島"
+  },
+  {
+    "templeNo": 14,
+    "forecastOfficeCode": "360000",
+    "forecastAreaCode": "360010",
+    "forecastAreaName": "北部",
+    "temperatureAreaCode": "71106",
+    "temperatureAreaName": "徳島"
+  },
+  {
+    "templeNo": 15,
+    "forecastOfficeCode": "360000",
+    "forecastAreaCode": "360010",
+    "forecastAreaName": "北部",
+    "temperatureAreaCode": "71106",
+    "temperatureAreaName": "徳島"
+  },
+  {
+    "templeNo": 16,
+    "forecastOfficeCode": "360000",
+    "forecastAreaCode": "360010",
+    "forecastAreaName": "北部",
+    "temperatureAreaCode": "71106",
+    "temperatureAreaName": "徳島"
+  },
+  {
+    "templeNo": 17,
+    "forecastOfficeCode": "360000",
+    "forecastAreaCode": "360010",
+    "forecastAreaName": "北部",
+    "temperatureAreaCode": "71106",
+    "temperatureAreaName": "徳島"
+  },
+  {
+    "templeNo": 18,
+    "forecastOfficeCode": "360000",
+    "forecastAreaCode": "360010",
+    "forecastAreaName": "北部",
+    "temperatureAreaCode": "71106",
+    "temperatureAreaName": "徳島"
+  },
+  {
+    "templeNo": 19,
+    "forecastOfficeCode": "360000",
+    "forecastAreaCode": "360010",
+    "forecastAreaName": "北部",
+    "temperatureAreaCode": "71106",
+    "temperatureAreaName": "徳島"
+  },
+  {
+    "templeNo": 20,
+    "forecastOfficeCode": "360000",
+    "forecastAreaCode": "360020",
+    "forecastAreaName": "南部",
+    "temperatureAreaCode": "71266",
+    "temperatureAreaName": "日和佐"
+  },
+  {
+    "templeNo": 21,
+    "forecastOfficeCode": "360000",
+    "forecastAreaCode": "360020",
+    "forecastAreaName": "南部",
+    "temperatureAreaCode": "71266",
+    "temperatureAreaName": "日和佐"
+  },
+  {
+    "templeNo": 22,
+    "forecastOfficeCode": "360000",
+    "forecastAreaCode": "360020",
+    "forecastAreaName": "南部",
+    "temperatureAreaCode": "71266",
+    "temperatureAreaName": "日和佐"
+  },
+  {
+    "templeNo": 23,
+    "forecastOfficeCode": "360000",
+    "forecastAreaCode": "360020",
+    "forecastAreaName": "南部",
+    "temperatureAreaCode": "71266",
+    "temperatureAreaName": "日和佐"
+  },
+  {
+    "templeNo": 24,
+    "forecastOfficeCode": "390000",
+    "forecastAreaCode": "390020",
+    "forecastAreaName": "東部",
+    "temperatureAreaCode": "74372",
+    "temperatureAreaName": "室戸岬"
+  },
+  {
+    "templeNo": 25,
+    "forecastOfficeCode": "390000",
+    "forecastAreaCode": "390020",
+    "forecastAreaName": "東部",
+    "temperatureAreaCode": "74372",
+    "temperatureAreaName": "室戸岬"
+  },
+  {
+    "templeNo": 26,
+    "forecastOfficeCode": "390000",
+    "forecastAreaCode": "390020",
+    "forecastAreaName": "東部",
+    "temperatureAreaCode": "74372",
+    "temperatureAreaName": "室戸岬"
+  },
+  {
+    "templeNo": 27,
+    "forecastOfficeCode": "390000",
+    "forecastAreaCode": "390020",
+    "forecastAreaName": "東部",
+    "temperatureAreaCode": "74372",
+    "temperatureAreaName": "室戸岬"
+  },
+  {
+    "templeNo": 28,
+    "forecastOfficeCode": "390000",
+    "forecastAreaCode": "390010",
+    "forecastAreaName": "中部",
+    "temperatureAreaCode": "74182",
+    "temperatureAreaName": "高知"
+  },
+  {
+    "templeNo": 29,
+    "forecastOfficeCode": "390000",
+    "forecastAreaCode": "390010",
+    "forecastAreaName": "中部",
+    "temperatureAreaCode": "74182",
+    "temperatureAreaName": "高知"
+  },
+  {
+    "templeNo": 30,
+    "forecastOfficeCode": "390000",
+    "forecastAreaCode": "390010",
+    "forecastAreaName": "中部",
+    "temperatureAreaCode": "74182",
+    "temperatureAreaName": "高知"
+  },
+  {
+    "templeNo": 31,
+    "forecastOfficeCode": "390000",
+    "forecastAreaCode": "390010",
+    "forecastAreaName": "中部",
+    "temperatureAreaCode": "74182",
+    "temperatureAreaName": "高知"
+  },
+  {
+    "templeNo": 32,
+    "forecastOfficeCode": "390000",
+    "forecastAreaCode": "390010",
+    "forecastAreaName": "中部",
+    "temperatureAreaCode": "74182",
+    "temperatureAreaName": "高知"
+  },
+  {
+    "templeNo": 33,
+    "forecastOfficeCode": "390000",
+    "forecastAreaCode": "390010",
+    "forecastAreaName": "中部",
+    "temperatureAreaCode": "74182",
+    "temperatureAreaName": "高知"
+  },
+  {
+    "templeNo": 34,
+    "forecastOfficeCode": "390000",
+    "forecastAreaCode": "390010",
+    "forecastAreaName": "中部",
+    "temperatureAreaCode": "74182",
+    "temperatureAreaName": "高知"
+  },
+  {
+    "templeNo": 35,
+    "forecastOfficeCode": "390000",
+    "forecastAreaCode": "390010",
+    "forecastAreaName": "中部",
+    "temperatureAreaCode": "74182",
+    "temperatureAreaName": "高知"
+  },
+  {
+    "templeNo": 36,
+    "forecastOfficeCode": "390000",
+    "forecastAreaCode": "390010",
+    "forecastAreaName": "中部",
+    "temperatureAreaCode": "74182",
+    "temperatureAreaName": "高知"
+  },
+  {
+    "templeNo": 37,
+    "forecastOfficeCode": "390000",
+    "forecastAreaCode": "390030",
+    "forecastAreaName": "西部",
+    "temperatureAreaCode": "74516",
+    "temperatureAreaName": "清水"
+  },
+  {
+    "templeNo": 38,
+    "forecastOfficeCode": "390000",
+    "forecastAreaCode": "390030",
+    "forecastAreaName": "西部",
+    "temperatureAreaCode": "74516",
+    "temperatureAreaName": "清水"
+  },
+  {
+    "templeNo": 39,
+    "forecastOfficeCode": "390000",
+    "forecastAreaCode": "390030",
+    "forecastAreaName": "西部",
+    "temperatureAreaCode": "74516",
+    "temperatureAreaName": "清水"
+  },
+  {
+    "templeNo": 40,
+    "forecastOfficeCode": "380000",
+    "forecastAreaCode": "380030",
+    "forecastAreaName": "南予",
+    "temperatureAreaCode": "73442",
+    "temperatureAreaName": "宇和島"
+  },
+  {
+    "templeNo": 41,
+    "forecastOfficeCode": "380000",
+    "forecastAreaCode": "380030",
+    "forecastAreaName": "南予",
+    "temperatureAreaCode": "73442",
+    "temperatureAreaName": "宇和島"
+  },
+  {
+    "templeNo": 42,
+    "forecastOfficeCode": "380000",
+    "forecastAreaCode": "380030",
+    "forecastAreaName": "南予",
+    "temperatureAreaCode": "73442",
+    "temperatureAreaName": "宇和島"
+  },
+  {
+    "templeNo": 43,
+    "forecastOfficeCode": "380000",
+    "forecastAreaCode": "380030",
+    "forecastAreaName": "南予",
+    "temperatureAreaCode": "73442",
+    "temperatureAreaName": "宇和島"
+  },
+  {
+    "templeNo": 44,
+    "forecastOfficeCode": "380000",
+    "forecastAreaCode": "380010",
+    "forecastAreaName": "中予",
+    "temperatureAreaCode": "73166",
+    "temperatureAreaName": "松山"
+  },
+  {
+    "templeNo": 45,
+    "forecastOfficeCode": "380000",
+    "forecastAreaCode": "380010",
+    "forecastAreaName": "中予",
+    "temperatureAreaCode": "73166",
+    "temperatureAreaName": "松山"
+  },
+  {
+    "templeNo": 46,
+    "forecastOfficeCode": "380000",
+    "forecastAreaCode": "380010",
+    "forecastAreaName": "中予",
+    "temperatureAreaCode": "73166",
+    "temperatureAreaName": "松山"
+  },
+  {
+    "templeNo": 47,
+    "forecastOfficeCode": "380000",
+    "forecastAreaCode": "380010",
+    "forecastAreaName": "中予",
+    "temperatureAreaCode": "73166",
+    "temperatureAreaName": "松山"
+  },
+  {
+    "templeNo": 48,
+    "forecastOfficeCode": "380000",
+    "forecastAreaCode": "380010",
+    "forecastAreaName": "中予",
+    "temperatureAreaCode": "73166",
+    "temperatureAreaName": "松山"
+  },
+  {
+    "templeNo": 49,
+    "forecastOfficeCode": "380000",
+    "forecastAreaCode": "380010",
+    "forecastAreaName": "中予",
+    "temperatureAreaCode": "73166",
+    "temperatureAreaName": "松山"
+  },
+  {
+    "templeNo": 50,
+    "forecastOfficeCode": "380000",
+    "forecastAreaCode": "380010",
+    "forecastAreaName": "中予",
+    "temperatureAreaCode": "73166",
+    "temperatureAreaName": "松山"
+  },
+  {
+    "templeNo": 51,
+    "forecastOfficeCode": "380000",
+    "forecastAreaCode": "380010",
+    "forecastAreaName": "中予",
+    "temperatureAreaCode": "73166",
+    "temperatureAreaName": "松山"
+  },
+  {
+    "templeNo": 52,
+    "forecastOfficeCode": "380000",
+    "forecastAreaCode": "380010",
+    "forecastAreaName": "中予",
+    "temperatureAreaCode": "73166",
+    "temperatureAreaName": "松山"
+  },
+  {
+    "templeNo": 53,
+    "forecastOfficeCode": "380000",
+    "forecastAreaCode": "380010",
+    "forecastAreaName": "中予",
+    "temperatureAreaCode": "73166",
+    "temperatureAreaName": "松山"
+  },
+  {
+    "templeNo": 54,
+    "forecastOfficeCode": "380000",
+    "forecastAreaCode": "380020",
+    "forecastAreaName": "東予",
+    "temperatureAreaCode": "73141",
+    "temperatureAreaName": "新居浜"
+  },
+  {
+    "templeNo": 55,
+    "forecastOfficeCode": "380000",
+    "forecastAreaCode": "380020",
+    "forecastAreaName": "東予",
+    "temperatureAreaCode": "73141",
+    "temperatureAreaName": "新居浜"
+  },
+  {
+    "templeNo": 56,
+    "forecastOfficeCode": "380000",
+    "forecastAreaCode": "380020",
+    "forecastAreaName": "東予",
+    "temperatureAreaCode": "73141",
+    "temperatureAreaName": "新居浜"
+  },
+  {
+    "templeNo": 57,
+    "forecastOfficeCode": "380000",
+    "forecastAreaCode": "380020",
+    "forecastAreaName": "東予",
+    "temperatureAreaCode": "73141",
+    "temperatureAreaName": "新居浜"
+  },
+  {
+    "templeNo": 58,
+    "forecastOfficeCode": "380000",
+    "forecastAreaCode": "380020",
+    "forecastAreaName": "東予",
+    "temperatureAreaCode": "73141",
+    "temperatureAreaName": "新居浜"
+  },
+  {
+    "templeNo": 59,
+    "forecastOfficeCode": "380000",
+    "forecastAreaCode": "380020",
+    "forecastAreaName": "東予",
+    "temperatureAreaCode": "73141",
+    "temperatureAreaName": "新居浜"
+  },
+  {
+    "templeNo": 60,
+    "forecastOfficeCode": "380000",
+    "forecastAreaCode": "380020",
+    "forecastAreaName": "東予",
+    "temperatureAreaCode": "73141",
+    "temperatureAreaName": "新居浜"
+  },
+  {
+    "templeNo": 61,
+    "forecastOfficeCode": "380000",
+    "forecastAreaCode": "380020",
+    "forecastAreaName": "東予",
+    "temperatureAreaCode": "73141",
+    "temperatureAreaName": "新居浜"
+  },
+  {
+    "templeNo": 62,
+    "forecastOfficeCode": "380000",
+    "forecastAreaCode": "380020",
+    "forecastAreaName": "東予",
+    "temperatureAreaCode": "73141",
+    "temperatureAreaName": "新居浜"
+  },
+  {
+    "templeNo": 63,
+    "forecastOfficeCode": "380000",
+    "forecastAreaCode": "380020",
+    "forecastAreaName": "東予",
+    "temperatureAreaCode": "73141",
+    "temperatureAreaName": "新居浜"
+  },
+  {
+    "templeNo": 64,
+    "forecastOfficeCode": "380000",
+    "forecastAreaCode": "380020",
+    "forecastAreaName": "東予",
+    "temperatureAreaCode": "73141",
+    "temperatureAreaName": "新居浜"
+  },
+  {
+    "templeNo": 65,
+    "forecastOfficeCode": "380000",
+    "forecastAreaCode": "380020",
+    "forecastAreaName": "東予",
+    "temperatureAreaCode": "73141",
+    "temperatureAreaName": "新居浜"
+  },
+  {
+    "templeNo": 66,
+    "forecastOfficeCode": "360000",
+    "forecastAreaCode": "360010",
+    "forecastAreaName": "北部",
+    "temperatureAreaCode": "71066",
+    "temperatureAreaName": "池田"
+  },
+  {
+    "templeNo": 67,
+    "forecastOfficeCode": "370000",
+    "forecastAreaCode": "370000",
+    "forecastAreaName": "香川県",
+    "temperatureAreaCode": "72086",
+    "temperatureAreaName": "高松"
+  },
+  {
+    "templeNo": 68,
+    "forecastOfficeCode": "370000",
+    "forecastAreaCode": "370000",
+    "forecastAreaName": "香川県",
+    "temperatureAreaCode": "72086",
+    "temperatureAreaName": "高松"
+  },
+  {
+    "templeNo": 69,
+    "forecastOfficeCode": "370000",
+    "forecastAreaCode": "370000",
+    "forecastAreaName": "香川県",
+    "temperatureAreaCode": "72086",
+    "temperatureAreaName": "高松"
+  },
+  {
+    "templeNo": 70,
+    "forecastOfficeCode": "370000",
+    "forecastAreaCode": "370000",
+    "forecastAreaName": "香川県",
+    "temperatureAreaCode": "72086",
+    "temperatureAreaName": "高松"
+  },
+  {
+    "templeNo": 71,
+    "forecastOfficeCode": "370000",
+    "forecastAreaCode": "370000",
+    "forecastAreaName": "香川県",
+    "temperatureAreaCode": "72086",
+    "temperatureAreaName": "高松"
+  },
+  {
+    "templeNo": 72,
+    "forecastOfficeCode": "370000",
+    "forecastAreaCode": "370000",
+    "forecastAreaName": "香川県",
+    "temperatureAreaCode": "72086",
+    "temperatureAreaName": "高松"
+  },
+  {
+    "templeNo": 73,
+    "forecastOfficeCode": "370000",
+    "forecastAreaCode": "370000",
+    "forecastAreaName": "香川県",
+    "temperatureAreaCode": "72086",
+    "temperatureAreaName": "高松"
+  },
+  {
+    "templeNo": 74,
+    "forecastOfficeCode": "370000",
+    "forecastAreaCode": "370000",
+    "forecastAreaName": "香川県",
+    "temperatureAreaCode": "72086",
+    "temperatureAreaName": "高松"
+  },
+  {
+    "templeNo": 75,
+    "forecastOfficeCode": "370000",
+    "forecastAreaCode": "370000",
+    "forecastAreaName": "香川県",
+    "temperatureAreaCode": "72086",
+    "temperatureAreaName": "高松"
+  },
+  {
+    "templeNo": 76,
+    "forecastOfficeCode": "370000",
+    "forecastAreaCode": "370000",
+    "forecastAreaName": "香川県",
+    "temperatureAreaCode": "72086",
+    "temperatureAreaName": "高松"
+  },
+  {
+    "templeNo": 77,
+    "forecastOfficeCode": "370000",
+    "forecastAreaCode": "370000",
+    "forecastAreaName": "香川県",
+    "temperatureAreaCode": "72086",
+    "temperatureAreaName": "高松"
+  },
+  {
+    "templeNo": 78,
+    "forecastOfficeCode": "370000",
+    "forecastAreaCode": "370000",
+    "forecastAreaName": "香川県",
+    "temperatureAreaCode": "72086",
+    "temperatureAreaName": "高松"
+  },
+  {
+    "templeNo": 79,
+    "forecastOfficeCode": "370000",
+    "forecastAreaCode": "370000",
+    "forecastAreaName": "香川県",
+    "temperatureAreaCode": "72086",
+    "temperatureAreaName": "高松"
+  },
+  {
+    "templeNo": 80,
+    "forecastOfficeCode": "370000",
+    "forecastAreaCode": "370000",
+    "forecastAreaName": "香川県",
+    "temperatureAreaCode": "72086",
+    "temperatureAreaName": "高松"
+  },
+  {
+    "templeNo": 81,
+    "forecastOfficeCode": "370000",
+    "forecastAreaCode": "370000",
+    "forecastAreaName": "香川県",
+    "temperatureAreaCode": "72086",
+    "temperatureAreaName": "高松"
+  },
+  {
+    "templeNo": 82,
+    "forecastOfficeCode": "370000",
+    "forecastAreaCode": "370000",
+    "forecastAreaName": "香川県",
+    "temperatureAreaCode": "72086",
+    "temperatureAreaName": "高松"
+  },
+  {
+    "templeNo": 83,
+    "forecastOfficeCode": "370000",
+    "forecastAreaCode": "370000",
+    "forecastAreaName": "香川県",
+    "temperatureAreaCode": "72086",
+    "temperatureAreaName": "高松"
+  },
+  {
+    "templeNo": 84,
+    "forecastOfficeCode": "370000",
+    "forecastAreaCode": "370000",
+    "forecastAreaName": "香川県",
+    "temperatureAreaCode": "72086",
+    "temperatureAreaName": "高松"
+  },
+  {
+    "templeNo": 85,
+    "forecastOfficeCode": "370000",
+    "forecastAreaCode": "370000",
+    "forecastAreaName": "香川県",
+    "temperatureAreaCode": "72086",
+    "temperatureAreaName": "高松"
+  },
+  {
+    "templeNo": 86,
+    "forecastOfficeCode": "370000",
+    "forecastAreaCode": "370000",
+    "forecastAreaName": "香川県",
+    "temperatureAreaCode": "72086",
+    "temperatureAreaName": "高松"
+  },
+  {
+    "templeNo": 87,
+    "forecastOfficeCode": "370000",
+    "forecastAreaCode": "370000",
+    "forecastAreaName": "香川県",
+    "temperatureAreaCode": "72086",
+    "temperatureAreaName": "高松"
+  },
+  {
+    "templeNo": 88,
+    "forecastOfficeCode": "370000",
+    "forecastAreaCode": "370000",
+    "forecastAreaName": "香川県",
+    "temperatureAreaCode": "72086",
+    "temperatureAreaName": "高松"
+  }
+]

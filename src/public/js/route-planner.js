@@ -184,34 +184,36 @@ function addDaysToDateStr(dateStr, days){
   return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
 }
 
-// Open-Meteoの天気コード(WMO標準)を簡易アイコンに変換
+// 気象庁の天気コード(天気予報用テロップ番号)を簡易アイコンへ変換。
+// 121種類の完全な対応表は持たず、先頭桁(1xx=晴れ系,2xx=くもり系,3xx=雨系,4xx=雪系)で大まかに判定する。
+// 表示文言そのもの(weatherText)は気象庁の値をそのまま使うため、ここではアイコン選択のみ行う。
 function weatherIconForCode(code){
-  if(code === 0) return '☀️';
-  if(code === 1 || code === 2) return '🌤️';
-  if(code === 3) return '☁️';
-  if(code === 45 || code === 48) return '🌫️';
-  if(code === 85 || code === 86) return '🌨️';
-  if(code >= 71 && code <= 77) return '❄️';
-  if(code === 95 || code === 96 || code === 99) return '⛈️';
-  if(code >= 51 && code <= 82) return '🌧️';
+  const n = Number(code);
+  if(!Number.isFinite(n)) return '☁️';
+  const family = Math.floor(n/100);
+  if(family === 1) return n===100 ? '☀️' : '🌤️';
+  if(family === 2) return '☁️';
+  if(family === 3) return '🌧️';
+  if(family === 4) return '❄️';
   return '☁️';
 }
 
 // 経路上の各札所(区間ごと)の天気をまとめて取得し、対応するチップに反映する。
-// APIキー不要のOpen-Meteoを使用。予報対象外の日付(先すぎる等)は何も表示しない。
+// 気象庁防災情報XML(サーバー側 /weather-proxy 経由)を使用。湿度は表示しない。
+// 予報対象外の日付(8日以降等)は「予報を取得できません」を表示する(仕様書6.3節)。
 async function attachWeather(arrival, dateStr){
   const stops = arrival
     .map((a, idx) => {
       const temple = temples.find(t=>t.no===a.no);
       if(!temple) return null;
-      // 到着予定時刻(toHHMMは24hで折り返す)を渡し、天気コード・気温・降水確率・湿度が
-      // 同じ時間帯の値になるようにする(以前はdailyの異なる集計を混在させていた)。
-      return { idx, lat: temple.lat, lng: temple.lng, date: addDaysToDateStr(dateStr, Math.floor(a.timeMin/1440)), time: toHHMM(a.timeMin) };
+      // 気象庁予報は札所ごとに割り当てた区域(src/data/temple_jma_areas.json)を使うため、
+      // 緯度経度ではなく札所番号(a.no)をそのままサーバーへ渡す。
+      return { idx, templeNo: a.no, date: addDaysToDateStr(dateStr, Math.floor(a.timeMin/1440)), time: toHHMM(a.timeMin) };
     })
     .filter(Boolean);
   if(!stops.length) return;
 
-  const pointsParam = stops.map(s=>`${s.lat},${s.lng},${s.date},${s.time}`).join(';');
+  const pointsParam = stops.map(s=>`${s.templeNo},${s.date},${s.time}`).join(';');
   let results;
   try{
     const res = await fetch(`${API_BASE}/weather-proxy?points=${encodeURIComponent(pointsParam)}`);
@@ -226,15 +228,44 @@ async function attachWeather(arrival, dateStr){
   stops.forEach((s, i) => {
     const chip = document.getElementById(`weather-chip-${s.idx}`);
     const w = results[i];
-    if(!chip || !w || !w.available) return;
-    const precipRounded = Math.round(w.precipProbability / 10) * 10; // 日本の天気予報に合わせて10%刻みで表示
-    const humidityText = w.humidity != null ? ` 💧${Math.round(w.humidity)}%` : '';
-    // 到着予定時刻の予報が取得できず日次予報にフォールバックした場合、
-    // precipProbabilityは「その日の最高降水確率」なのでその旨を明示する(24節)。
-    const precipLabel = w.isDailyMax ? `☔${t('weather_daily_max_short')}${precipRounded}%` : `☔${precipRounded}%`;
-    chip.title = w.isDailyMax ? t('weather_daily_max_note') : '';
-    chip.textContent = `${weatherIconForCode(w.weathercode)} ${Math.round(w.maxTempC)}°C ${precipLabel}${humidityText}`;
-    chip.classList.toggle('weather-warn', w.precipProbability >= 50 || w.maxTempC >= 33);
+    if(!chip) return;
+
+    if(!w || !w.available){
+      chip.textContent = '';
+      chip.title = '';
+      chip.classList.remove('weather-warn');
+      return;
+    }
+
+    const maxC = w.temperature?.maxC;
+    const minC = w.temperature?.minC;
+    const tempParts = [];
+    if(maxC != null) tempParts.push(`${t('temp_max_short')}${Math.round(maxC)}℃`);
+    if(minC != null) tempParts.push(`${t('temp_min_short')}${Math.round(minC)}℃`);
+    const precipText = w.precipitationProbability != null ? `☔${Math.round(w.precipitationProbability)}%` : '';
+    // 天気自体・気温・降水確率のすべてが欠けている場合だけ「予報を取得できません」にする。
+    // 一部だけ欠けている場合は取得できた項目だけを表示する(仕様書6.3節)。
+    if(!w.weatherText && !tempParts.length && !precipText){
+      chip.textContent = t('weather_unavailable');
+      chip.title = '';
+      chip.classList.remove('weather-warn');
+      return;
+    }
+
+    const icon = weatherIconForCode(w.weatherCode);
+    const mainLine = [icon, tempParts.join(' / '), precipText].filter(Boolean).join(' ');
+    // 「到着予定時刻の降水確率」と誤認させないよう、時間帯別予報の場合は対象時間帯を必ず併記し、
+    // 日別予報の場合はその旨を明記する(仕様書6.1/6.2節)。気象庁の区域は札所の一点予報ではないため
+    // 「◯◯寺の降水確率」のような表現は避け、区域名(forecastAreaName)と合わせて表示する。
+    const periodLine = w.isDailyForecast
+      ? `${t('weather_daily_label')}・${t('weather_source_jma')}`
+      : `${w.precipitationPeriod ? w.precipitationPeriod + '・' : ''}${t('weather_period_label')}・${t('weather_source_jma')}`;
+    const tempFullParts = [];
+    if(maxC != null) tempFullParts.push(`${t('temp_max_label')}${Math.round(maxC)}℃`);
+    if(minC != null) tempFullParts.push(`${t('temp_min_label')}${Math.round(minC)}℃`);
+    chip.textContent = mainLine;
+    chip.title = [w.forecastAreaName, tempFullParts.join(' / '), periodLine].filter(Boolean).join('　');
+    chip.classList.toggle('weather-warn', (w.precipitationProbability ?? 0) >= 50 || (maxC ?? 0) >= 33);
   });
 }
 
