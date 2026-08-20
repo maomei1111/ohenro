@@ -160,7 +160,7 @@ function renderResult(arrival, dateStr){
           <span class="weather-chip" id="weather-chip-${idx}" title="${t('weather_label')}"></span>
         </div>
         <div class="stop-meta mono">${temple.kana}</div>
-        <a class="official-link" href="/temple/${temple.no}?lang=${currentLang}" target="_blank" rel="noopener">${t('temple_detail_link')}</a>
+        <a class="official-link" href="/temple/${temple.no}?lang=${currentLang}">${t('temple_detail_link')}</a>
         ${nextEntry ? `
           <div class="segment-note" onclick="openMapForIndex(${idx+1})">
             <span class="badge-mode ${nextEntry.mode}">${nextEntry.mode==='bus'?'BUS':'WALK'}</span>

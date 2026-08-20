@@ -227,7 +227,20 @@ export function createApp() {
     <p>${desc.history}</p>
     ${spotsHtml ? `<h2>${ui.highlights}</h2><div class="spots-grid">${spotsHtml}</div>` : ''}
   ` : `<p class="empty">${ui.empty}</p>`}
-  <a class="back" href="javascript:history.back()">${ui.back}</a>
+  <a class="back" href="/" id="templeBackLink">${ui.back}</a>
+  <script>
+    // 履歴があれば同じWebView内で戻る(Androidの物理戻るボタンでもこのページの
+    // 履歴エントリが解消されて直前のルート結果へ戻れるようにするため)。
+    // document.referrerが同一オリジンでない場合(新規タブで開かれた・深いリンクで
+    // 直接開かれた等、戻り先の履歴が無い場合)は、通常のリンク遷移(href="/")へ
+    // フォールバックする(仕様書25節)。
+    document.getElementById('templeBackLink').addEventListener('click', function(e){
+      if (document.referrer && document.referrer.indexOf(location.origin) === 0) {
+        e.preventDefault();
+        history.back();
+      }
+    });
+  </script>
 </body>
 </html>`;
     res.type('html').send(html);
