@@ -202,6 +202,10 @@
   </div>
 </div>
 
+<!-- alert()の代わりに使うページ内トースト表示。Android WebViewがonJsAlertを実装していない
+     場合でも確実にメッセージを表示できるようにするため(window.alertに依存しない)。 -->
+<div class="app-toast-container" id="appToastContainer" aria-live="polite"></div>
+
 <script>
   // サーバー側の環境変数(DISABLE_GOSHUIN_LOCATION_CHECK)を安全な真偽値だけ埋め込む。
   // テンプレートが未置換のまま(サーバーを経由せず直接開かれた場合)は

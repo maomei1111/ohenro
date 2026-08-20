@@ -46,7 +46,7 @@ function onLocationToggleChange(el){
       return;
     }
     if(!navigator.geolocation){
-      alert(t('zukan_locate_unsupported'));
+      showToast(t('zukan_locate_unsupported'));
       refreshLocationStatus();
       return;
     }
@@ -81,13 +81,13 @@ function handleLocationFailure(err, messageKey){
     }
     return;
   }
-  alert(t(messageKey));
+  showToast(t(messageKey));
 }
 function settingsOpenAppSettings(){
   if(window.AndroidBridge && typeof window.AndroidBridge.openAppSettings === 'function'){
     window.AndroidBridge.openAppSettings();
   }else{
-    alert(t('zukan_locate_unsupported'));
+    showToast(t('zukan_locate_unsupported'));
   }
 }
 
@@ -149,16 +149,16 @@ function checkTempleProximity(no, button, onSuccess){
 //御朱印取得を現在地から取得
 // function checkTempleProximity(no, button, onSuccess){
 //   if(!isLocationUsageEnabled()){
-//     alert(t('location_app_disabled'));
+//     showToast(t('location_app_disabled'));
 //     return;
 //   }
   if(!navigator.geolocation){
-    alert(t('zukan_locate_unsupported'));
+    showToast(t('zukan_locate_unsupported'));
     return;
   }
   const temple = temples.find(item=>item.no===no);
   if(!temple || !Number.isFinite(Number(temple.lat)) || !Number.isFinite(Number(temple.lng))){
-    alert(t('zukan_locate_failed'));
+    showToast(t('zukan_locate_failed'));
     return;
   }
 
@@ -193,20 +193,20 @@ function checkTempleProximity(no, button, onSuccess){
       const distance = Math.round(distanceMeters);
       if(proximity.reason === 'invalid_accuracy'){
         restoreButton();
-        alert(t('zukan_locate_failed'));
+        showToast(t('zukan_locate_failed'));
         return;
       }
       if(proximity.ok){
         onSuccess(pos, distance);
       }else{
         restoreButton();
-        alert(t('zukan_too_far', formatDistance(distance)));
+        showToast(t('zukan_too_far', formatDistance(distance)));
       }
     },
     (err)=>{
       console.warn('現在地の取得に失敗しました', err);
       restoreButton();
-      alert(t('zukan_locate_failed'));
+      showToast(t('zukan_locate_failed'));
     },
     { enableHighAccuracy:true, timeout:15000, maximumAge:0 }
   );
@@ -237,11 +237,11 @@ function zukanCardTap(evt, no){
 
 function setStartFromLocation(){
   if(!isLocationUsageEnabled()){
-    alert(t('location_app_disabled'));
+    showToast(t('location_app_disabled'));
     return;
   }
   if(!navigator.geolocation){
-    alert(t('locate_unsupported'));
+    showToast(t('locate_unsupported'));
     return;
   }
   const btn = document.querySelector('.locate-btn');
@@ -261,7 +261,7 @@ function setStartFromLocation(){
       btn.disabled = false;
       if(nearest){
         if(minDist > MAX_AUTO_START_DISTANCE_M){
-          alert(t('locate_outside_area', Math.round(minDist / 1000)));
+          showToast(t('locate_outside_area', Math.round(minDist / 1000)));
           return;
         }
         startSel.value = nearest.no;
