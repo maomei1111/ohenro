@@ -112,6 +112,26 @@ Railwayでは対象サービスのVariablesに設定する。テスト環境は
 変数自体を未設定にする（未設定時は自動的に本番用の動作になる）。設定変更後は
 再デプロイ・再起動のうえ、ブラウザ/アプリを開き直して反映を確認すること。
 
+公開サーバーのCORS・レート制限は以下の環境変数で管理する
+（`src/server.ts` の `createApp()`。詳細は `docs/CSS_AND_SERVER_PROTECTION_SPEC.md` 参照）:
+
+| 環境変数 | 既定値 | 内容 |
+|---|---|---|
+| `CORS_ALLOWED_ORIGINS` | 空（許可オリジン無し） | カンマ区切りの許可オリジン。完全一致で判定する。`*` やワイルドカード、末尾スラッシュを含む値は無視され警告ログが出る（例: `https://本番ドメイン,https://テスト環境ドメイン`） |
+| `ALLOW_NULL_ORIGIN` | `false` | `file://` から読み込まれるAndroid WebView由来の `Origin: null` を許可する場合のみ `true` にする。実機で実際にnullオリジンを送るか確認してから有効化すること |
+| `TRUST_PROXY_HOPS` | `1` | Railway等のプロキシ経由で正しいクライアントIPを取得するためのホップ数。不正値・未設定は既定値1にフォールバックする |
+
+`Origin` ヘッダーの無いリクエスト（同一サイト・ネイティブ相当）は常に許可される。
+許可されていないオリジンからのリクエストは `403 {"error":"cors_denied"}` を返す
+（スタックトレースやサーバー内部のパスは返さない）。
+
+`/next-bus`・`/weather-proxy`・`/overpass-proxy`・`/stop-walk-routes`・`/temples`・
+`/temple-places` には個別のアクセス回数制限（`express-rate-limit`）がある。制限を
+超えると `429 {"error":"too_many_requests","message":"しばらく待ってから再度お試しください"}`
+を返す。静的ファイル・トップ画面(`/`)・`/health` には制限をかけていない。基本的な
+HTTPセキュリティヘッダーは `helmet` で付与している（CSPは別段階でReport-Onlyから
+導入するため、現時点では無効のまま）。
+
 ## 3. 実行順序
 
 ```bash

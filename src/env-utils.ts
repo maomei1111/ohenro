@@ -8,3 +8,34 @@ export function parseBooleanEnv(value: string | undefined, defaultValue = false)
   console.warn(`[config] invalid boolean env value "${value}"; using ${defaultValue}`);
   return defaultValue;
 }
+
+// CORS_ALLOWED_ORIGINS をカンマ区切りでパースする。
+// "*" やワイルドカードを含む値は許可オリジンとして絶対に採用しない
+// (無条件許可に相当してしまうため、安全側でその要素だけ無視して警告する)。
+export function parseAllowedOrigins(value: string | undefined): Set<string> {
+  if (value == null || value.trim() === '') return new Set();
+  const origins = new Set<string>();
+  for (const raw of value.split(',')) {
+    const origin = raw.trim();
+    if (!origin) continue;
+    if (origin.includes('*')) {
+      console.warn(`[config] CORS_ALLOWED_ORIGINS contains a wildcard entry "${origin}"; ignoring it`);
+      continue;
+    }
+    if (origin.endsWith('/')) {
+      console.warn(`[config] CORS_ALLOWED_ORIGINS entry "${origin}" has a trailing slash; ignoring it`);
+      continue;
+    }
+    origins.add(origin);
+  }
+  return origins;
+}
+
+// TRUST_PROXY_HOPS を安全な正の整数へ変換する。不正値・未設定は既定値(1)。
+export function parseTrustProxyHops(value: string | undefined, defaultValue = 1): number {
+  if (value == null || value.trim() === '') return defaultValue;
+  const n = Number(value.trim());
+  if (Number.isInteger(n) && n >= 0) return n;
+  console.warn(`[config] invalid TRUST_PROXY_HOPS value "${value}"; using ${defaultValue}`);
+  return defaultValue;
+}
