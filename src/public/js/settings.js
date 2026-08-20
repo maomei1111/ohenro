@@ -134,8 +134,9 @@ function renderZukan(){
 const ZUKAN_VISIT_MIN_RADIUS_M = 100;
 const ZUKAN_VISIT_MAX_RADIUS_M = 200;
 
-//御朱印取得を無条件で実施
-const DISABLE_GOSHUIN_LOCATION_CHECK = true;
+// サーバー側の環境変数 DISABLE_GOSHUIN_LOCATION_CHECK から埋め込まれた設定を読む。
+// window.OHENRO_CONFIG が無い(index.htmlを経由していない等)場合も安全側(false=位置判定有効)。
+const DISABLE_GOSHUIN_LOCATION_CHECK = window.OHENRO_CONFIG?.disableGoshuinLocationCheck === true;
 
 function checkTempleProximity(no, button, onSuccess){
   if (DISABLE_GOSHUIN_LOCATION_CHECK) {

@@ -192,6 +192,14 @@
   </div>
 </div>
 
+<script>
+  // サーバー側の環境変数(DISABLE_GOSHUIN_LOCATION_CHECK)を安全な真偽値だけ埋め込む。
+  // テンプレートが未置換のまま(サーバーを経由せず直接開かれた場合)は
+  // '{{DISABLE_GOSHUIN_LOCATION_CHECK}}' === 'true' が false になり、位置判定は有効側になる。
+  window.OHENRO_CONFIG = Object.freeze({
+    disableGoshuinLocationCheck: '{{DISABLE_GOSHUIN_LOCATION_CHECK}}' === 'true'
+  });
+</script>
 <script src="/js/i18n.js"></script>
 <script src="/js/geo-utils.js"></script>
 <script src="/js/date-utils.js"></script>

@@ -11,6 +11,14 @@ import fs from 'fs';
 import path from 'path';
 import { findNextBus } from './query-next-bus';
 import { AppDataSource } from './data-source';
+import { parseBooleanEnv } from './env-utils';
+
+// 起動時に一度だけ評価する。値が不正な場合の警告ログもここで1回だけ出す
+// （リクエストごとに再評価すると、不正値の警告が毎回出てログが埋まってしまうため）。
+const DISABLE_GOSHUIN_LOCATION_CHECK = parseBooleanEnv(process.env.DISABLE_GOSHUIN_LOCATION_CHECK, false);
+console.log(
+  `[config] goshuin location check: ${DISABLE_GOSHUIN_LOCATION_CHECK ? 'disabled (test mode)' : 'enabled'}`
+);
 
 const app = express();
 app.use(cors()); // WebView(file://やhttps://)からのアクセスを許可
@@ -172,6 +180,7 @@ app.get('/', (_req, res) => {
       '{{GOOGLE_MAPS_MAP_ID}}',
       process.env.GOOGLE_MAPS_MAP_ID ?? '75b8f3f04b0ac15a904e6d31'
     );
+    html = html.replaceAll('{{DISABLE_GOSHUIN_LOCATION_CHECK}}', String(DISABLE_GOSHUIN_LOCATION_CHECK));
     // WebView/ブラウザによる古いバージョンのキャッシュを防ぐ
     res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
     res.type('html').send(html);
