@@ -1,0 +1,107 @@
+
+  .settings-body{ padding:0; }
+  .settings-select{
+    width:100%;
+    padding:10px;
+    border:1px solid rgba(43,40,37,0.2);
+    border-radius:2px;
+    background:#fff;
+    font-size:14px;
+    margin-bottom:6px;
+    outline:none;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .settings-select:focus,.settings-select:focus-visible{outline:none!important;box-shadow:none!important}
+  .settings-divider{
+    height:1px;
+    background:rgba(43,40,37,0.12);
+    margin:20px 0;
+  }
+  .settings-section-title{
+    font-family:'BIZ UDPGothic', 'Noto Sans JP', sans-serif;
+    font-size:14px;
+    font-weight:700;
+    color:var(--indigo-deep);
+    margin-bottom:4px;
+  }
+  .settings-section-desc{
+    font-size:12.5px;
+    color:#8a8578;
+    margin-bottom:10px;
+  }
+  .settings-toggle-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:10px 12px;
+    background:var(--washi);
+    border:1px solid rgba(43,40,37,0.1);
+    border-radius:4px;
+    margin-bottom:10px;
+  }
+  .settings-toggle-row span{ font-size:13.5px; font-weight:700; }
+  .toggle-switch{
+    position:relative;
+    display:inline-block;
+    width:46px; height:26px;
+    flex-shrink:0;
+  }
+  .toggle-switch input{ opacity:0; width:0; height:0; }
+  .toggle-slider{
+    position:absolute; inset:0;
+    background:#c9c1af;
+    border-radius:26px;
+    transition:0.15s;
+    cursor:pointer;
+  }
+  .toggle-slider::before{
+    content:'';
+    position:absolute;
+    width:20px; height:20px;
+    left:3px; top:3px;
+    background:#fff;
+    border-radius:50%;
+    transition:0.15s;
+    box-shadow:0 1px 3px rgba(0,0,0,0.3);
+  }
+  .toggle-switch input:checked + .toggle-slider{ background:var(--line-walk); }
+  .toggle-switch input:checked + .toggle-slider::before{ transform:translateX(20px); }
+  .settings-secondary-btn{
+    display:block;
+    width:100%;
+    padding:9px;
+    background:transparent;
+    border:1px solid rgba(43,40,37,0.2);
+    color:var(--indigo-mid);
+    border-radius:2px;
+    font-family:'BIZ UDPGothic', 'Noto Sans JP', sans-serif;
+    font-size:12.5px;
+    cursor:pointer;
+    margin-top:4px;
+  }
+
+  #viewSettings .settings-body{
+    min-height:74vh;padding:28px 14px;border-radius:24px 24px 0 0;background:var(--washi-panel);
+  }
+  #viewSettings .settings-section-title{margin:0;color:var(--sumi);font-size:15px;font-weight:600;letter-spacing:.04em}
+  #viewSettings .settings-section-desc{margin:3px 0 0;color:#777064;font-size:11px}
+  #viewSettings .settings-reference-card,#viewSettings .settings-secondary-btn{
+    min-height:76px;margin:0 0 14px;padding:14px 16px;border:1px solid rgba(43,40,37,.11);
+    border-radius:17px;background:#fbf7ef;color:var(--sumi);font-size:15px;
+    box-shadow:0 4px 12px rgba(43,40,37,.08);
+  }
+  #viewSettings .settings-reference-card{display:flex;align-items:center;gap:13px}
+  #viewSettings .settings-reference-icon{width:28px;height:28px;display:flex;align-items:center;justify-content:center;color:var(--sumi);flex:0 0 auto}
+  #viewSettings .settings-reference-icon svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  #viewSettings .settings-reference-content{min-width:0;flex:1}
+  #viewSettings #settingsLocationStatus{display:block;margin-top:4px;color:#777064;font-size:12px;font-weight:400}
+  #viewSettings .settings-reference-chevron{font-size:23px;color:#777064}
+  #viewSettings .settings-select{min-height:28px;padding:0;border:0;background:transparent;box-shadow:none;font-size:13px;color:#777064;appearance:none}
+  #viewSettings .settings-toggle-row{display:flex;align-items:center;margin:0;padding:0;border:0;background:transparent;box-shadow:none}
+  #viewSettings .settings-toggle-row>span{display:none}
+  #viewSettings .settings-secondary-btn{display:none}
+  #viewSettings .settings-divider{display:none}
+  #viewSettings .toggle-switch{width:48px;height:28px}
+  #viewSettings .toggle-switch input:checked + .toggle-slider{background:var(--vermillion)}
+  #viewSettings .toggle-switch input:checked + .toggle-slider::before{transform:translateX(20px)}
+  #viewSettings .settings-theme-card{cursor:pointer}

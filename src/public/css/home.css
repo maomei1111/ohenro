@@ -1,0 +1,155 @@
+
+
+  .panel{
+    background:var(--washi-panel);
+    border:1px solid rgba(43,40,37,0.1);
+    border-radius:4px;
+    padding:28px;
+    margin-top:-28px;
+    position:relative;
+    z-index:2;
+    box-shadow:0 12px 30px rgba(29,43,79,0.08);
+  }
+
+  .controls{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:16px;
+  }
+
+  label{
+    display:block;
+    font-size:11px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--indigo-mid);
+    margin-bottom:6px;
+    font-weight:700;
+  }
+  select, input[type=time]{
+    width:100%;
+    padding:10px 12px;
+    border:1px solid rgba(43,40,37,0.25);
+    border-radius:2px;
+    background:#fff;
+    font-family:'BIZ UDPGothic', 'Noto Sans JP', sans-serif;
+    font-size:14px;
+    color:var(--sumi);
+  }
+  .date-fields, .time-fields{
+    display:flex;
+    gap:4px;
+  }
+  .date-fields select, .time-fields select{
+    padding:8px 4px;
+    font-size:12px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    min-width:0;
+  }
+  .date-fields select.df-year{ flex:0 0 78px; }
+  .date-fields select.df-month{ flex:0 0 auto; width:auto; }
+  .date-fields select.df-day{ flex:0 0 58px; }
+  .time-fields select.tf-hour, .time-fields select.tf-minute{ flex:0 0 52px; text-align:center; }
+  .time-fields .tf-colon{
+    display:flex;
+    align-items:center;
+    font-family:'BIZ UDPGothic', 'Noto Sans JP', sans-serif;
+    font-weight:700;
+    color:var(--indigo-mid);
+  }
+  .mode-toggle{
+    display:flex;
+    border:1px solid var(--indigo-mid);
+    border-radius:2px;
+    overflow:hidden;
+    height:41px;
+  }
+  .mode-toggle button{
+    flex:1;
+    border:none;
+    background:#fff;
+    color:var(--indigo-mid);
+    font-size:12.5px;
+    font-weight:700;
+    cursor:pointer;
+    font-family:'BIZ UDPGothic', 'Noto Sans JP', sans-serif;
+  }
+  .mode-toggle button.active{
+    background:var(--indigo-mid);
+    color:#fff;
+  }
+
+  .run-btn{
+    grid-column:1/-1;
+    margin-top:4px;
+    background:var(--vermillion);
+    color:#fff;
+    border:none;
+    padding:13px 20px;
+    font-size:14px;
+    font-weight:700;
+    letter-spacing:0.03em;
+    border-radius:2px;
+    cursor:pointer;
+    font-family:'BIZ UDPGothic', 'Noto Sans JP', sans-serif;
+  }
+  .run-btn:hover{ filter:brightness(1.08); }
+  .locate-btn{
+    margin-top:6px;
+    width:100%;
+    background:none;
+    border:1px dashed var(--indigo-mid);
+    color:var(--indigo-mid);
+    font-size:11.5px;
+    padding:6px 8px;
+    border-radius:2px;
+    cursor:pointer;
+    font-family:'BIZ UDPGothic', 'Noto Sans JP', sans-serif;
+  }
+  .locate-btn:hover{ background:rgba(51,80,122,0.08); }
+  .share-btn{
+    grid-column:1/-1;
+    margin-top:8px;
+    background:none;
+    border:1px solid var(--indigo-mid);
+    color:var(--indigo-mid);
+    padding:10px 20px;
+    font-size:13px;
+    font-weight:700;
+    border-radius:2px;
+    cursor:pointer;
+    font-family:'BIZ UDPGothic', 'Noto Sans JP', sans-serif;
+  }
+  .share-btn:hover{ background:rgba(51,80,122,0.06); }
+  .progress-bar{
+    font-family:'BIZ UDPGothic', 'Noto Sans JP', sans-serif;
+    font-size:12px;
+    color:var(--indigo-mid);
+    background:var(--washi);
+    border:1px solid rgba(43,40,37,0.1);
+    border-radius:2px;
+    padding:8px 12px;
+    margin-bottom:18px;
+  }
+
+  .legend{
+    display:flex;
+    gap:22px;
+    margin:26px 0 6px;
+    font-size:12.5px;
+    color:var(--indigo-mid);
+    flex-wrap:wrap;
+  }
+  .legend span{ display:flex; align-items:center; gap:7px; }
+  .swatch{ width:20px; height:3px; display:inline-block; }
+  .swatch.walk{ background:var(--line-walk); }
+  .swatch.bus{ background:none; border-top:2px dashed var(--line-bus); height:0; width:20px; }
+
+  .footnote{
+    font-size:12px;
+    color:#8a8578;
+    line-height:1.8;
+    padding-bottom:40px;
+  }
