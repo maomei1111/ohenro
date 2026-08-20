@@ -249,3 +249,21 @@ function updateProgressLabel(){
   const set = getVisitedSet();
   el.textContent = t('progress_label', set.size, temples.length);
 }
+
+// Androidの物理戻るボタン用ブリッジ（MainActivity.ktのOnBackPressedDispatcherから
+// evaluateJavascriptで呼ばれる想定）。御朱印詳細・地図のモーダルが開いていれば
+// 閉じてtrueを返す。何も開いていなければfalseを返し、Android側は通常の終了動作へ
+// フォールバックする（仕様書 docs/CSS_AND_SERVER_PROTECTION_SPEC.md 25節）。
+window.closeAnyOpenOverlay = function(){
+  const goshuinOverlay = document.getElementById('goshuinOverlay');
+  if(goshuinOverlay && goshuinOverlay.classList.contains('open')){
+    closeGoshuin();
+    return true;
+  }
+  const mapOverlay = document.getElementById('mapOverlay');
+  if(mapOverlay && mapOverlay.classList.contains('open')){
+    closeMap();
+    return true;
+  }
+  return false;
+};
