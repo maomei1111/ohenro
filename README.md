@@ -98,6 +98,20 @@ PGHOST, PGPORT, PGUSER, PGPASSWORD, PGDATABASE
 DATABASE_URL
 ```
 
+御朱印取得時の位置判定は環境変数 `DISABLE_GOSHUIN_LOCATION_CHECK` で切り替える
+（`src/env-utils.ts` の `parseBooleanEnv` で解釈。詳細は
+`docs/GOSHUIN_LOCATION_ENV_SPEC.md` 参照）:
+
+| 設定値 | 動作 |
+|---|---|
+| `true` | 位置情報を確認せず御朱印を取得できる。開発・テスト用 |
+| `false` / 未設定 / 不正値 | 現在地と札所の距離・位置精度を確認する。本番用（既定） |
+
+Railwayでは対象サービスのVariablesに設定する。テスト環境は
+`DISABLE_GOSHUIN_LOCATION_CHECK=true`、本番環境は `false` を設定するか、
+変数自体を未設定にする（未設定時は自動的に本番用の動作になる）。設定変更後は
+再デプロイ・再起動のうえ、ブラウザ/アプリを開き直して反映を確認すること。
+
 ## 3. 実行順序
 
 ```bash
