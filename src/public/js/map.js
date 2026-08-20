@@ -659,6 +659,10 @@ async function openMap(fromNo, toNo, mode, note, distanceKm, busResult){
       center: { lat: from.lat, lng: from.lng },
       zoom: 13,
       mapId: '{{GOOGLE_MAPS_MAP_ID}}',
+      // mapId任せだとCloud Console側でVectorスタイルが設定されていない限りRaster
+      // 描画になり、2本指回転が使えなくなる(実際にそうなっていた)。renderingTypeを
+      // 明示することで、mapIdの設定に関わらずVector描画を要求する。
+      renderingType: google.maps.RenderingType.VECTOR,
       headingInteractionEnabled: true,
       tiltInteractionEnabled: false,
       disableDefaultUI: true,
