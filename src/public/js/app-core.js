@@ -63,6 +63,27 @@ function toggleHeroInfo(){
   document.getElementById('heroInfoTooltip')?.classList.toggle('open');
 }
 
+// window.alert()の代替。Android WebViewがonJsAlertを実装していないと
+// alert()が表示されない(または反応がないように見える)ことがあるため、
+// ページ内に自前でメッセージを表示する(タップ、または一定時間で自動的に消える)。
+const TOAST_AUTO_HIDE_MS = 4000;
+function showToast(message){
+  const container = document.getElementById('appToastContainer');
+  if(!container){ console.warn('[toast]', message); return; }
+  const el = document.createElement('div');
+  el.className = 'app-toast';
+  el.textContent = message;
+  const remove = () => {
+    el.classList.remove('show');
+    el.addEventListener('transitionend', () => el.remove(), { once:true });
+  };
+  el.addEventListener('click', remove);
+  container.appendChild(el);
+  // 追加直後にclassを付けることでCSSのtransitionを発火させる
+  requestAnimationFrame(() => el.classList.add('show'));
+  setTimeout(remove, TOAST_AUTO_HIDE_MS);
+}
+
 // 現在の計画(出発・到着札所、日付、時刻、言語)を、URL一つで共有できるようにする
 async function sharePlan(){
   const params = new URLSearchParams();
@@ -86,10 +107,10 @@ async function sharePlan(){
   // Web Share API が無い環境(PCブラウザ等)ではクリップボードにコピーする
   try{
     await navigator.clipboard.writeText(shareUrl);
-    alert(t('share_copied'));
+    showToast(t('share_copied'));
   }catch(e){
     console.warn('share failed', e);
-    alert(t('share_failed'));
+    showToast(t('share_failed'));
   }
 }
 

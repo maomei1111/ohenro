@@ -474,7 +474,7 @@ window.__onLocationPermanentlyDenied = function(){
   if(openSettings && confirm(t('zukan_locate_failed') + '\n\n' + t('location_open_settings_confirm'))){
     window.AndroidBridge.openAppSettings();
   }else if(!openSettings){
-    alert(t('zukan_locate_failed'));
+    showToast(t('zukan_locate_failed'));
   }
 };
 
@@ -482,11 +482,11 @@ window.__onLocationPermanentlyDenied = function(){
 function mapLocateMe(){
   if(!googleMap) return;
   if(!isLocationUsageEnabled()){
-    alert(t('location_app_disabled'));
+    showToast(t('location_app_disabled'));
     return;
   }
   if(!navigator.geolocation){
-    alert(t('zukan_locate_unsupported'));
+    showToast(t('zukan_locate_unsupported'));
     return;
   }
   const btn = document.getElementById('mapLocateBtn');
@@ -502,7 +502,7 @@ function mapLocateMe(){
     (err)=>{
       btn.innerHTML = original;
       console.warn('現在地の取得に失敗しました', err);
-      alert(t('zukan_locate_failed'));
+      showToast(t('zukan_locate_failed'));
     },
     { enableHighAccuracy:true, timeout:8000, maximumAge:0 }
   );
@@ -534,7 +534,7 @@ function updateCompassAvailability(){
 function toggleMapHeadingMode(){
   if(!googleMap) return;
   if(!mapVectorCapable){
-    alert(t('compass_unsupported'));
+    showToast(t('compass_unsupported'));
     return;
   }
   if(mapHeadingMode === 'device'){
@@ -544,7 +544,7 @@ function toggleMapHeadingMode(){
     mapHeadingMode = 'device';
     try{ googleMap.setHeading(latestDeviceHeading); }catch(e){}
   }else{
-    alert(t('compass_waiting'));
+    showToast(t('compass_waiting'));
   }
   try{ googleMap.setTilt(0); }catch(e){}
   updateMapCompassIcon();
