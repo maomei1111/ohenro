@@ -8,6 +8,9 @@ let lastArrival = [];
 let googleMap = null;
 let mapOverlays = []; // 開き直すたびにクリアするマーカー・ポリラインの一覧
 let mapReqToken = 0;
+// コンパスボタンは常に表示したままにし(非表示にしない)、回転操作が使えるかどうかは
+// このフラグで管理する。地図初期化直後・Rendering Type確定後(tilesloaded)の両方で更新する。
+let mapVectorCapable = false;
 
 // Google Maps JS APIの読み込み完了を待つための仕組み
 // (実体・コールバック関数本体は head 内で定義済み。ここではグローバルの状態を参照するだけ)
@@ -518,8 +521,22 @@ function updateDirectionMarkerForMap(){
   currentDirectionMarker.setIcon(currentDirectionIcon(normalizeHeading(latestDeviceHeading - mapHeading)));
   currentDirectionMarker.setVisible(true);
 }
+// コンパスボタンは常時見えるようにしているため、回転非対応の地図でタップされた場合は
+// ボタンを消す代わりに理由を説明するメッセージを出す(仕様書27節)。
+function updateCompassAvailability(){
+  const compassBtn = document.getElementById('mapCompassBtn');
+  if(!compassBtn || !googleMap) return;
+  const isVector = googleMap.getRenderingType?.() === google.maps.RenderingType.VECTOR;
+  mapVectorCapable = !!isVector;
+  compassBtn.classList.toggle('is-unsupported', !mapVectorCapable);
+  compassBtn.setAttribute('aria-disabled', String(!mapVectorCapable));
+}
 function toggleMapHeadingMode(){
   if(!googleMap) return;
+  if(!mapVectorCapable){
+    alert(t('compass_unsupported'));
+    return;
+  }
   if(mapHeadingMode === 'device'){
     mapHeadingMode = 'north';
     try{ googleMap.setHeading(0); }catch(e){}
@@ -646,15 +663,22 @@ async function openMap(fromNo, toNo, mode, note, distanceKm, busResult){
       tiltInteractionEnabled: false,
       disableDefaultUI: true,
       zoomControl: true,
+      // 独自のコンパス・現在地ボタンは右上(.map-fab-group)へ移したため、
+      // Google Maps標準のズームボタンは右下のままで重ならない(仕様書26節)。
+      zoomControlOptions: { position: google.maps.ControlPosition.RIGHT_BOTTOM },
       gestureHandling: 'greedy', // 1本指パン・ピンチズーム・2本指回転を全て地図側で処理する
     });
     mapHeadingMode = 'north';
     googleMap.addListener('heading_changed', updateMapCompassIcon);
+    // 地図初期化直後(Rendering Typeがまだ確定していない場合が多い)にも一度状態を
+    // 更新しておき、tilesloaded確定後にもう一度更新する(仕様書27節)。
+    updateCompassAvailability();
     google.maps.event.addListenerOnce(googleMap, 'tilesloaded', ()=>{
-      const compassBtn = document.getElementById('mapCompassBtn');
-      const isVector = googleMap.getRenderingType?.() === google.maps.RenderingType.VECTOR;
-      if(compassBtn) compassBtn.style.visibility = isVector ? 'visible' : 'hidden';
-      if(isVector) googleMap.setHeadingInteractionEnabled?.(true);
+      updateCompassAvailability();
+      if(mapVectorCapable) googleMap.setHeadingInteractionEnabled?.(true);
+      // Google Maps標準のズームボタン等、コントロールのレイアウトを地図表示後に
+      // 再計算させる(モーダル表示アニメーション等でサイズが変わっているため)。
+      google.maps.event.trigger(googleMap, 'resize');
     });
 
     addPinMarker({lat:from.lat, lng:from.lng}, '#1D2B4F', String(from.no).padStart(2,'0'), templeDisplayName(from), 13);

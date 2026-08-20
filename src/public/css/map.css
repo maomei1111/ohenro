@@ -1,11 +1,15 @@
 
   #mapCanvas{ width:100%; height:360px; }
   .map-canvas-wrap{ position:relative; }
+  /* Google Maps標準のズームボタン(右下)と重ならないよう、独自ボタンは右上へまとめる。
+     .map-fab-group自体は中身(ボタン)の分だけしかヒット領域を持たせず、地図のパン・
+     ピンチ操作を妨げないようにする(仕様書26節)。 */
   .map-fab-group{
     position:absolute;
-    right:10px; bottom:16px;
+    right:10px; top:10px; bottom:auto;
     display:flex; flex-direction:column; gap:8px;
     z-index:5;
+    pointer-events:none;
   }
   .map-fab{
     width:40px; height:40px;
@@ -17,9 +21,12 @@
     color:#3c4043;
     display:flex; align-items:center; justify-content:center;
     cursor:pointer;
+    pointer-events:auto;
   }
   .map-fab svg{width:23px;height:23px;display:block}
-  #mapCompassBtn{visibility:hidden}
+  /* コンパスボタンは(Vector Mapでなく回転非対応の場合でも)常に表示したままにし、
+     タップ時に非対応の旨を伝える。ボタン自体を消さない(仕様書27節)。 */
+  #mapCompassBtn.is-unsupported{opacity:.4}
   #mapCompassBtn.is-heading-up{background:#e8f0fe;box-shadow:0 0 0 2px rgba(66,133,244,.28),0 2px 6px rgba(0,0,0,.25)}
   #mapCompassBtn svg{width:25px;height:25px}
   #mapCompassBtn svg{transition:transform .18s ease}
