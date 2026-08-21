@@ -43,6 +43,24 @@
     ){
       renderResult(cached.arrival, cached.date);
       restoredFromCache = true;
+
+      // 見どころページから戻った場合、直前に保存したスクロール位置(押した札所)へ復元する
+      // (仕様書4.4)。ルート条件が変わっていた場合は誤って復元しない。
+      try{
+        const savedScroll = JSON.parse(sessionStorage.getItem('ohenro_return_scroll') || 'null');
+        if(savedScroll){
+          const routeKey = buildRouteKey(cached.from, cached.to, cached.date, cached.time, cached.lang);
+          if(savedScroll.routeKey === routeKey){
+            const target = document.getElementById(`route-stop-${savedScroll.templeNo}`);
+            if(target){
+              target.scrollIntoView({ block: 'center' });
+            } else if(typeof savedScroll.scrollY === 'number'){
+              window.scrollTo(0, savedScroll.scrollY);
+            }
+          }
+        }
+      }catch(e){ console.warn('スクロール位置の復元に失敗しました', e); }
+      sessionStorage.removeItem('ohenro_return_scroll');
     }
   }catch(e){ console.warn('キャッシュ結果の復元に失敗しました', e); }
 

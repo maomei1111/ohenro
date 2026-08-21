@@ -39,6 +39,14 @@ const I18N = {
     temp_min_label: '最低気温',
     temp_max_short: '最高',
     temp_min_short: '最低',
+    weather_word_sunny: '晴れ',
+    weather_word_cloudy: 'くもり',
+    weather_word_rain: '雨',
+    weather_word_snow: '雪',
+    weather_word_thunder: '雷',
+    weather_word_fog: '霧',
+    weather_word_sometimes: '時々',
+    weather_word_then: 'のち',
     summary_nokyo_label: '最終札所の納経所',
     summary_ok: 'OK',
     summary_warn: '要注意',
@@ -156,6 +164,14 @@ const I18N = {
     temp_min_label: 'Low',
     temp_max_short: 'H',
     temp_min_short: 'L',
+    weather_word_sunny: 'Sunny',
+    weather_word_cloudy: 'Cloudy',
+    weather_word_rain: 'Rain',
+    weather_word_snow: 'Snow',
+    weather_word_thunder: 'Thunder',
+    weather_word_fog: 'Fog',
+    weather_word_sometimes: 'at times',
+    weather_word_then: 'then',
     summary_nokyo_label: 'Stamp office at final temple',
     summary_ok: 'OK',
     summary_warn: 'Check timing',
@@ -273,6 +289,14 @@ const I18N = {
     temp_min_label: '최저기온',
     temp_max_short: '최고',
     temp_min_short: '최저',
+    weather_word_sunny: '맑음',
+    weather_word_cloudy: '흐림',
+    weather_word_rain: '비',
+    weather_word_snow: '눈',
+    weather_word_thunder: '천둥',
+    weather_word_fog: '안개',
+    weather_word_sometimes: '때때로',
+    weather_word_then: '이후',
     summary_nokyo_label: '마지막 사찰 납경소',
     summary_ok: 'OK',
     summary_warn: '주의',
@@ -390,6 +414,14 @@ const I18N = {
     temp_min_label: '最低气温',
     temp_max_short: '最高',
     temp_min_short: '最低',
+    weather_word_sunny: '晴',
+    weather_word_cloudy: '多云',
+    weather_word_rain: '雨',
+    weather_word_snow: '雪',
+    weather_word_thunder: '雷',
+    weather_word_fog: '雾',
+    weather_word_sometimes: '有时',
+    weather_word_then: '后转',
     summary_nokyo_label: '终点寺庙纳经所',
     summary_ok: 'OK',
     summary_warn: '请注意',
@@ -507,6 +539,14 @@ const I18N = {
     temp_min_label: '最低氣溫',
     temp_max_short: '最高',
     temp_min_short: '最低',
+    weather_word_sunny: '晴',
+    weather_word_cloudy: '多雲',
+    weather_word_rain: '雨',
+    weather_word_snow: '雪',
+    weather_word_thunder: '雷',
+    weather_word_fog: '霧',
+    weather_word_sometimes: '有時',
+    weather_word_then: '後轉',
     summary_nokyo_label: '終點寺廟納經所',
     summary_ok: 'OK',
     summary_warn: '請注意',
@@ -624,6 +664,14 @@ const I18N = {
     temp_min_label: 'Tiefsttemperatur',
     temp_max_short: 'Max.',
     temp_min_short: 'Min.',
+    weather_word_sunny: 'Sonnig',
+    weather_word_cloudy: 'Bewölkt',
+    weather_word_rain: 'Regen',
+    weather_word_snow: 'Schnee',
+    weather_word_thunder: 'Gewitter',
+    weather_word_fog: 'Nebel',
+    weather_word_sometimes: 'zeitweise',
+    weather_word_then: 'danach',
     summary_nokyo_label: 'Stempelbüro am Zieltempel',
     summary_ok: 'OK',
     summary_warn: 'Achtung',
@@ -741,6 +789,14 @@ const I18N = {
     temp_min_label: 'Temperatura mínima',
     temp_max_short: 'Máx.',
     temp_min_short: 'Mín.',
+    weather_word_sunny: 'Ensolarado',
+    weather_word_cloudy: 'Nublado',
+    weather_word_rain: 'Chuva',
+    weather_word_snow: 'Neve',
+    weather_word_thunder: 'Trovoada',
+    weather_word_fog: 'Nevoeiro',
+    weather_word_sometimes: 'às vezes',
+    weather_word_then: 'depois',
     summary_nokyo_label: 'Escritório de carimbos no templo final',
     summary_ok: 'OK',
     summary_warn: 'Atenção',
@@ -841,5 +897,21 @@ const I18N = {
     };
   }
 
-  return { I18N, createTranslator };
+  // 気象庁の天気コード(天気予報用テロップ番号)から、日本語以外の言語向けに簡潔な状態語を
+  // 生成する。121種類の完全な対応表は持たず、先頭桁(1xx=晴れ系,2xx=くもり系,3xx=雨系,
+  // 4xx=雪系)だけで大まかに判定する(docs/POST_JMA_QUALITY_FIX_SPEC.md 5.5)。
+  // 日本語はweatherTextの原文をそのまま表示するため、この関数は呼ばない想定。
+  function weatherSimpleTextFromCode(weatherCode, lang) {
+    const dict = I18N[lang] || I18N.ja;
+    const n = Number(weatherCode);
+    if (!Number.isFinite(n)) return null;
+    const family = Math.floor(n / 100);
+    if (family === 1) return dict.weather_word_sunny;
+    if (family === 2) return dict.weather_word_cloudy;
+    if (family === 3) return dict.weather_word_rain;
+    if (family === 4) return dict.weather_word_snow;
+    return null;
+  }
+
+  return { I18N, createTranslator, weatherSimpleTextFromCode };
 });

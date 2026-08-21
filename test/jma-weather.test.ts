@@ -143,7 +143,17 @@ function buildVpfw50Xml(reportDateTimeIso: string): string {
 </Report>`;
 }
 
-function buildFeedXml(vpfd51Updated: string, vpfw50Updated: string): string {
+// includeVpfw50=false で、VPFW50が電文一覧に載っていない状態
+// (短時間版regular.xmlで実際に発生していた状況)を再現する。
+function buildFeedXml(vpfd51Updated: string, vpfw50Updated: string, includeVpfw50 = true): string {
+  const vpfw50Entry = includeVpfw50
+    ? `<entry>
+<title>府県週間天気予報</title>
+<id>https://example.test/xml/data/20260101000000_0_VPFW50_360000.xml</id>
+<updated>${vpfw50Updated}</updated>
+<author><name>徳島地方気象台</name></author>
+</entry>`
+    : '';
   return `<?xml version="1.0" encoding="UTF-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
 <entry>
@@ -152,12 +162,7 @@ function buildFeedXml(vpfd51Updated: string, vpfw50Updated: string): string {
 <updated>${vpfd51Updated}</updated>
 <author><name>徳島地方気象台</name></author>
 </entry>
-<entry>
-<title>府県週間天気予報</title>
-<id>https://example.test/xml/data/20260101000000_0_VPFW50_360000.xml</id>
-<updated>${vpfw50Updated}</updated>
-<author><name>徳島地方気象台</name></author>
-</entry>
+${vpfw50Entry}
 </feed>`;
 }
 
@@ -288,13 +293,13 @@ describe('selectWeeklyForecast', () => {
 describe('getForecastForTemple (integration, mocked fetch)', () => {
   let fetchCalls: string[] = [];
 
-  function mockFetch(vpfd51Updated: string, vpfw50Updated: string) {
+  function mockFetch(vpfd51Updated: string, vpfw50Updated: string, includeVpfw50 = true) {
     fetchCalls = [];
     const fn = (async (url: string) => {
       fetchCalls.push(url);
       let body: string;
-      if (url.includes('feed/regular.xml')) {
-        body = buildFeedXml(vpfd51Updated, vpfw50Updated);
+      if (url.includes('feed/regular_l.xml')) {
+        body = buildFeedXml(vpfd51Updated, vpfw50Updated, includeVpfw50);
       } else if (url.includes('VPFD51_360000')) {
         body = buildVpfd51Xml(vpfd51Updated);
       } else if (url.includes('VPFW50_360000')) {
@@ -346,7 +351,7 @@ describe('getForecastForTemple (integration, mocked fetch)', () => {
     await getForecastForTemple(7, dateStrPlusDays(0), '09:00');
     await getForecastForTemple(1, dateStrPlusDays(0), '15:00');
 
-    const feedFetches = fetchCalls.filter((u) => u.includes('feed/regular.xml'));
+    const feedFetches = fetchCalls.filter((u) => u.includes('feed/regular_l.xml'));
     const reportFetches = fetchCalls.filter((u) => u.includes('VPFD51_360000'));
     expect(feedFetches.length).toBe(1);
     expect(reportFetches.length).toBe(1);
@@ -363,6 +368,74 @@ describe('getForecastForTemple (integration, mocked fetch)', () => {
   it('returns available:false for an unknown temple number', async () => {
     mockFetch(`${dateStrPlusDays(0)}T17:00:00+09:00`, `${dateStrPlusDays(0)}T11:00:00+09:00`);
     const result = await getForecastForTemple(999, dateStrPlusDays(0), '09:00');
+    expect(result.available).toBe(false);
+  });
+});
+
+// docs/POST_JMA_QUALITY_FIX_SPEC.md 3.5: 長期間版フィード(regular_l.xml)への切り替えの検証。
+describe('getForecastForTemple (regular_l.xml weekly-feed reliability, spec 3.5)', () => {
+  let fetchCalls: string[] = [];
+
+  function mockFetch(vpfd51Updated: string, vpfw50Updated: string, includeVpfw50 = true) {
+    fetchCalls = [];
+    const fn = (async (url: string) => {
+      fetchCalls.push(url);
+      let body: string;
+      if (url.includes('feed/regular_l.xml')) {
+        body = buildFeedXml(vpfd51Updated, vpfw50Updated, includeVpfw50);
+      } else if (url.includes('VPFD51_360000')) {
+        body = buildVpfd51Xml(vpfd51Updated);
+      } else if (url.includes('VPFW50_360000')) {
+        body = buildVpfw50Xml(vpfw50Updated);
+      } else {
+        return { ok: false, status: 404, text: async () => '' } as Response;
+      }
+      return { ok: true, status: 200, text: async () => body } as Response;
+    }) as typeof fetch;
+    __setFetchForTesting(fn);
+  }
+
+  beforeEach(() => {
+    __resetCachesForTesting();
+  });
+  afterEach(() => {
+    __setFetchForTesting(null);
+  });
+
+  it('only ever requests the long-period feed (regular_l.xml), never the short-lived regular.xml', async () => {
+    mockFetch(`${dateStrPlusDays(0)}T17:00:00+09:00`, `${dateStrPlusDays(0)}T11:00:00+09:00`);
+    await getForecastForTemple(1, dateStrPlusDays(0), '09:00');
+    await getForecastForTemple(1, dateStrPlusDays(4), null);
+    expect(fetchCalls.some((u) => u.includes('feed/regular_l.xml'))).toBe(true);
+    expect(fetchCalls.some((u) => /feed\/regular\.xml/.test(u))).toBe(false);
+  });
+
+  it('reproduces the short-feed gap: available:false when the feed has no VPFW50 entry at all', async () => {
+    // 短時間版regular.xmlの実際の問題(1日2回発表のVPFW50がフィードに一度も
+    // 載っていない時間帯がある)を、フィードにVPFW50エントリ自体がない状態として再現する。
+    mockFetch(`${dateStrPlusDays(0)}T17:00:00+09:00`, `${dateStrPlusDays(0)}T11:00:00+09:00`, false);
+    const result = await getForecastForTemple(1, dateStrPlusDays(4), null);
+    expect(result.available).toBe(false);
+  });
+
+  it('recovers once the feed includes a VPFW50 entry (simulates regular_l.xml having it)', async () => {
+    mockFetch(`${dateStrPlusDays(0)}T17:00:00+09:00`, `${dateStrPlusDays(0)}T11:00:00+09:00`, true);
+    const result = await getForecastForTemple(1, dateStrPlusDays(4), null);
+    expect(result.available).toBe(true);
+    expect(result.isDailyForecast).toBe(true);
+  });
+
+  it('returns available forecasts for 3, 6, and 7 days out', async () => {
+    mockFetch(`${dateStrPlusDays(0)}T17:00:00+09:00`, `${dateStrPlusDays(0)}T11:00:00+09:00`);
+    for (const days of [3, 6, 7]) {
+      const result = await getForecastForTemple(1, dateStrPlusDays(days), null);
+      expect(result.available).toBe(true);
+    }
+  });
+
+  it('returns available:false for 8 days out (beyond the JMA forecast horizon)', async () => {
+    mockFetch(`${dateStrPlusDays(0)}T17:00:00+09:00`, `${dateStrPlusDays(0)}T11:00:00+09:00`);
+    const result = await getForecastForTemple(1, dateStrPlusDays(8), null);
     expect(result.available).toBe(false);
   });
 });

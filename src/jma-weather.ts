@@ -391,7 +391,10 @@ export function selectWeeklyForecast(
 
 // ---- フィード・電文の取得とキャッシュ ----
 
-const FEED_URL = 'https://www.data.jma.go.jp/developer/xml/feed/regular.xml';
+// 短時間版(regular.xml)は直近の電文しか残らず、1日2回発表のVPFW50(週間予報)が
+// フィードに載っていない時間帯があるため、起動時刻に左右されない長期間版を使う
+// (docs/POST_JMA_QUALITY_FIX_SPEC.md 3.2: VPFD51/VPFW50とも長期間版から検索する)。
+const FEED_URL = 'https://www.data.jma.go.jp/developer/xml/feed/regular_l.xml';
 const FEED_CHECK_INTERVAL_MS = 10 * 60 * 1000; // 仕様書5.3: フィード確認間隔は10分以上
 const FETCH_FAILURE_RETRY_MS = 5 * 60 * 1000; // 仕様書5.3: 取得失敗時は5分以上あけて再試行
 const FETCH_TIMEOUT_MS = 8000;

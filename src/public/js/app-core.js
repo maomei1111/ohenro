@@ -8,7 +8,7 @@
 // 従来通りの名前でこのスコープ内から呼べるようにする橋渡し。
 // currentLangはこの直後で宣言されるが、tはgetter経由で毎回参照するため
 // 宣言順の影響を受けない。
-const { I18N, createTranslator, metersBetween, distToPolyline, formatDistance,
+const { I18N, createTranslator, weatherSimpleTextFromCode, metersBetween, distToPolyline, formatDistance,
   evaluateVisitProximity, toKanjiNumber, getWarekiDate, toMinutes, toHHMM,
   warekiDateLengthClass, nokyoStatus, durationParts, TEMPLE_NAMES_EN, ROMANIZED_LANGS,
   TEMPLE_HONZON, HONZON_EN, MAX_AUTO_START_DISTANCE_M, DATE_FIELD_ORDER, INTL_LOCALES,

@@ -36,6 +36,7 @@
     grid-template-columns:64px 1fr;
     gap:18px;
     position:relative;
+    scroll-margin-bottom:110px; /* 見どころから戻った際、下部タブバーと重ならないようにする */
   }
   .stop-rail{
     position:relative;
@@ -100,17 +101,38 @@
   }
   .nokyo-ok{ background:#E4EBDD; color:#3E5A2C; }
   .nokyo-warn{ background:var(--warn-bg); color:var(--vermillion); }
+  /* 天気チップ: 1行目=天気文言・気温・降水確率、2行目=区域・対象時間帯・情報源(仕様書5.2)。
+     [hidden]属性で表示/非表示を切り替える(取得中・対象外の一瞬だけレイアウトが崩れないよう)。 */
   .weather-chip{
-    display:inline-block;
-    font-size:11px;
-    padding:3px 8px;
-    border-radius:2px;
+    display:block;
+    margin:6px 0 4px;
+    padding:6px 10px;
+    border-radius:4px;
     font-family:'JetBrains Mono', monospace;
     background:#E4EBDD;
     color:#3E5A2C;
+    max-width:100%;
   }
-  .weather-chip:empty{ display:none; }
+  .weather-chip[hidden]{ display:none; }
   .weather-chip.weather-warn{ background:var(--warn-bg); color:var(--vermillion); }
+  .weather-chip-main{
+    font-size:12px;
+    line-height:1.5;
+    /* くもり時々晴れ所により昼過ぎから雨、のような長い文言でも折り返しを許可しつつ、
+       極端に長い場合だけ2行で打ち切る(全文はtitle属性で確認できる)。 */
+    overflow-wrap:anywhere;
+    display:-webkit-box;
+    -webkit-line-clamp:2;
+    -webkit-box-orient:vertical;
+    overflow:hidden;
+  }
+  .weather-chip-sub{
+    font-size:10.5px;
+    line-height:1.5;
+    margin-top:2px;
+    opacity:0.85;
+    overflow-wrap:anywhere;
+  }
 
   .segment-note{
     margin-top:8px;
