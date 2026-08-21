@@ -37,6 +37,19 @@ console.log(
     `allow null origin: ${ALLOW_NULL_ORIGIN}, trust proxy hops: ${TRUST_PROXY_HOPS}`
 );
 
+// ブラウザに埋め込む用(Maps JavaScript API)とサーバー側処理専用(Places API)でキーを分離する
+// (docs/PRODUCTION_RELEASE_CHECKLIST.md 6.1)。新しいキーが未設定の間は、移行期間として
+// 従来の単一キー(GOOGLE_MAPS_API_KEY)へフォールバックする(本番が即座に壊れないようにするため。
+// Google Cloud Console側でのキー分離・制限設定は別途手動作業が必要)。
+const GOOGLE_MAPS_BROWSER_API_KEY = process.env.GOOGLE_MAPS_BROWSER_API_KEY ?? process.env.GOOGLE_MAPS_API_KEY ?? '';
+const GOOGLE_MAPS_SERVER_API_KEY = process.env.GOOGLE_MAPS_SERVER_API_KEY ?? process.env.GOOGLE_MAPS_API_KEY ?? '';
+if (!process.env.GOOGLE_MAPS_BROWSER_API_KEY && process.env.GOOGLE_MAPS_API_KEY) {
+  console.warn('[config] GOOGLE_MAPS_BROWSER_API_KEY is not set; falling back to the shared GOOGLE_MAPS_API_KEY');
+}
+if (!process.env.GOOGLE_MAPS_SERVER_API_KEY && process.env.GOOGLE_MAPS_API_KEY) {
+  console.warn('[config] GOOGLE_MAPS_SERVER_API_KEY is not set; falling back to the shared GOOGLE_MAPS_API_KEY');
+}
+
 const corsOptions: cors.CorsOptions = {
   origin(origin, callback) {
     // Originヘッダーが無いリクエスト(同一サイト・ネイティブ相当・curl等)は許可する。
@@ -74,6 +87,7 @@ const weatherProxyLimiter = createLimiter(60 * 1000, 30); // 気象庁への代�
 const overpassProxyLimiter = createLimiter(60 * 1000, 30); // DB検索・地図関連処理を保護
 const stopWalkRoutesLimiter = createLimiter(60 * 1000, 60); // DB参照を保護
 const templesLimiter = createLimiter(60 * 1000, 120); // マスタ取得を保護
+const templePhotoLimiter = createLimiter(60 * 1000, 60); // Places写真の代理取得を保護
 
 export function createApp() {
   const app = express();
@@ -82,9 +96,31 @@ export function createApp() {
   // レート制限ミドルウェアより前に設定すること。
   app.set('trust proxy', TRUST_PROXY_HOPS);
 
-  // Google Maps、Google Fonts、既存のインラインスクリプトと衝突しないよう、
-  // 初回導入ではCSPは有効化しない(別段階でReport-Onlyから調査する)。
-  app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
+  // Google Maps、Google Fonts、既存のインラインスクリプトと衝突しないよう、まずは
+  // Report-Only(違反をブロックせずContent-Security-Policy-Report-Onlyヘッダーで通知するのみ)
+  // で導入し、実際の違反状況を見てから強制(enforce)へ移行する
+  // (docs/PRODUCTION_RELEASE_CHECKLIST.md 10.1)。'unsafe-inline'はindex.html等の既存の
+  // インラインscript/styleのため当面必要(nonce化は別対応)。写真はtemple-photoの自前
+  // プロキシ経由になったため、Places写真ホストはimgSrcに含めていない。
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        reportOnly: true,
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'", "'unsafe-inline'", 'https://maps.googleapis.com', 'https://maps.gstatic.com'],
+          styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+          fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+          imgSrc: ["'self'", 'data:', 'https://maps.gstatic.com', 'https://maps.googleapis.com', 'https://*.googleapis.com'],
+          connectSrc: ["'self'", 'https://maps.googleapis.com'],
+          frameSrc: ["'none'"],
+          objectSrc: ["'none'"],
+          baseUri: ["'self'"],
+        },
+      },
+      crossOriginEmbedderPolicy: false,
+    })
+  );
 
   app.use(cors(corsOptions)); // 許可オリジンのみCORSを許可(WebViewのfile://等は環境変数で個別許可)
 
@@ -172,6 +208,37 @@ export function createApp() {
     pt: { history: 'História', highlights: 'Destaques', back: '← Voltar', empty: 'A descrição deste templo será adicionada em breve.', title: '' },
   };
 
+  // 札所の紹介写真(Google Places由来)をサーバー側で代理取得して配信する。
+  // クライアントへGoogleの実URLやサーバー用APIキーを一切渡さないための代理エンドポイント
+  // (docs/PRODUCTION_RELEASE_CHECKLIST.md 6.1)。入力は札所番号(1-88)のみで、
+  // 実際にどのPlaces写真を取得するかはtemples_88_places.json(サーバー側データ)が
+  // 決めるため、クライアントが任意のGoogle API URLを中継することはできない。
+  app.get('/temple-photo/:no', templePhotoLimiter, async (req, res) => {
+    const no = Number(req.params.no);
+    if (!Number.isInteger(no) || no < 1 || no > 88) {
+      return res.status(400).json({ error: 'no は1〜88の整数で指定してください' });
+    }
+    const photoName = templesPlacesInfo[String(no)]?.photoName;
+    if (!photoName) return res.status(404).json({ error: 'photo not found' });
+
+    try {
+      const upstream = await fetch(
+        `https://places.googleapis.com/v1/${photoName}/media?maxHeightPx=500&key=${GOOGLE_MAPS_SERVER_API_KEY}`
+      );
+      if (!upstream.ok || !upstream.body) {
+        console.error(`[temple-photo] upstream status ${upstream.status} for temple ${no}`);
+        return res.status(502).json({ error: 'upstream error' });
+      }
+      res.set('Content-Type', upstream.headers.get('content-type') ?? 'image/jpeg');
+      res.set('Cache-Control', 'public, max-age=86400');
+      const buf = Buffer.from(await upstream.arrayBuffer());
+      res.send(buf);
+    } catch (e) {
+      console.error('[temple-photo] exception:', e);
+      res.status(502).json({ error: 'upstream error' });
+    }
+  });
+
   app.get('/temple/:no', (req, res) => {
     const no = Number(req.params.no);
     const temple = temples88.find((t) => t.no === no);
@@ -182,9 +249,8 @@ export function createApp() {
     const desc = templeDescriptions[String(no)]?.[lang] ?? templeDescriptions[String(no)]?.ja;
 
     const placeInfo = templesPlacesInfo[String(no)];
-    const photoUrl = placeInfo?.photoName
-      ? `https://places.googleapis.com/v1/${placeInfo.photoName}/media?maxHeightPx=500&key=${process.env.GOOGLE_MAPS_API_KEY ?? ''}`
-      : null;
+    // 実際のGoogle URL・APIキーはクライアントへ渡さず、自前の代理エンドポイント経由で配信する。
+    const photoUrl = placeInfo?.photoName ? `/temple-photo/${no}` : null;
 
     const spotsHtml =
       desc?.spots && desc.spots.length
@@ -253,7 +319,7 @@ export function createApp() {
   app.get('/', (_req, res) => {
     try {
       let html = fs.readFileSync(indexTemplatePath, 'utf-8');
-      html = html.replaceAll('{{GOOGLE_MAPS_API_KEY}}', process.env.GOOGLE_MAPS_API_KEY ?? '');
+      html = html.replaceAll('{{GOOGLE_MAPS_API_KEY}}', GOOGLE_MAPS_BROWSER_API_KEY);
       html = html.replaceAll(
         '{{GOOGLE_MAPS_MAP_ID}}',
         process.env.GOOGLE_MAPS_MAP_ID ?? '75b8f3f04b0ac15a904e6d31'
@@ -270,6 +336,20 @@ export function createApp() {
 
   app.get('/health', (_req, res) => {
     res.json({ ok: true });
+  });
+
+  // Railway等の外部監視から、プロセスの生存確認(/health)とは別にDB接続の
+  // 健全性も確認できるようにする(docs/PRODUCTION_RELEASE_CHECKLIST.md 9.2)。
+  // 秘密情報や内部エラーの詳細は返さず、サーバー側のログにだけ残す。
+  app.get('/ready', async (_req, res) => {
+    try {
+      const ds = AppDataSource.isInitialized ? AppDataSource : await AppDataSource.initialize();
+      await ds.query('SELECT 1');
+      res.json({ ok: true });
+    } catch (e) {
+      console.error(`[ready] DB接続確認に失敗しました: ${sanitizeDbError(e, process.env.DATABASE_URL)}`);
+      res.status(503).json({ ok: false });
+    }
   });
 
   // プライバシーポリシー（Google Playのストア掲載に必要な公開URL）
@@ -361,7 +441,7 @@ export function createApp() {
       res.json({ elements });
     } catch (e) {
       console.error('[overpass-proxy] exception:', e);
-      res.status(500).json({ error: 'internal error', detail: (e as Error).message });
+      res.status(500).json({ error: 'internal error' });
     }
   });
 
