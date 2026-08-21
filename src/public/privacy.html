@@ -33,7 +33,7 @@
 
 <h2>1. 取得する情報</h2>
 <ul>
-  <li><b>位置情報</b>：地図上に現在地を表示する目的でのみ使用します。端末のOSの許可を得た場合にブラウザの位置情報APIから取得し、<b>地図表示のためだけに端末内で利用</b>します。この位置情報を弊社サーバーに送信・保存することはありません。</li>
+  <li><b>位置情報</b>：地図上に現在地を表示する目的、および巡拝の記録（デジタル御朱印）機能で、その札所の近くにいるかどうかを判定する目的で使用します。端末のOSの許可を得た場合にブラウザの位置情報APIから取得し、<b>いずれの用途も端末内でのみ処理</b>します。この位置情報を弊社サーバーに送信・保存することはありません。</li>
   <li><b>言語設定</b>：選択した表示言語は、端末のブラウザストレージ（localStorage）にのみ保存され、サーバーには送信されません。</li>
   <li><b>アクセスログ</b>：一般的なWebサーバーの運用上、アクセス元のIPアドレス等が一時的にサーバーのログに記録される場合があります。これは不正利用の防止・障害対応の目的でのみ利用し、個人を特定する目的では利用しません。</li>
 </ul>
@@ -73,7 +73,7 @@
 
 <h2>1. Information We Collect</h2>
 <ul>
-  <li><b>Location data</b>: Used only to display your current position on the map. With your device's permission, location is obtained via the browser's Geolocation API and used <b>only on your device</b> for map display. We do not transmit or store this location data on our servers.</li>
+  <li><b>Location data</b>: Used to display your current position on the map, and, for the pilgrimage record (digital goshuin) feature, to determine whether you are near a given temple. With your device's permission, location is obtained via the browser's Geolocation API and is <b>processed only on your device for both purposes</b>. We do not transmit or store this location data on our servers.</li>
   <li><b>Language preference</b>: Your selected display language is stored only in your browser's local storage on your device and is not sent to our servers.</li>
   <li><b>Access logs</b>: As with any standard web server, IP addresses may be temporarily recorded in server logs for the purposes of abuse prevention and troubleshooting. These are not used to identify individuals.</li>
 </ul>
