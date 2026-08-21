@@ -13,7 +13,7 @@ import fs from 'fs';
 import path from 'path';
 import { findNextBus } from './query-next-bus';
 import { AppDataSource } from './data-source';
-import { parseBooleanEnv, parseAllowedOrigins, parseTrustProxyHops } from './env-utils';
+import { parseBooleanEnv, parseAllowedOrigins, parseTrustProxyHops, maskConnectionString, sanitizeDbError } from './env-utils';
 import { getForecastForTemple } from './jma-weather';
 
 // 起動時に一度だけ評価する。値が不正な場合の警告ログもここで1回だけ出す
@@ -449,14 +449,30 @@ if (require.main === module) {
 
   // デバッグ用: 環境変数が実際に読み込めているか確認（パスワード部分は伏せる）
   if (process.env.DATABASE_URL) {
-    const masked = process.env.DATABASE_URL.replace(/:([^:@]+)@/, ':****@');
-    console.log(`[startup] DATABASE_URL detected: ${masked}`);
+    console.log(`[startup] DATABASE_URL detected: ${maskConnectionString(process.env.DATABASE_URL)}`);
   } else {
     console.log('[startup] DATABASE_URL is NOT set. Falling back to localhost.');
   }
 
-  const app = createApp();
-  app.listen(PORT, () => {
-    console.log(`API server listening on port ${PORT}`);
-  });
+  // 本番ではsynchronizeを使わず、起動のたびに未適用のmigrationだけを適用する
+  // (docs/PRODUCTION_RELEASE_CHECKLIST.md 5.1)。DB接続・migration失敗時は
+  // 中途半端なスキーマのままリクエストを受け付けないよう、起動自体を中止する。
+  // エラーメッセージに接続文字列(パスワード)が含まれないようsanitizeDbErrorを通す。
+  (async () => {
+    try {
+      const ds = AppDataSource.isInitialized ? AppDataSource : await AppDataSource.initialize();
+      const executed = await ds.runMigrations();
+      console.log(`[startup] migration実行完了(${executed.length}件適用)`);
+    } catch (e) {
+      console.error(
+        `[startup] DB migrationに失敗したため起動を中止します: ${sanitizeDbError(e, process.env.DATABASE_URL)}`
+      );
+      process.exit(1);
+    }
+
+    const app = createApp();
+    app.listen(PORT, () => {
+      console.log(`API server listening on port ${PORT}`);
+    });
+  })();
 }

@@ -39,3 +39,19 @@ export function parseTrustProxyHops(value: string | undefined, defaultValue = 1)
   console.warn(`[config] invalid TRUST_PROXY_HOPS value "${value}"; using ${defaultValue}`);
   return defaultValue;
 }
+
+// DATABASE_URL等の接続文字列に含まれるパスワード部分を伏せる。
+// ログ・例外メッセージへ接続文字列をそのまま出さないようにするため
+// (postgresql://user:password@host/db 形式のpassword部分だけを****に置換する)。
+export function maskConnectionString(value: string): string {
+  return value.replace(/:([^:@/]+)@/g, ':****@');
+}
+
+// DB接続失敗時などの例外を、接続文字列(パスワード含む)を含めない安全な文字列へ変換する。
+export function sanitizeDbError(e: unknown, connectionString?: string): string {
+  let message = e instanceof Error ? e.message : String(e);
+  if (connectionString) {
+    message = message.split(connectionString).join(maskConnectionString(connectionString));
+  }
+  return maskConnectionString(message);
+}
