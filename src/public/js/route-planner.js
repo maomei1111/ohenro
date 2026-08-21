@@ -175,9 +175,9 @@ function renderResult(arrival, dateStr){
       <div class="stop-card">
         <div class="stop-title"><span class="no">${String(temple.no).padStart(2,'0')}</span><span class="stop-name">${displayName}</span>
           <span class="nokyo-badge ${nokyoOver?'nokyo-warn':'nokyo-ok'}">${(nokyoOver? t('nokyo_warn') : t('nokyo_ok'))}${nokyoExtra}</span>
-          <span class="weather-chip" id="weather-chip-${idx}" title="${t('weather_label')}"></span>
         </div>
         <div class="stop-meta mono">${temple.kana}</div>
+        <div class="weather-chip" id="weather-chip-${idx}" hidden></div>
         <a class="official-link" href="/temple/${temple.no}?lang=${currentLang}" onclick="saveReturnScrollPosition(${temple.no}, '${routeKey}')">${t('temple_detail_link')}</a>
         ${nextEntry ? `
           <div class="segment-note" onclick="openMapForIndex(${idx+1})">
@@ -216,6 +216,19 @@ function weatherIconForCode(code){
   return '☁️';
 }
 
+// HTML特殊文字をエスケープする(天気チップをinnerHTMLで組み立てるため)。
+// 気象庁の文言は基本的に安全なテキストだが、念のため防御的にエスケープする。
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// 気象庁のweatherTextは日本語のみ。日本語以外の言語では、完全翻訳の代わりに
+// 天気コードから生成した簡潔な状態語(晴れ/くもり/雨/雪)を表示する(仕様書5.5節)。
+function weatherTextForLang(weatherCode, weatherTextJa, lang){
+  if(lang === 'ja') return weatherTextJa || null;
+  return weatherSimpleTextFromCode(weatherCode, lang);
+}
+
 // 経路上の各札所(区間ごと)の天気をまとめて取得し、対応するチップに反映する。
 // 気象庁防災情報XML(サーバー側 /weather-proxy 経由)を使用。湿度は表示しない。
 // 予報対象外の日付(8日以降等)は「予報を取得できません」を表示する(仕様書6.3節)。
@@ -248,41 +261,49 @@ async function attachWeather(arrival, dateStr){
     const w = results[i];
     if(!chip) return;
 
-    if(!w || !w.available){
-      chip.textContent = '';
-      chip.title = '';
-      chip.classList.remove('weather-warn');
-      return;
-    }
-
-    const maxC = w.temperature?.maxC;
-    const minC = w.temperature?.minC;
+    const maxC = w?.temperature?.maxC;
+    const minC = w?.temperature?.minC;
     const tempParts = [];
     if(maxC != null) tempParts.push(`${t('temp_max_short')}${Math.round(maxC)}℃`);
     if(minC != null) tempParts.push(`${t('temp_min_short')}${Math.round(minC)}℃`);
-    const precipText = w.precipitationProbability != null ? `☔${Math.round(w.precipitationProbability)}%` : '';
-    // 天気自体・気温・降水確率のすべてが欠けている場合だけ「予報を取得できません」にする。
-    // 一部だけ欠けている場合は取得できた項目だけを表示する(仕様書6.3節)。
-    if(!w.weatherText && !tempParts.length && !precipText){
-      chip.textContent = t('weather_unavailable');
+    const precipText = w?.precipitationProbability != null ? `☔${Math.round(w.precipitationProbability)}%` : '';
+    const weatherText = w ? weatherTextForLang(w.weatherCode, w.weatherText, currentLang) : null;
+
+    // 予報自体が対象外(available:false)の場合も、天気・気温・降水確率が全て欠けている場合も、
+    // 画面上に「予報を取得できません」とはっきり表示する(仕様書5.3節)。titleだけに情報を
+    // 押し込めず、一部だけ取得できた項目はそのまま表示する。
+    if(!w || !w.available || (!weatherText && !tempParts.length && !precipText)){
+      chip.hidden = false;
+      chip.innerHTML = `<div class="weather-chip-main">${escapeHtml(t('weather_unavailable'))}</div>`;
       chip.title = '';
       chip.classList.remove('weather-warn');
       return;
     }
 
     const icon = weatherIconForCode(w.weatherCode);
-    const mainLine = [icon, tempParts.join(' / '), precipText].filter(Boolean).join(' ');
+    const mainLine = [
+      weatherText ? `${icon} ${weatherText}` : icon,
+      tempParts.join(' / '),
+      precipText,
+    ].filter(Boolean).join('　');
     // 「到着予定時刻の降水確率」と誤認させないよう、時間帯別予報の場合は対象時間帯を必ず併記し、
-    // 日別予報の場合はその旨を明記する(仕様書6.1/6.2節)。気象庁の区域は札所の一点予報ではないため
+    // 日別予報の場合はその旨を明記する(仕様書5.3節)。気象庁の区域は札所の一点予報ではないため
     // 「◯◯寺の降水確率」のような表現は避け、区域名(forecastAreaName)と合わせて表示する。
     const periodLine = w.isDailyForecast
       ? `${t('weather_daily_label')}・${t('weather_source_jma')}`
       : `${w.precipitationPeriod ? w.precipitationPeriod + '・' : ''}${t('weather_period_label')}・${t('weather_source_jma')}`;
+    const subLine = [w.forecastAreaName, periodLine].filter(Boolean).join('・');
+
     const tempFullParts = [];
     if(maxC != null) tempFullParts.push(`${t('temp_max_label')}${Math.round(maxC)}℃`);
     if(minC != null) tempFullParts.push(`${t('temp_min_label')}${Math.round(minC)}℃`);
-    chip.textContent = mainLine;
-    chip.title = [w.forecastAreaName, tempFullParts.join(' / '), periodLine].filter(Boolean).join('　');
+    // titleは補助情報(長い原文全文の確認手段)として残すが、必要な情報は本文2行に必ず出す。
+    const fullTitle = [w.forecastAreaName, tempFullParts.join(' / '), periodLine, w.weatherText]
+      .filter(Boolean).join('　');
+
+    chip.hidden = false;
+    chip.innerHTML = `<div class="weather-chip-main">${escapeHtml(mainLine)}</div><div class="weather-chip-sub">${escapeHtml(subLine)}</div>`;
+    chip.title = fullTitle;
     chip.classList.toggle('weather-warn', (w.precipitationProbability ?? 0) >= 50 || (maxC ?? 0) >= 33);
   });
 }
