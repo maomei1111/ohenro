@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { parseBooleanEnv } from '../src/env-utils';
+import { parseBooleanEnv, maskConnectionString, sanitizeDbError } from '../src/env-utils';
 
 describe('parseBooleanEnv', () => {
   afterEach(() => {
@@ -46,5 +46,36 @@ describe('parseBooleanEnv', () => {
   });
   it('respects a custom default value when unset', () => {
     expect(parseBooleanEnv(undefined, true)).toBe(true);
+  });
+});
+
+describe('maskConnectionString', () => {
+  it('masks the password portion of a postgresql:// URL', () => {
+    expect(maskConnectionString('postgresql://user:s3cr3t@sakura.proxy.rlwy.net:33335/railway')).toBe(
+      'postgresql://user:****@sakura.proxy.rlwy.net:33335/railway'
+    );
+  });
+  it('leaves a URL without a password unchanged', () => {
+    expect(maskConnectionString('postgresql://localhost:5432/ohenro')).toBe('postgresql://localhost:5432/ohenro');
+  });
+  it('leaves arbitrary text without a credential pattern unchanged', () => {
+    expect(maskConnectionString('connect ECONNREFUSED 127.0.0.1:5432')).toBe('connect ECONNREFUSED 127.0.0.1:5432');
+  });
+});
+
+describe('sanitizeDbError', () => {
+  it('masks a connection string embedded in an Error message', () => {
+    const url = 'postgresql://user:s3cr3t@sakura.proxy.rlwy.net:33335/railway';
+    const e = new Error(`Connection terminated: ${url}`);
+    expect(sanitizeDbError(e, url)).toBe(
+      'Connection terminated: postgresql://user:****@sakura.proxy.rlwy.net:33335/railway'
+    );
+  });
+  it('masks any password-shaped substring even without a matching connectionString argument', () => {
+    const e = new Error('failed to connect: postgresql://user:s3cr3t@host:5432/db');
+    expect(sanitizeDbError(e)).toBe('failed to connect: postgresql://user:****@host:5432/db');
+  });
+  it('stringifies non-Error thrown values safely', () => {
+    expect(sanitizeDbError('plain string error')).toBe('plain string error');
   });
 });
