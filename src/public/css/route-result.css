@@ -36,6 +36,7 @@
     grid-template-columns:64px 1fr;
     gap:18px;
     position:relative;
+    scroll-margin-bottom:110px; /* 見どころから戻った際、下部タブバーと重ならないようにする */
   }
   .stop-rail{
     position:relative;

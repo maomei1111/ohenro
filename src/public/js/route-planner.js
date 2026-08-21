@@ -1,6 +1,21 @@
 // index.htmlから切り出したルート計算コア（runPlanner/renderResult/天気表示）。
 // index.html側の他スクリプトと同じグローバルスコープで動作する前提（ES Modules不使用）。
 
+// 見どころページから戻った際の位置復元用。出発・到着・日付・時刻・言語が全て一致する場合だけ
+// 同じルート結果とみなす識別子(app.jsの復元処理と同じ組み立て方をする)。
+function buildRouteKey(from, to, date, time, lang){
+  return `${from}-${to}-${date}-${time}-${lang}`;
+}
+
+// 見どころリンクを押した時点のスクロール位置を保存する。戻ってきた際にapp.js側で復元する。
+function saveReturnScrollPosition(templeNo, routeKey){
+  try{
+    sessionStorage.setItem('ohenro_return_scroll', JSON.stringify({
+      templeNo, scrollY: window.scrollY, routeKey,
+    }));
+  }catch(e){ console.warn('スクロール位置の保存に失敗しました', e); }
+}
+
 async function runPlanner(){
   const startNo = Number(startSel.value);
   const endNo = Number(endSel.value);
@@ -130,6 +145,9 @@ function renderResult(arrival, dateStr){
     </div>
   `;
 
+  // 見どころページから戻った位置の復元に使うルート識別子(仕様書4.2)。
+  const routeKey = buildRouteKey(arrival[0].no, arrival[arrival.length-1].no, dateStr, toHHMM(arrival[0].timeMin), currentLang);
+
   let html = '';
   arrival.forEach((a, idx)=>{
     const temple = temples.find(t=>t.no===a.no);
@@ -148,7 +166,7 @@ function renderResult(arrival, dateStr){
     const nextEntry = arrival[idx+1];
     const nextTemple = nextEntry ? temples.find(t=>t.no===nextEntry.no) : null;
 
-    html += `<div class="stop">
+    html += `<div class="stop" id="route-stop-${temple.no}">
       <div class="stop-rail">
         <div class="stop-dot"></div>
         <div class="stop-time">${toHHMM(a.timeMin)}</div>
@@ -160,7 +178,7 @@ function renderResult(arrival, dateStr){
           <span class="weather-chip" id="weather-chip-${idx}" title="${t('weather_label')}"></span>
         </div>
         <div class="stop-meta mono">${temple.kana}</div>
-        <a class="official-link" href="/temple/${temple.no}?lang=${currentLang}">${t('temple_detail_link')}</a>
+        <a class="official-link" href="/temple/${temple.no}?lang=${currentLang}" onclick="saveReturnScrollPosition(${temple.no}, '${routeKey}')">${t('temple_detail_link')}</a>
         ${nextEntry ? `
           <div class="segment-note" onclick="openMapForIndex(${idx+1})">
             <span class="badge-mode ${nextEntry.mode}">${nextEntry.mode==='bus'?'BUS':'WALK'}</span>
