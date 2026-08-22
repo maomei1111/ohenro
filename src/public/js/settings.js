@@ -125,10 +125,9 @@ function renderZukan(){
       ? `<div class="zukan-goshuin-area"><div class="zukan-goshuin-sheet"><img class="zukan-photo" src="/goshuin/${no}.webp" alt="${displayName}" loading="lazy" onerror="this.parentElement.style.display='none';this.parentElement.nextElementSibling.style.display='flex'">${warekiVisitDate ? `<div class="${dateOverlayClass}">${warekiVisitDate}</div>` : ''}</div><div class="zukan-hidden-goshuin" style="display:none"><span>${t('goshuin_no_image')}</span></div></div>`
       : hiddenHtml;
     return `<div class="zukan-card ${visited?'visited':'unvisited'}" onclick="zukanCardTap(event, ${temple.no})">
-      <div class="zukan-no">${temple.no}</div>
       ${photoHtml}
       <div class="zukan-info">
-        <div class="zukan-name-row"><div class="zukan-name">${displayName}</div>${visitDate ? `<div class="zukan-card-date">${visitDate}</div>` : ''}</div>
+        <div class="zukan-name-row"><div class="zukan-no">${no}</div><div class="zukan-name">${displayName}</div>${visitDate ? `<div class="zukan-card-date">${visitDate}</div>` : ''}</div>
       </div>
     </div>`;
   }).join('');
