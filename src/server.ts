@@ -316,7 +316,8 @@ export function createApp() {
   // メインのプランナー画面を配信。Google Maps APIキーはビルド時に埋め込まず、
   // リクエスト時に環境変数から動的に埋め込む(コードにキーを残さないため)。
   const indexTemplatePath = path.join(__dirname, 'public', 'index.html');
-  app.get('/', (_req, res) => {
+  const companySitePath = path.join(__dirname, 'public', 'company.html');
+  const servePlanner = (_req: express.Request, res: express.Response) => {
     try {
       let html = fs.readFileSync(indexTemplatePath, 'utf-8');
       html = html.replaceAll('{{GOOGLE_MAPS_API_KEY}}', GOOGLE_MAPS_BROWSER_API_KEY);
@@ -332,7 +333,39 @@ export function createApp() {
       console.error('[/] failed to serve index.html:', e);
       res.status(500).send('internal error');
     }
+  };
+
+  // 独自ドメインではMaoMeiLabsの公式サイトを表示する。Railwayの既存URLでは
+  // 従来どおりプランナーを表示し、Android WebViewの読み込み先を壊さない。
+  app.get('/', (req, res) => {
+    const hostname = req.hostname.toLowerCase();
+    if (hostname === 'maomeilabs.com' || hostname === 'www.maomeilabs.com') {
+      try {
+        const html = fs.readFileSync(companySitePath, 'utf-8');
+        res.set('Cache-Control', 'public, max-age=300');
+        return res.type('html').send(html);
+      } catch (e) {
+        console.error('[/] failed to serve company.html:', e);
+        return res.status(500).send('internal error');
+      }
+    }
+    return servePlanner(req, res);
   });
+
+  // Railway URLからの確認や、将来の案内用として公式サイトを明示URLでも配信する。
+  app.get('/about', (_req, res) => {
+    try {
+      const html = fs.readFileSync(companySitePath, 'utf-8');
+      res.set('Cache-Control', 'public, max-age=300');
+      res.type('html').send(html);
+    } catch (e) {
+      console.error('[/about] failed to serve company.html:', e);
+      res.status(500).send('internal error');
+    }
+  });
+
+  // 独自ドメインからもプランナーへ直接アクセスできる経路を維持する。
+  app.get('/app', servePlanner);
 
   app.get('/health', (_req, res) => {
     res.json({ ok: true });

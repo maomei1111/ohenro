@@ -123,6 +123,33 @@ describe('HTTP headers (helmet)', () => {
   });
 });
 
+describe('MaoMeiLabs official website', () => {
+  it('serves the company site on the custom domain root', async () => {
+    const { app, restore } = await loadAppWithEnv({});
+    const res = await request(app).get('/').set('Host', 'maomeilabs.com');
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('MaoMeiLabs');
+    expect(res.text).toContain('お遍路みちしるべ');
+    restore();
+  });
+
+  it('keeps serving the planner on the Railway domain root', async () => {
+    const { app, restore } = await loadAppWithEnv({});
+    const res = await request(app).get('/').set('Host', 'example.up.railway.app');
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('Ohenro Route Planner');
+    restore();
+  });
+
+  it('serves the company site at /about on every host', async () => {
+    const { app, restore } = await loadAppWithEnv({});
+    const res = await request(app).get('/about');
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('文化とテクノロジー');
+    restore();
+  });
+});
+
 describe('Rate limiting', () => {
   it('does not rate-limit /health even under many requests', async () => {
     const { app, restore: r } = await loadAppWithEnv({});
