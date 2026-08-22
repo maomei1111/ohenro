@@ -39,14 +39,25 @@
     border-top:1px solid rgba(43,40,37,0.1);
   }
   .zukan-card .zukan-no{
+    flex:0 0 auto;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    box-sizing:border-box;
+    min-width:26px;
+    height:21px;
+    padding:0 5px;
+    border-radius:6px;
+    background:rgba(166,58,42,0.12);
     font-family:'BIZ UDPGothic', 'Noto Sans JP', sans-serif;
     font-size:11px;
     color:var(--vermillion);
     font-weight:700;
-    display:block;
   }
-  .zukan-card.unvisited .zukan-no{ color:rgba(43,40,37,0.45); }
+  .zukan-card.unvisited .zukan-no{ color:rgba(43,40,37,0.45); background:rgba(43,40,37,0.08); }
   .zukan-card .zukan-name{
+    flex:1 1 auto;
+    min-width:0;
     font-family:'Noto Serif JP', serif;
     font-size:13px;
     line-height:1.3;
@@ -136,7 +147,7 @@
     padding:14px 18px calc(16px + env(safe-area-inset-bottom,0));
     background:#fbf7ef;border-top:1px solid rgba(43,40,37,.1);
   }
-  .zukan-name-row{display:flex;align-items:baseline;justify-content:space-between;gap:6px}
+  .zukan-name-row{display:flex;align-items:center;gap:6px}
   .zukan-card-date{flex:0 0 auto;color:#777064;font-size:10px;white-space:nowrap}
   .goshuin-date-overlay{
     position:absolute;left:4.8%;bottom:5.2%;
@@ -225,12 +236,9 @@
   #viewZukan .zukan-goshuin-area>.zukan-hidden-goshuin{height:100%}
   #viewZukan .zukan-card .zukan-info{padding:8px 10px 10px;background:#fbf7ef}
   #viewZukan .zukan-card .zukan-no{
-    position:absolute;top:0;left:0;z-index:3;display:flex;align-items:center;justify-content:center;
-    min-width:38px;height:34px;padding:0 9px;color:#fff;background:var(--vermillion);
-    border-radius:14px 0 10px 0;font-size:16px;font-weight:600;
+    min-width:28px;height:22px;padding:0 6px;font-size:12px;border-radius:7px;
   }
-  #viewZukan .zukan-card.unvisited .zukan-no{color:#fff;background:#77746d}
-  #viewZukan .zukan-card .zukan-name{min-width:0;font-size:15px;font-weight:600;line-height:1.45}
+  #viewZukan .zukan-card .zukan-name{font-size:15px;font-weight:600;line-height:1.45}
   #viewZukan .zukan-stamp{
     top:auto;right:8px;bottom:8px;width:46px;height:46px;color:var(--vermillion);
     background:rgba(251,247,239,.94);border:2px solid var(--vermillion);box-shadow:none;
