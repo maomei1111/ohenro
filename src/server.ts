@@ -11,10 +11,13 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 import { findNextBus } from './query-next-bus';
 import { AppDataSource } from './data-source';
 import { parseBooleanEnv, parseAllowedOrigins, parseTrustProxyHops, maskConnectionString, sanitizeDbError } from './env-utils';
 import { getForecastForTemple } from './jma-weather';
+import { Entitlement } from './entities/entitlement.entities';
+import { generateRecoveryCode, normalizeRecoveryCode, hasProEntitlement, verifyPlayPurchase } from './entitlement';
 
 // 起動時に一度だけ評価する。値が不正な場合の警告ログもここで1回だけ出す
 // （リクエストごとに再評価すると、不正値の警告が毎回出てログが埋まってしまうため）。
@@ -88,6 +91,16 @@ const overpassProxyLimiter = createLimiter(60 * 1000, 30); // DB検索・地図�
 const stopWalkRoutesLimiter = createLimiter(60 * 1000, 60); // DB参照を保護
 const templesLimiter = createLimiter(60 * 1000, 120); // マスタ取得を保護
 const templePhotoLimiter = createLimiter(60 * 1000, 60); // Places写真の代理取得を保護
+const entitlementLimiter = createLimiter(60 * 1000, 20); // recovery_codeの総当たり試行を抑止
+const entitlementAdminLimiter = createLimiter(60 * 1000, 10); // 管理用エンドポイントを保護
+
+// legacy_paid権利の管理用エンドポイントを有効化するための共有シークレット。
+// 未設定(空文字含む)の場合はエンドポイント自体を無効化する(本番で誤って誰でも
+// 発行できる状態にならないようにするため)。
+const ENTITLEMENT_ADMIN_SECRET = process.env.ENTITLEMENT_ADMIN_SECRET?.trim() || null;
+if (!ENTITLEMENT_ADMIN_SECRET) {
+  console.log('[config] ENTITLEMENT_ADMIN_SECRET is not set; /entitlement/admin/register-legacy is disabled');
+}
 
 export function createApp() {
   const app = express();
@@ -535,6 +548,134 @@ export function createApp() {
       res.json({ results });
     } catch (e) {
       console.error('[weather-proxy] exception:', e);
+      res.status(500).json({ error: 'internal error' });
+    }
+  });
+
+  // ==================================================================
+  // ---- 有料公開・legacy_paid権利 (docs/PAID_LAUNCH_AND_GOSHUIN_LIST_SPEC.md 3章) ----
+  // ログイン機能が無いアプリのため、recovery_code(引継ぎコード)を検索キーにする。
+  // ==================================================================
+  const RECOVERY_CODE_RE = /^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/;
+
+  // 権利の有無をコードの存在有無で403等にせず常に200+foundフラグで返す
+  // (存在しないコードへの応答を変えると総当たりの手がかりを与えてしまうため)。
+  app.get('/entitlement/status', entitlementLimiter, async (req, res) => {
+    try {
+      const raw = String(req.query.code ?? '');
+      const code = normalizeRecoveryCode(raw);
+      if (!RECOVERY_CODE_RE.test(code)) {
+        return res.json({ found: false });
+      }
+
+      const ds = AppDataSource.isInitialized ? AppDataSource : await AppDataSource.initialize();
+      const repo = ds.getRepository(Entitlement);
+      const row = await repo.findOne({ where: { recovery_code: code } });
+      if (!row) return res.json({ found: false });
+
+      row.last_verified_at = new Date();
+      await repo.save(row);
+
+      res.json({
+        found: true,
+        entitlementType: row.entitlement_type,
+        status: row.status,
+        hasProEntitlement: hasProEntitlement(row.status),
+        lastVerifiedAt: row.last_verified_at.toISOString(),
+      });
+    } catch (e) {
+      console.error('[entitlement/status] exception:', e);
+      res.status(500).json({ error: 'internal error' });
+    }
+  });
+
+  // 無料化後、ネイティブ側がGoogle Play Billingで得たpurchaseTokenを渡してくる想定のエンドポイント。
+  // 今回のバックエンド実装のうち、唯一「将来ネイティブ側から呼ばれる」契約になる。
+  app.post('/entitlement/verify-purchase', entitlementLimiter, express.json(), async (req, res) => {
+    try {
+      const purchaseToken = String(req.body?.purchaseToken ?? '');
+      const productId = String(req.body?.productId ?? '');
+      if (!purchaseToken || !productId) {
+        return res.status(400).json({ error: 'purchaseToken, productId は必須です' });
+      }
+
+      const result = await verifyPlayPurchase(purchaseToken, productId);
+      if (!result.valid) {
+        return res.status(400).json({ error: 'invalid_purchase', reason: result.reason });
+      }
+
+      const ds = AppDataSource.isInitialized ? AppDataSource : await AppDataSource.initialize();
+      const repo = ds.getRepository(Entitlement);
+
+      // 同じpurchaseTokenの再送(ネットワーク再試行等)は同じ権利を返す(二重発行しない)。
+      const existing = await repo.findOne({ where: { purchase_token: purchaseToken } });
+      if (existing) {
+        return res.json({ recoveryCode: existing.recovery_code, hasProEntitlement: hasProEntitlement(existing.status) });
+      }
+
+      // recovery_codeの衝突は天文学的に低確率だが、一意制約違反時は再生成して再試行する。
+      let created: Entitlement | null = null;
+      for (let attempt = 0; attempt < 5 && !created; attempt++) {
+        try {
+          const row = repo.create({
+            recovery_code: generateRecoveryCode(),
+            entitlement_type: 'pro_one_time',
+            status: 'active',
+            purchase_token: purchaseToken,
+            product_id: productId,
+            created_at: new Date(),
+            last_verified_at: new Date(),
+          });
+          created = await repo.save(row);
+        } catch (e) {
+          if (attempt === 4) throw e;
+        }
+      }
+
+      res.json({ recoveryCode: created!.recovery_code, hasProEntitlement: true });
+    } catch (e) {
+      console.error('[entitlement/verify-purchase] exception:', e);
+      res.status(500).json({ error: 'internal error' });
+    }
+  });
+
+  // 運営がGoogle Play Consoleの購入記録を目視確認したうえで、サポート対応として個別に
+  // legacy_paid権利を発行するための管理用エンドポイント(spec 3.3の半手動フローに対応)。
+  app.post('/entitlement/admin/register-legacy', entitlementAdminLimiter, express.json(), async (req, res) => {
+    if (!ENTITLEMENT_ADMIN_SECRET) return res.status(404).json({ error: 'not found' });
+    const provided = req.get('X-Admin-Secret') ?? '';
+    if (
+      provided.length !== ENTITLEMENT_ADMIN_SECRET.length ||
+      !crypto.timingSafeEqual(Buffer.from(provided), Buffer.from(ENTITLEMENT_ADMIN_SECRET))
+    ) {
+      return res.status(404).json({ error: 'not found' });
+    }
+
+    try {
+      const note = req.body?.note != null ? String(req.body.note).slice(0, 500) : null;
+      const ds = AppDataSource.isInitialized ? AppDataSource : await AppDataSource.initialize();
+      const repo = ds.getRepository(Entitlement);
+
+      let created: Entitlement | null = null;
+      for (let attempt = 0; attempt < 5 && !created; attempt++) {
+        try {
+          const row = repo.create({
+            recovery_code: generateRecoveryCode(),
+            entitlement_type: 'legacy_paid',
+            status: 'active',
+            note,
+            created_at: new Date(),
+            last_verified_at: new Date(),
+          });
+          created = await repo.save(row);
+        } catch (e) {
+          if (attempt === 4) throw e;
+        }
+      }
+
+      res.json({ recoveryCode: created!.recovery_code });
+    } catch (e) {
+      console.error('[entitlement/admin/register-legacy] exception:', e);
       res.status(500).json({ error: 'internal error' });
     }
   });

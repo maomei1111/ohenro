@@ -158,3 +158,26 @@ hasProEntitlement = legacy_paid || pro_one_time
 - この仕様書追加と同時には、御朱印一覧のHTML/CSSを変更しない。
 - 広告SDKは導入しない。
 
+## 7. 実装状況
+
+第4章(御朱印一覧の札所番号表示)は実装済み。
+
+第3章のうち、このリポジトリ(WebView配信用フロントとRailway上のExpress/TypeORMバックエンド)
+で完結する範囲は実装済み。
+
+- `entitlements`テーブル(`src/entities/entitlement.entities.ts`、migration
+  `src/migrations/1787979119172-AddEntitlements.ts`)。
+- `GET /entitlement/status`・`POST /entitlement/verify-purchase`・
+  `POST /entitlement/admin/register-legacy`(`src/server.ts`、権利判定ロジックは`src/entitlement.ts`)。
+- 設定タブの「購入者特典」セクション(コード入力・復元、状態表示。`src/public/index.html`・
+  `src/public/js/settings.js`・`src/public/js/i18n.js`)。
+
+引き続き未着手・別作業が必要な範囲。
+
+- Androidネイティブ側のGoogle Play Billing Library実装、実際の「Proを購入する」ボタンの動作
+  (`window.AndroidBridge.purchasePro()`のような呼び出し口を用意する想定だが、ネイティブ側の
+  実装は別プロジェクト)。
+- 初回`legacy_paid`登録の運用そのもの(Play Consoleの購入記録を運営が目視確認し、
+  `/entitlement/admin/register-legacy`でコードを発行してサポート対応する手順の整備)。
+- Google Playでの実際の無料化作業、3.3節の移行準備版公開・復元試験。
+

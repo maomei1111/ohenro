@@ -25,7 +25,7 @@ function switchTab(tab){
   document.getElementById('tabZukanBtn').classList.toggle('active', tab==='zukan');
   document.getElementById('tabSettingsBtn').classList.toggle('active', tab==='settings');
   if(tab==='zukan') renderZukan();
-  if(tab==='settings') refreshLocationStatus();
+  if(tab==='settings'){ refreshLocationStatus(); refreshEntitlementStatus(); }
   window.scrollTo(0,0);
 }
 function applyReferenceVisuals(){

@@ -50,6 +50,9 @@ function applyStaticTranslations(){
   document.querySelectorAll('[data-i18n]').forEach(el=>{
     el.innerHTML = t(el.getAttribute('data-i18n'));
   });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el=>{
+    el.placeholder = t(el.getAttribute('data-i18n-placeholder'));
+  });
   const langSelect = document.getElementById('langSelect');
   if(langSelect) langSelect.value = currentLang;
   const themeSelect = document.getElementById('themeSelect');
