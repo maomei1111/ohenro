@@ -14,6 +14,7 @@ import {
   TempleStopLink,
 } from './entities/gtfs.entities';
 import { CachedLandmark } from './entities/landmark.entities';
+import { Entitlement } from './entities/entitlement.entities';
 
 const ENTITIES = [
   GtfsStop,
@@ -27,6 +28,7 @@ const ENTITIES = [
   GtfsShapePoint,
   TempleStopLink,
   CachedLandmark,
+  Entitlement,
 ];
 
 // マイグレーションファイル本体はsrc/migrationsに置く。このプロジェクトはビルドせず

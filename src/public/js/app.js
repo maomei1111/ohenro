@@ -5,6 +5,7 @@
 (async function init(){
   applyStaticTranslations();
   applyReferenceVisuals();
+  refreshEntitlementStatus(); // 設定タブを開かなくても、保存済みコードがあれば裏で権利状態を最新化しておく
   document.getElementById('timeline').innerHTML = `<div class="segment-note">${t('loading_temples')}</div>`;
   try{
     await loadTemples();

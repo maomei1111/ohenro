@@ -471,3 +471,106 @@ function hhmm(timeStr){
   return timeStr ? timeStr.slice(0,5) : timeStr;
 }
 
+// ==================================================================
+// ---- 購入者特典（有料版購入者/Pro権利） ----
+// ログイン機能が無いアプリのため、サーバーが発行するrecovery_code(引継ぎコード)を
+// localStorageに保持し、機種変更・再インストール後はユーザー自身がコードを入力して
+// 復元する(docs/PAID_LAUNCH_AND_GOSHUIN_LIST_SPEC.md 3章)。
+// 購入トークン等の機密情報は一切クライアントへ渡さない・保存しない。
+// ==================================================================
+const ENTITLEMENT_CODE_KEY = 'ohenro_entitlement_code';
+const ENTITLEMENT_CACHE_KEY = 'ohenro_entitlement_cache';
+
+function getStoredEntitlementCode(){
+  return localStorage.getItem(ENTITLEMENT_CODE_KEY);
+}
+function getEntitlementCache(){
+  try{
+    const raw = localStorage.getItem(ENTITLEMENT_CACHE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  }catch(e){ return null; }
+}
+function setEntitlementCache(entitlementType, status, lastVerifiedAt){
+  localStorage.setItem(ENTITLEMENT_CACHE_KEY, JSON.stringify({ entitlementType, status, lastVerifiedAt }));
+}
+
+// spec 3.4のhasProEntitlement判定。オフライン時は直近の検証済みキャッシュをそのまま使う
+// (一時的な通信失敗だけでProを解除しない)。
+function hasProEntitlement(){
+  const cache = getEntitlementCache();
+  return !!(cache && cache.status === 'active');
+}
+
+function renderEntitlementUI(){
+  const activeCard = document.getElementById('entitlementActive');
+  const restoreForm = document.getElementById('entitlementRestoreForm');
+  const statusLabel = document.getElementById('entitlementStatusLabel');
+  const codeDisplay = document.getElementById('entitlementCodeDisplay');
+  if(!activeCard || !restoreForm || !statusLabel || !codeDisplay) return;
+
+  const code = getStoredEntitlementCode();
+  const cache = getEntitlementCache();
+  const active = code && cache && cache.status === 'active';
+
+  activeCard.style.display = active ? '' : 'none';
+  restoreForm.style.display = active ? 'none' : '';
+  if(active){
+    statusLabel.textContent = cache.entitlementType === 'legacy_paid'
+      ? t('settings_entitlement_legacy_active')
+      : t('settings_entitlement_pro_active');
+    codeDisplay.textContent = code;
+  }
+}
+
+// サーバーから最新の権利状態を取得してキャッシュを更新する。コード未保存時は何もしない。
+// ネットワーク失敗時は既存のキャッシュを保持したまま(=直近の検証済み状態のまま)にする。
+async function refreshEntitlementStatus(){
+  renderEntitlementUI();
+  const code = getStoredEntitlementCode();
+  if(!code) return;
+  try{
+    const res = await fetch(`${API_BASE}/entitlement/status?code=${encodeURIComponent(code)}`);
+    if(!res.ok) return;
+    const data = await res.json();
+    if(data.found){
+      setEntitlementCache(data.entitlementType, data.status, data.lastVerifiedAt);
+    }
+    renderEntitlementUI();
+  }catch(e){
+    console.warn('entitlement status refresh failed', e);
+  }
+}
+
+async function restoreEntitlementByCode(){
+  const input = document.getElementById('entitlementCodeInput');
+  const btn = document.querySelector('.settings-entitlement-restore-btn');
+  if(!input) return;
+  const code = input.value.trim().toUpperCase();
+  if(!code){
+    showToast(t('settings_entitlement_restore_failed'));
+    return;
+  }
+
+  const originalLabel = btn ? btn.textContent : '';
+  if(btn){ btn.disabled = true; btn.textContent = t('settings_entitlement_restore_btn'); }
+
+  try{
+    const res = await fetch(`${API_BASE}/entitlement/status?code=${encodeURIComponent(code)}`);
+    const data = res.ok ? await res.json() : { found:false };
+    if(data.found && data.hasProEntitlement){
+      localStorage.setItem(ENTITLEMENT_CODE_KEY, code);
+      setEntitlementCache(data.entitlementType, data.status, data.lastVerifiedAt);
+      input.value = '';
+      renderEntitlementUI();
+      showToast(t('settings_entitlement_restore_success'));
+    }else{
+      showToast(t('settings_entitlement_restore_failed'));
+    }
+  }catch(e){
+    console.warn('entitlement restore failed', e);
+    showToast(t('settings_entitlement_restore_failed'));
+  }finally{
+    if(btn){ btn.disabled = false; btn.textContent = originalLabel; }
+  }
+}
+

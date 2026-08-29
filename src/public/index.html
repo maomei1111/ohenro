@@ -142,6 +142,21 @@
     <button type="button" class="settings-secondary-btn" onclick="settingsOpenAppSettings()" data-i18n="settings_location_opensettings_btn"></button>
 
     <div class="settings-divider"></div>
+
+    <div class="settings-section-title" data-i18n="settings_entitlement_section"></div>
+    <div class="settings-section-desc" data-i18n="settings_entitlement_desc"></div>
+    <div id="entitlementActive" class="settings-entitlement-card" style="display:none;">
+      <div id="entitlementStatusLabel" class="settings-entitlement-status"></div>
+      <div class="settings-entitlement-code-hint" data-i18n="settings_entitlement_code_hint"></div>
+      <div id="entitlementCodeDisplay" class="settings-entitlement-code"></div>
+    </div>
+    <div id="entitlementRestoreForm" class="settings-entitlement-restore-row">
+      <input type="text" id="entitlementCodeInput" class="settings-entitlement-input" maxlength="19"
+        data-i18n-placeholder="settings_entitlement_code_placeholder" autocapitalize="characters" autocomplete="off">
+      <button type="button" class="settings-entitlement-restore-btn" onclick="restoreEntitlementByCode()" data-i18n="settings_entitlement_restore_btn"></button>
+    </div>
+
+    <div class="settings-divider"></div>
     <div class="settings-section-title" data-i18n="settings_theme_section"></div>
     <select class="settings-select" onchange="setTheme(this.value); this.blur()" id="themeSelect">
       <option value="auto" data-i18n="theme_auto"></option>
