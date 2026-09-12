@@ -219,6 +219,13 @@ h2 { margin: 0; color: var(--navy); font-size: clamp(31px, 4vw, 48px); line-heig
 .features span { color: var(--red); font-size: 11px; font-weight: 700; }
 .release-note { display: inline-block; margin: 34px 0 0; padding: 8px 14px; border-radius: 20px; color: #fff; background: var(--navy); font-size: 12px; }
 
+.apps { padding: 80px 0; }
+.app-list { margin: 32px 0 0; padding: 0; list-style: none; display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+.app-list li { padding: 28px; border-radius: 16px; background: var(--paper); }
+.app-list strong { display: block; margin-bottom: 10px; color: var(--navy); font-size: 17px; }
+.app-list p { margin: 0 0 16px; color: var(--muted); font-size: 14px; }
+.app-list a { font-size: 13px; text-decoration: none; color: var(--red); }
+
 .contact { padding: 120px 0; text-align: center; }
 .contact p:not(.section-label) { color: var(--muted); }
 .mail-link { display: inline-flex; gap: 18px; margin-top: 20px; color: var(--navy); font-size: clamp(20px, 3vw, 30px); font-weight: 600; text-underline-offset: 8px; }
@@ -242,7 +249,7 @@ footer {
   font-size: 12px;
 }
 .footer-brand { color: #fff; font-size: 16px; font-weight: 700; }
-.footer-links { display: flex; gap: 24px; }
+.footer-links { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 12px 24px; max-width: 560px; }
 .footer-links a { text-decoration: none; }
 .footer-links a:hover { color: #fff; }
 
@@ -265,6 +272,8 @@ footer {
   .product-visual { min-height: 480px; }
   .phone { right: 50%; bottom: -170px; height: 570px; transform: translateX(50%) rotate(3deg); }
   .product-copy { padding: 70px 24px 80px; }
+  .apps { padding: 56px 0; }
+  .app-list { grid-template-columns: 1fr; gap: 20px; }
   .contact { padding: 84px 20px; }
   .operator-info div { grid-template-columns: 82px 1fr; }
   footer { grid-template-columns: 1fr; gap: 20px; text-align: center; }

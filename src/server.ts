@@ -409,6 +409,32 @@ export function createApp() {
     }
   });
 
+  // mono帳(コレクション管理アプリ)の紹介ページ。docs/monocho-privacy-release-spec.md
+  // の「最小変更案」に基づき、既存のお遍路サイトはそのまま残し、別ページとして追加する。
+  app.get('/monocho', (_req, res) => {
+    try {
+      const html = fs.readFileSync(path.join(__dirname, 'public', 'monocho.html'), 'utf-8');
+      res.set('Cache-Control', 'public, max-age=300');
+      res.type('html').send(html);
+    } catch (e) {
+      console.error('[/monocho] failed to serve monocho.html:', e);
+      res.status(500).send('internal error');
+    }
+  });
+
+  // mono帳のプライバシーポリシー(Google Playのストア掲載に必要な公開URL)。
+  // docs/monocho-privacy-release-spec.mdの指示どおりURLを
+  // https://maomeilabs.com/monocho/privacy に固定し、以後変更しない。
+  app.get('/monocho/privacy', (_req, res) => {
+    try {
+      const html = fs.readFileSync(path.join(__dirname, 'public', 'monocho-privacy.html'), 'utf-8');
+      res.type('html').send(html);
+    } catch (e) {
+      console.error('[/monocho/privacy] failed to serve monocho-privacy.html:', e);
+      res.status(500).send('internal error');
+    }
+  });
+
   // データ提供元クレジット（GTFS各社・OpenStreetMap等のライセンス表示義務対応）
   app.get('/credits', (_req, res) => {
     try {

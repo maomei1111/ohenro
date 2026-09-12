@@ -148,6 +148,23 @@ describe('MaoMeiLabs official website', () => {
     expect(res.text).toContain('文化とテクノロジー');
     restore();
   });
+
+  it('serves the mono帳 intro page at /monocho on every host', async () => {
+    const { app, restore } = await loadAppWithEnv({});
+    const res = await request(app).get('/monocho');
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('mono帳');
+    restore();
+  });
+
+  it('serves the mono帳 privacy policy at the fixed /monocho/privacy URL', async () => {
+    const { app, restore } = await loadAppWithEnv({});
+    const res = await request(app).get('/monocho/privacy');
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('mono帳 プライバシーポリシー');
+    expect(res.text).toContain('com.dkdna.mycollection');
+    restore();
+  });
 });
 
 describe('Rate limiting', () => {
