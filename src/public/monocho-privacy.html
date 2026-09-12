@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="index, follow">
+<title>mono帳 プライバシーポリシー</title>
+<style>
+  body{
+    font-family:'Helvetica Neue', 'Noto Sans JP', sans-serif;
+    max-width:760px;
+    margin:0 auto;
+    padding:32px 24px 80px;
+    line-height:1.8;
+    color:#24272c;
+    background:#fcfaf5;
+  }
+  h1{ font-size:24px; margin-bottom:4px; }
+  h2{ font-size:17px; margin-top:36px; border-left:4px solid #182a4b; padding-left:10px; }
+  .meta{ color:#8a8578; font-size:13px; margin-bottom:32px; }
+  ul{ padding-left:22px; }
+  li{ margin-bottom:6px; }
+  a{ color:#33507A; }
+  table{ border-collapse:collapse; width:100%; font-size:13px; margin:16px 0; }
+  th, td{ border:1px solid #d8d2c2; padding:8px 10px; text-align:left; vertical-align:top; }
+  th{ background:#efe8d8; }
+  .back-link{ display:inline-block; margin-top:40px; font-size:13px; }
+</style>
+</head>
+<body>
+
+<h1>mono帳 プライバシーポリシー</h1>
+<div class="meta">制定日: 2026年9月12日 ／ 最終更新日: 2026年9月12日</div>
+
+<p>MaoMeiLabs（以下「当方」）は、本アプリ「mono帳」（Androidパッケージ名: <code>com.dkdna.mycollection</code>、以下「本アプリ」）における利用者情報の取扱いについて、以下のとおり定めます。</p>
+
+<h2>1. 収集する情報</h2>
+<ul>
+  <li>利用者が本アプリに登録する商品情報、メモ、保管場所、写真</li>
+  <li>写真AI認識・Google Lens＋AI解析・Google Vision解析・JAN照会・公式商品確認等、利用者が実行したAI認識・商品検索・照合機能の処理に必要な写真、テキスト、商品識別子</li>
+  <li>不正利用防止・障害調査のための、IPアドレスのハッシュ値、匿名端末IDのハッシュ値、日時、API利用結果・エラー種別</li>
+  <li>有料クレジット購入機能を有効にした場合の、購入状態に関する情報</li>
+</ul>
+<p>本アプリにはユーザー登録・ログイン機能がなく、氏名、住所、電話番号の入力を求めません。メールアドレスの入力を求めることもありません。</p>
+
+<h2>2. 機能ごとの外部送信の詳細</h2>
+<p>以下は本アプリが備える機能と、それぞれの機能を利用者が実行した場合にのみ発生する外部送信です。「(有効時)」と記載した機能は、運営者側の設定で無効化されている場合があり、その場合は該当のデータ送信自体が発生しません。</p>
+<table>
+  <thead>
+    <tr><th>機能</th><th>送信される可能性があるデータ</th><th>主な送信先</th><th>目的</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>写真AI認識</td><td>選択した商品写真、匿名端末IDのハッシュ、IPアドレスのハッシュ</td><td>mono帳サーバー、OpenAI</td><td>商品候補の作成</td></tr>
+    <tr><td>Google Lens＋AI解析</td><td>貼り付けたLensテキスト、匿名端末IDのハッシュ、IPアドレスのハッシュ</td><td>mono帳サーバー、OpenAI</td><td>商品情報の抽出</td></tr>
+    <tr><td>Google Vision解析（有効時）</td><td>選択した商品写真、匿名端末IDのハッシュ、IPアドレスのハッシュ</td><td>mono帳サーバー、Google Cloud Vision</td><td>商品候補の作成</td></tr>
+    <tr><td>JAN照会（有効時）</td><td>JANコード、匿名端末IDのハッシュ、IPアドレスのハッシュ</td><td>mono帳サーバー、Yahoo!ショッピングAPI／openBD</td><td>商品情報の検索</td></tr>
+    <tr><td>公式商品確認（有効時）</td><td>商品名、メーカー、型番・JAN等の候補情報、匿名端末IDのハッシュ、IPアドレスのハッシュ</td><td>mono帳サーバー、OpenAI、必要に応じてBrave Search</td><td>メーカー公式情報との照合</td></tr>
+    <tr><td>クレジット購入（有効時）</td><td>購入取引に必要な情報</td><td>Google Play Billing、RevenueCat</td><td>購入処理・購入状況の確認</td></tr>
+    <tr><td>バックアップ</td><td>商品データと利用者が保存した写真</td><td>利用者が選択した保存先・共有先（当方のサーバーは経由しません）</td><td>機種変更・復元</td></tr>
+  </tbody>
+</table>
+<p>写真、テキスト、商品情報等は、利用者が該当の機能を実行した操作のときに限って送信されます。自動的・定期的に送信されることはありません。</p>
+
+<h2>3. 利用目的</h2>
+<ul>
+  <li>商品の登録、表示、検索、バックアップおよび復元</li>
+  <li>利用者が選択したAI認識・商品検索・公式情報照合の実行</li>
+  <li>利用回数制限、不正利用防止、障害対応および費用管理</li>
+  <li>購入処理と購入済み機能の提供（購入機能を有効にした場合）</li>
+</ul>
+
+<h2>4. 外部サービスおよび情報の取扱い</h2>
+<p>本アプリは、上記機能の提供のために以下の外部サービスを利用する場合があります。これらの事業者は、サービス提供に必要な範囲で情報を処理します。</p>
+<ul>
+  <li><b>OpenAI</b>（写真AI認識、Google Lens＋AI解析、公式商品確認）：<a href="https://openai.com/policies/privacy-policy" target="_blank" rel="noopener">OpenAI Privacy Policy</a></li>
+  <li><b>Google Cloud Vision</b>（Google Vision解析、有効時のみ）：<a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Googleプライバシーポリシー</a></li>
+  <li><b>Yahoo!ショッピング商品検索API／openBD</b>（JAN照会、有効時のみ）：<a href="https://about.yahoo.co.jp/privacy/" target="_blank" rel="noopener">Yahoo! JAPANプライバシーセンター</a></li>
+  <li><b>Brave Search</b>（公式商品確認の入口としてのみ、有効時のみ）：<a href="https://brave.com/privacy/browser/" target="_blank" rel="noopener">Brave Privacy Policy</a></li>
+  <li><b>RevenueCat／Google Play Billing</b>（有料クレジット購入、有効時のみ）：<a href="https://www.revenuecat.com/privacy/" target="_blank" rel="noopener">RevenueCat Privacy Policy</a></li>
+  <li><b>Railway</b>（アプリのホスティング）：<a href="https://railway.com/legal/privacy" target="_blank" rel="noopener">Railway Privacy Policy</a></li>
+</ul>
+<p>本アプリからGoogle Lensアプリ・ウェブサイトへ移動、または共有する操作は利用者自身の操作によって行われ、その後のGoogle側でのデータの取扱いはGoogleのポリシーに従います。</p>
+
+<h2>5. 第三者提供</h2>
+<p>当方は、利用者情報を販売しません。また、次の場合を除き、利用者情報を第三者に提供しません。</p>
+<ul>
+  <li>本ポリシーに記載した外部サービス事業者へ、機能提供、決済処理またはホスティングに必要な範囲で処理を委託する場合</li>
+  <li>法令に基づく場合、または人の生命・身体・財産の保護のために必要な場合</li>
+</ul>
+
+<h2>6. 保存と削除</h2>
+<ul>
+  <li>商品情報、メモ、保管場所、写真は、通常、利用者の端末（ブラウザのIndexedDB等）にのみ保存されます。当方のサーバーには保存しません。</li>
+  <li>アプリ内の「すべてのデータを初期化する」操作により、端末内のデータをいつでも削除できます。</li>
+  <li>利用者がバックアップとして端末外へ保存・共有したデータは、利用者が選択した保存先・共有先の方針に従います。</li>
+  <li>サーバーの利用ログ（IPアドレスのハッシュ、匿名端末IDのハッシュ、日時、API利用結果等）は、記録から30日以内を目安に削除します（暫定値です。実際の保持設定は運用状況に応じて見直す場合があり、変更時は本ページを更新します）。</li>
+  <li>本アプリはアカウントを作成しないため、アカウント削除の手続きはありません。ただし、匿名または仮名化された識別子のみで記録され、特定の利用者と対応付けできない情報は、個別に特定・削除できない場合があります。</li>
+</ul>
+
+<h2>7. 安全管理</h2>
+<p>本アプリと当方のサーバーおよび外部サービスとの通信には、HTTPSによる暗号化を使用します。当方は、利用者情報への不正アクセス、漏えい、改ざんまたは滅失を防止するため、合理的な安全管理措置を講じます。</p>
+
+<h2>8. Cookieおよび端末識別子等</h2>
+<p>本アプリは、アカウント認証を目的としたCookieを使用しません。端末内のデータ保存にはIndexedDB・localStorage等を使用し、不正利用防止のために、端末ごとにランダムに生成される匿名端末IDを使用します。この端末IDは氏名・メールアドレス等と結び付けられません。</p>
+
+<h2>9. お子様のプライバシー</h2>
+<p>本アプリは13歳未満のお子様を対象としておらず、13歳未満のお子様から意図的に情報を取得しません。</p>
+
+<h2>10. 本ポリシーの変更</h2>
+<p>本ポリシーは、法令、アプリの機能または利用する外部サービスの変更等に応じて改定することがあります。重要な変更がある場合は、本ページ上でお知らせします。</p>
+
+<h2>11. お問い合わせ</h2>
+<p>本ポリシーおよび利用者情報の取扱いに関するお問い合わせは、以下までご連絡ください。<br>
+運営者: MaoMeiLabs<br>
+連絡先: <a href="mailto:maomeilabs@gmail.com">maomeilabs@gmail.com</a></p>
+
+<a class="back-link" href="/monocho">← mono帳の紹介ページへ戻る</a>
+
+</body>
+</html>

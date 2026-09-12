@@ -1,0 +1,126 @@
+/* mono帳紹介ページ(/monocho)専用スタイル。company.cssの配色トークンに合わせつつ、
+   ホームページ(company.html)のセレクタとは衝突しないよう.monocho-page配下に限定する。 */
+:root {
+  --mc-navy: #182a4b;
+  --mc-navy-deep: #101e36;
+  --mc-blue: #2f5fc4;
+  --mc-paper: #f7f1e6;
+  --mc-paper-light: #fcfaf5;
+  --mc-ink: #24272c;
+  --mc-muted: #6f716f;
+  --mc-line: rgba(24, 42, 75, 0.15);
+}
+
+.monocho-page {
+  margin: 0;
+  color: var(--mc-ink);
+  background: var(--mc-paper-light);
+  font-family: "Noto Sans JP", sans-serif;
+  line-height: 1.8;
+  -webkit-font-smoothing: antialiased;
+}
+.monocho-page a { color: inherit; }
+
+.monocho-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: min(1100px, calc(100% - 48px));
+  margin: 0 auto;
+  padding: 28px 0;
+}
+.monocho-header .brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 16px;
+  font-weight: 700;
+  text-decoration: none;
+  color: var(--mc-navy);
+}
+.monocho-header a.home-link {
+  font-size: 13px;
+  color: var(--mc-muted);
+  text-decoration: none;
+}
+
+.monocho-hero {
+  width: min(880px, calc(100% - 48px));
+  margin: 0 auto;
+  padding: 20px 0 56px;
+}
+.monocho-hero .eyebrow {
+  margin: 0 0 16px;
+  color: var(--mc-blue);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .18em;
+}
+.monocho-hero h1 {
+  margin: 0 0 20px;
+  color: var(--mc-navy);
+  font-size: clamp(30px, 5vw, 44px);
+  line-height: 1.4;
+}
+.monocho-hero p.lead {
+  max-width: 560px;
+  margin: 0;
+  color: var(--mc-muted);
+  font-size: 15px;
+}
+
+.monocho-section {
+  width: min(880px, calc(100% - 48px));
+  margin: 0 auto;
+  padding: 40px 0;
+  border-top: 1px solid var(--mc-line);
+}
+.monocho-section h2 {
+  margin: 0 0 18px;
+  color: var(--mc-navy);
+  font-size: 20px;
+}
+.monocho-features {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 14px;
+}
+.monocho-features li {
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: var(--mc-paper);
+  font-size: 14px;
+}
+
+.monocho-cta {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 10px 20px;
+  border-radius: 999px;
+  background: var(--mc-navy);
+  color: #fff;
+  font-size: 13px;
+  text-decoration: none;
+}
+.monocho-note {
+  margin-top: 12px;
+  color: var(--mc-muted);
+  font-size: 13px;
+}
+
+.monocho-footer {
+  width: min(880px, calc(100% - 48px));
+  margin: 0 auto;
+  padding: 40px 0 60px;
+  color: var(--mc-muted);
+  font-size: 12px;
+}
+.monocho-footer a { text-decoration: underline; }
+
+@media (max-width: 600px) {
+  .monocho-header, .monocho-hero, .monocho-section, .monocho-footer {
+    width: calc(100% - 32px);
+  }
+}
