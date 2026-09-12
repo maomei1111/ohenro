@@ -380,6 +380,20 @@ export function createApp() {
   // 独自ドメインからもプランナーへ直接アクセスできる経路を維持する。
   app.get('/app', servePlanner);
 
+  // お遍路みちしるべの紹介ページ。トップページ(company.html)を汎用的な
+  // アプリ一覧に変えたのに伴い、旧トップページの製品紹介(電話モックアップ等)
+  // をこの専用ページへ切り出した。/monocho と対になる構成。
+  app.get('/ohenro', (_req, res) => {
+    try {
+      const html = fs.readFileSync(path.join(__dirname, 'public', 'ohenro.html'), 'utf-8');
+      res.set('Cache-Control', 'public, max-age=300');
+      res.type('html').send(html);
+    } catch (e) {
+      console.error('[/ohenro] failed to serve ohenro.html:', e);
+      res.status(500).send('internal error');
+    }
+  });
+
   app.get('/health', (_req, res) => {
     res.json({ ok: true });
   });
