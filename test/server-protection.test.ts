@@ -149,6 +149,14 @@ describe('MaoMeiLabs official website', () => {
     restore();
   });
 
+  it('serves the ohenro intro page at /ohenro on every host', async () => {
+    const { app, restore } = await loadAppWithEnv({});
+    const res = await request(app).get('/ohenro');
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('お遍路みちしるべ');
+    restore();
+  });
+
   it('serves the mono帳 intro page at /monocho on every host', async () => {
     const { app, restore } = await loadAppWithEnv({});
     const res = await request(app).get('/monocho');
