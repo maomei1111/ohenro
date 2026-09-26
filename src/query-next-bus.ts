@@ -44,6 +44,14 @@ export function pickBestCandidate(candidates: any[]): any | null {
   return nearlyBest[0];
 }
 
+// 札所⇔バス停リンクを、(agency_key, stop_id) の組として照合するためのSQLパラメータ
+// ([agency_key[], stop_id[]]、同じ添字が1組)。停留所IDは事業者ごとに独立した名前空間で、
+// 短い数字などのIDが別の事業者の停留所と偶然一致するため、stop_idだけで照合すると、
+// リンクの無い(札所の近くではない)停留所を誤って一致扱いにしてしまう。
+export function stopPairParams(links: { agency_key: string; stop_id: string }[]): [string[], string[]] {
+  return [links.map((l) => l.agency_key), links.map((l) => l.stop_id)];
+}
+
 export function gtfsTimeToMinutes(hhmmss: string): number {
   const [h, m] = hhmmss.split(':').map(Number);
   return h * 60 + m;
@@ -124,19 +132,13 @@ async function findDirectBus(
     JOIN gtfs_stops s_to
       ON s_to.agency_key = st_to.agency_key
      AND s_to.stop_id    = st_to.stop_id
-    WHERE st_from.agency_key = ANY($1)
-      AND st_from.stop_id = ANY($2)
-      AND st_to.stop_id   = ANY($3)
-      AND (${serviceRunsOnDateClause('trip', dayColumn).replace(/\$DATE/g, '$4')})
+    WHERE (st_from.agency_key, st_from.stop_id) IN (SELECT * FROM unnest($1::text[], $2::text[]))
+      AND (st_to.agency_key, st_to.stop_id)   IN (SELECT * FROM unnest($3::text[], $4::text[]))
+      AND (${serviceRunsOnDateClause('trip', dayColumn).replace(/\$DATE/g, '$5')})
     ORDER BY st_from.departure_time ASC
   `;
 
-  const rows = await ds.query(sql, [
-    Array.from(new Set(fromLinks.map((l) => l.agency_key))),
-    fromLinks.map((l) => l.stop_id),
-    toLinks.map((l) => l.stop_id),
-    dateStr,
-  ]);
+  const rows = await ds.query(sql, [...stopPairParams(fromLinks), ...stopPairParams(toLinks), dateStr]);
 
   const candidates = rows
     .map((r: any) => {
@@ -217,9 +219,8 @@ async function findOneTransferBus(
         ON s_a.agency_key = st_a.agency_key AND s_a.stop_id = st_a.stop_id
       JOIN gtfs_stops s_b
         ON s_b.agency_key = st_b.agency_key AND s_b.stop_id = st_b.stop_id
-      WHERE st_a.agency_key = ANY($1)
-        AND st_a.stop_id = ANY($2)
-        AND (${serviceRunsOnDateClause('trip1', dayColumn).replace(/\$DATE/g, '$4')})
+      WHERE (st_a.agency_key, st_a.stop_id) IN (SELECT * FROM unnest($1::text[], $2::text[]))
+        AND (${serviceRunsOnDateClause('trip1', dayColumn).replace(/\$DATE/g, '$5')})
     ) leg1
     JOIN (
       SELECT
@@ -245,8 +246,8 @@ async function findOneTransferBus(
         ON trip2.agency_key = st_c.agency_key AND trip2.trip_id = st_c.trip_id
       JOIN gtfs_stops s_d
         ON s_d.agency_key = st_d.agency_key AND s_d.stop_id = st_d.stop_id
-      WHERE st_d.stop_id = ANY($3)
-        AND (${serviceRunsOnDateClause('trip2', dayColumn).replace(/\$DATE/g, '$4')})
+      WHERE (st_d.agency_key, st_d.stop_id) IN (SELECT * FROM unnest($3::text[], $4::text[]))
+        AND (${serviceRunsOnDateClause('trip2', dayColumn).replace(/\$DATE/g, '$5')})
     ) leg2
       ON leg2.agency_key = leg1.agency_key
      AND leg2.mid_stop_id = leg1.mid_stop_id
@@ -254,12 +255,7 @@ async function findOneTransferBus(
     ORDER BY leg1.mid_arrival ASC
   `;
 
-  const rows = await ds.query(sql, [
-    Array.from(new Set(fromLinks.map((l) => l.agency_key))),
-    fromLinks.map((l) => l.stop_id),
-    toLinks.map((l) => l.stop_id),
-    dateStr,
-  ]);
+  const rows = await ds.query(sql, [...stopPairParams(fromLinks), ...stopPairParams(toLinks), dateStr]);
 
   const candidates = rows
     .map((r: any) => {
