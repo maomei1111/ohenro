@@ -12,7 +12,7 @@
 const I18N = {
   ja: {
     hero_title: 'お遍路みちしるべ',
-    hero_desc: '四国八十八ヶ所すべてを対象にした周遊プランナーです。<br>区間距離とバスダイヤをもとに、納経所が開いている時間内に次の札所へ着けるかを計算し、徒歩とバスのどちらが良いか区間ごとに提案します。<br>順打ち（1→88番）・逆打ち（88→1番）のどちらにも対応しています。<br>徒歩時間は、事前計算済みの区間は実際の道のり、未計算の区間は直線距離からの概算です。<br>※現在バスの実データが整備済みなのは徳島・高知・香川の一部エリアのみです。それ以外の区間は「バス便が見つかりません」と表示され、徒歩での計算になります。',
+    hero_desc: '四国八十八ヶ所すべてを対象にした周遊プランナーです。<br>区間距離とバスダイヤをもとに、納経所が開いている時間内に次の札所へ着けるかを計算し、徒歩とバスのどちらが良いか区間ごとに提案します。<br>順打ち（1→88番）・逆打ち（88→1番）のどちらにも対応しています。<br>徒歩時間は、事前計算済みの区間は実際の道のり、未計算の区間は直線距離からの概算です。<br>※バスの時刻データは、四国の一部の事業者・自治体が公開しているデータに対応しています。データのない区間・期間は「バス便が見つかりません」と表示され、徒歩での計算になります。',
     label_start: '出発する札所',
     label_end: '到着したい札所',
     label_date: '出発日',
@@ -146,7 +146,7 @@ const I18N = {
   },
   en: {
     hero_title: 'Ohenro Route Guide',
-    hero_desc: 'A route planner covering all 88 temples of the Shikoku Pilgrimage.<br>Using segment distances and bus timetables, it works out whether you can reach the next temple while its stamp office is open, and suggests walking or bus for each leg.<br>Both the standard order (1→88) and reverse order (88→1) are supported.<br>Walking times use real route data where available, and straight-line estimates elsewhere.<br>Note: real bus data currently only covers parts of Tokushima, Kochi, and Kagawa. Other legs will show "no bus service found" and default to walking.',
+    hero_desc: 'A route planner covering all 88 temples of the Shikoku Pilgrimage.<br>Using segment distances and bus timetables, it works out whether you can reach the next temple while its stamp office is open, and suggests walking or bus for each leg.<br>Both the standard order (1→88) and reverse order (88→1) are supported.<br>Walking times use real route data where available, and straight-line estimates elsewhere.<br>Note: bus data covers only some operators and municipalities in Shikoku that publish it. Legs or dates without data will show "no bus service found" and default to walking.',
     label_start: 'Starting temple',
     label_end: 'Destination temple',
     label_date: 'Date',
@@ -280,7 +280,7 @@ const I18N = {
   },
   ko: {
     hero_title: '오헨로 길잡이',
-    hero_desc: '시코쿠 88개 사찰 순례 전체를 대상으로 한 경로 플래너입니다.<br>구간 거리와 버스 시간표를 바탕으로 납경소 접수 시간 내에 다음 사찰에 도착할 수 있는지 계산하고, 구간별로 도보와 버스 중 더 나은 방법을 제안합니다.<br>정순(1→88번)·역순(88→1번) 모두 지원합니다.<br>도보 시간은 사전 계산된 구간은 실제 경로 데이터, 미계산 구간은 직선거리 추정값입니다.<br>※ 현재 실제 버스 데이터가 준비된 곳은 도쿠시마·고치·가가와의 일부 지역뿐입니다. 그 외 구간은 "버스 편을 찾을 수 없습니다"로 표시되며 도보로 계산됩니다.',
+    hero_desc: '시코쿠 88개 사찰 순례 전체를 대상으로 한 경로 플래너입니다.<br>구간 거리와 버스 시간표를 바탕으로 납경소 접수 시간 내에 다음 사찰에 도착할 수 있는지 계산하고, 구간별로 도보와 버스 중 더 나은 방법을 제안합니다.<br>정순(1→88번)·역순(88→1번) 모두 지원합니다.<br>도보 시간은 사전 계산된 구간은 실제 경로 데이터, 미계산 구간은 직선거리 추정값입니다.<br>※ 버스 시간표 데이터는 시코쿠 일부 사업자·지자체가 공개한 데이터만 지원합니다. 데이터가 없는 구간·기간은 "버스 편을 찾을 수 없습니다"로 표시되며 도보로 계산됩니다.',
     label_start: '출발 사찰',
     label_end: '도착 사찰',
     label_date: '출발 날짜',
@@ -414,7 +414,7 @@ const I18N = {
   },
   'zh-CN': {
     hero_title: '遍路指南',
-    hero_desc: '覆盖四国八十八所寺庙巡礼全程的路线规划工具。<br>根据路段距离和公交时刻表，计算能否在纳经所开放时间内抵达下一座寺庙，并为每个路段推荐徒步或公交。<br>支持顺打（1→88番）和逆打（88→1番）两种方向。<br>徒步时间：已计算路段采用实际路线数据，未计算路段采用直线距离估算。<br>※ 目前只有德岛、高知、香川部分地区有真实公交数据，其余路段会显示"未找到公交班次"，并按徒步计算。',
+    hero_desc: '覆盖四国八十八所寺庙巡礼全程的路线规划工具。<br>根据路段距离和公交时刻表，计算能否在纳经所开放时间内抵达下一座寺庙，并为每个路段推荐徒步或公交。<br>支持顺打（1→88番）和逆打（88→1番）两种方向。<br>徒步时间：已计算路段采用实际路线数据，未计算路段采用直线距离估算。<br>※ 公交时刻数据仅覆盖四国部分运营商和地方政府公开的数据。没有数据的路段或日期会显示"未找到公交班次"，并按徒步计算。',
     label_start: '出发寺庙',
     label_end: '目的地寺庙',
     label_date: '出发日期',
@@ -548,7 +548,7 @@ const I18N = {
   },
   'zh-TW': {
     hero_title: '遍路指南',
-    hero_desc: '涵蓋四國八十八所寺廟巡禮全程的路線規劃工具。<br>根據路段距離和公車時刻表，計算能否在納經所開放時間內抵達下一座寺廟，並為每個路段推薦徒步或公車。<br>支援順打（1→88番）與逆打（88→1番）兩種方向。<br>徒步時間：已計算路段採用實際路線資料，未計算路段採用直線距離估算。<br>※ 目前僅德島、高知、香川部分地區備有實際公車資料，其餘路段會顯示「找不到公車班次」，並以徒步計算。',
+    hero_desc: '涵蓋四國八十八所寺廟巡禮全程的路線規劃工具。<br>根據路段距離和公車時刻表，計算能否在納經所開放時間內抵達下一座寺廟，並為每個路段推薦徒步或公車。<br>支援順打（1→88番）與逆打（88→1番）兩種方向。<br>徒步時間：已計算路段採用實際路線資料，未計算路段採用直線距離估算。<br>※ 公車時刻資料僅涵蓋四國部分業者與地方政府公開的資料。沒有資料的路段或日期會顯示「找不到公車班次」，並以徒步計算。',
     label_start: '出發寺廟',
     label_end: '目的地寺廟',
     label_date: '出發日期',
@@ -682,7 +682,7 @@ const I18N = {
   },
   de: {
     hero_title: 'Ohenro-Wegweiser',
-    hero_desc: 'Ein Routenplaner für alle 88 Tempel der Shikoku-Pilgerfahrt.<br>Anhand von Streckenlängen und Busfahrplänen wird berechnet, ob der nächste Tempel bei geöffnetem Stempelbüro erreichbar ist, mit einer Empfehlung für jede Etappe: zu Fuß oder mit dem Bus.<br>Reguläre (1→88) und umgekehrte Reihenfolge (88→1) werden unterstützt.<br>Gehzeiten basieren, wo verfügbar, auf echten Routendaten, sonst auf einer Luftlinien-Schätzung.<br>Hinweis: Echte Busdaten gibt es derzeit nur für Teile von Tokushima, Kochi und Kagawa. Andere Etappen zeigen „keine Busverbindung gefunden" und werden zu Fuß berechnet.',
+    hero_desc: 'Ein Routenplaner für alle 88 Tempel der Shikoku-Pilgerfahrt.<br>Anhand von Streckenlängen und Busfahrplänen wird berechnet, ob der nächste Tempel bei geöffnetem Stempelbüro erreichbar ist, mit einer Empfehlung für jede Etappe: zu Fuß oder mit dem Bus.<br>Reguläre (1→88) und umgekehrte Reihenfolge (88→1) werden unterstützt.<br>Gehzeiten basieren, wo verfügbar, auf echten Routendaten, sonst auf einer Luftlinien-Schätzung.<br>Hinweis: Busdaten liegen nur für einige Betreiber und Gemeinden in Shikoku vor, die sie veröffentlichen. Etappen oder Zeiträume ohne Daten zeigen „keine Busverbindung gefunden" und werden zu Fuß berechnet.',
     label_start: 'Starttempel',
     label_end: 'Zieltempel',
     label_date: 'Datum',
@@ -816,7 +816,7 @@ const I18N = {
   },
   pt: {
     hero_title: 'Guia da Rota Ohenro',
-    hero_desc: 'Um planejador de rotas para os 88 templos da Peregrinação de Shikoku.<br>Com base na distância e nos horários dos ônibus, calcula se é possível chegar ao próximo templo com o escritório de carimbos aberto, sugerindo a pé ou de ônibus para cada trecho.<br>Suporta a ordem padrão (1→88) e a ordem inversa (88→1).<br>Os tempos de caminhada usam dados reais quando disponíveis, e estimativas em linha reta nos demais casos.<br>Nota: dados reais de ônibus cobrem atualmente apenas partes de Tokushima, Kochi e Kagawa. Os demais trechos mostrarão "nenhum ônibus encontrado" e serão calculados a pé.',
+    hero_desc: 'Um planejador de rotas para os 88 templos da Peregrinação de Shikoku.<br>Com base na distância e nos horários dos ônibus, calcula se é possível chegar ao próximo templo com o escritório de carimbos aberto, sugerindo a pé ou de ônibus para cada trecho.<br>Suporta a ordem padrão (1→88) e a ordem inversa (88→1).<br>Os tempos de caminhada usam dados reais quando disponíveis, e estimativas em linha reta nos demais casos.<br>Nota: os dados de ônibus cobrem apenas alguns operadores e municípios de Shikoku que os publicam. Trechos ou datas sem dados mostrarão "nenhum ônibus encontrado" e serão calculados a pé.',
     label_start: 'Templo de partida',
     label_end: 'Templo de destino',
     label_date: 'Data',
