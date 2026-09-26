@@ -9,7 +9,7 @@
 // currentLangはこの直後で宣言されるが、tはgetter経由で毎回参照するため
 // 宣言順の影響を受けない。
 const { I18N, createTranslator, weatherSimpleTextFromCode, metersBetween, distToPolyline, formatDistance,
-  evaluateVisitProximity, toKanjiNumber, getWarekiDate, toMinutes, toHHMM,
+  evaluateVisitProximity, toKanjiNumber, getWarekiDate, toMinutes, toHHMM, formatGtfsTime,
   warekiDateLengthClass, nokyoStatus, durationParts, TEMPLE_NAMES_EN, ROMANIZED_LANGS,
   TEMPLE_HONZON, HONZON_EN, MAX_AUTO_START_DISTANCE_M, DATE_FIELD_ORDER, INTL_LOCALES,
   AGENCY_NAMES } = window.OhenroApp;

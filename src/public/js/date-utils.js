@@ -62,5 +62,15 @@
     return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');
   }
 
-  return { toKanjiNumber, getWarekiDate, toMinutes, toHHMM, warekiDateLengthClass };
+  // GTFSの時刻文字列("H:MM:SS"または"HH:MM:SS")を"HH:MM"へ整形する。
+  // 事業者によっては時が0埋めされていない("7:27:00")ため、単純な先頭5文字の切り出しだと
+  // "7:27:"のように末尾に「:」が残る。24時超の表記("25:30:00")は運行日基準の時刻として
+  // そのまま"25:30"で返す。
+  function formatGtfsTime(timeStr){
+    const m = /^(\d{1,3}):(\d{2})/.exec(String(timeStr ?? ''));
+    if(!m) return timeStr;
+    return `${m[1].padStart(2,'0')}:${m[2]}`;
+  }
+
+  return { toKanjiNumber, getWarekiDate, toMinutes, toHHMM, warekiDateLengthClass, formatGtfsTime };
 });

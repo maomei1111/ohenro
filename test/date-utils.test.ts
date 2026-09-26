@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { toKanjiNumber, getWarekiDate, toMinutes, toHHMM, warekiDateLengthClass } from '../src/public/js/date-utils.js';
+import { toKanjiNumber, getWarekiDate, toMinutes, toHHMM, warekiDateLengthClass, formatGtfsTime } from '../src/public/js/date-utils.js';
 
 describe('toKanjiNumber', () => {
   it('renders 1 as 一', () => {
@@ -79,5 +79,26 @@ describe('toMinutes / toHHMM', () => {
   it('wraps hours past 24:00 (GTFS-style overflow) back into 0-23', () => {
     // GTFSは25:30のような24時超えの表記があるため、分換算後は24hで折り返す
     expect(toHHMM(25 * 60 + 30)).toBe('01:30');
+  });
+});
+
+describe('formatGtfsTime', () => {
+  it('trims seconds from a zero-padded GTFS time', () => {
+    expect(formatGtfsTime('10:17:00')).toBe('10:17');
+  });
+  it('zero-pads the hour when the feed omits the leading zero (regression: "7:27:")', () => {
+    expect(formatGtfsTime('7:27:00')).toBe('07:27');
+    expect(formatGtfsTime('9:05:00')).toBe('09:05');
+  });
+  it('keeps hours past 24 as-is (GTFS overflow after midnight)', () => {
+    expect(formatGtfsTime('25:30:00')).toBe('25:30');
+  });
+  it('accepts an HH:MM string without seconds', () => {
+    expect(formatGtfsTime('7:27')).toBe('07:27');
+  });
+  it('returns empty or unparseable values unchanged', () => {
+    expect(formatGtfsTime('')).toBe('');
+    expect(formatGtfsTime(undefined)).toBe(undefined);
+    expect(formatGtfsTime('abc')).toBe('abc');
   });
 });
