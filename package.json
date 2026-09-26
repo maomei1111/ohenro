@@ -14,7 +14,8 @@
     "migration:generate": "npm run typeorm -- migration:generate",
     "migration:run": "npm run typeorm -- migration:run",
     "migration:revert": "npm run typeorm -- migration:revert",
-    "migration:show": "npm run typeorm -- migration:show"
+    "migration:show": "npm run typeorm -- migration:show",
+    "gtfs:check": "node -r tsx/cjs src/check-gtfs-validity.ts"
   },
   "keywords": [],
   "author": "",
