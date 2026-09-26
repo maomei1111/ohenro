@@ -468,7 +468,7 @@ function agencyDisplayName(key){
 
 // GTFSの時刻文字列("07:57:00")から秒を除いて表示用に整形する
 function hhmm(timeStr){
-  return timeStr ? timeStr.slice(0,5) : timeStr;
+  return timeStr ? formatGtfsTime(timeStr) : timeStr;
 }
 
 // ==================================================================
