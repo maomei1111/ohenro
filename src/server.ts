@@ -16,6 +16,7 @@ import { findNextBus } from './query-next-bus';
 import { AppDataSource } from './data-source';
 import { parseBooleanEnv, parseAllowedOrigins, parseTrustProxyHops, maskConnectionString, sanitizeDbError } from './env-utils';
 import { getForecastForTemple } from './jma-weather';
+import { createPlacePhotoService } from './places-photo';
 import { Entitlement } from './entities/entitlement.entities';
 import { generateRecoveryCode, normalizeRecoveryCode, hasProEntitlement, verifyPlayPurchase } from './entitlement';
 
@@ -176,6 +177,10 @@ export function createApp() {
     console.log('[startup] temples_88_places.json は未生成です（紹介文・写真は非表示になります）');
   }
 
+  // 写真参照名は時間が経つと失効するため、失効時はplaceIdから取り直す(places-photo.ts)。
+  // 取り直した参照名・撮影者名は templesPlacesInfo へ書き戻され、/temple/:no の帰属表示にも反映される。
+  const placePhotos = createPlacePhotoService({ info: templesPlacesInfo, apiKey: GOOGLE_MAPS_SERVER_API_KEY });
+
   app.get('/temples', templesLimiter, (_req, res) => {
     res.json(temples88);
   });
@@ -231,25 +236,13 @@ export function createApp() {
     if (!Number.isInteger(no) || no < 1 || no > 88) {
       return res.status(400).json({ error: 'no は1〜88の整数で指定してください' });
     }
-    const photoName = templesPlacesInfo[String(no)]?.photoName;
-    if (!photoName) return res.status(404).json({ error: 'photo not found' });
+    const photo = await placePhotos.getPhoto(no);
+    if (photo.status === 'not_found') return res.status(404).json({ error: 'photo not found' });
+    if (photo.status === 'upstream_error') return res.status(502).json({ error: 'upstream error' });
 
-    try {
-      const upstream = await fetch(
-        `https://places.googleapis.com/v1/${photoName}/media?maxHeightPx=500&key=${GOOGLE_MAPS_SERVER_API_KEY}`
-      );
-      if (!upstream.ok || !upstream.body) {
-        console.error(`[temple-photo] upstream status ${upstream.status} for temple ${no}`);
-        return res.status(502).json({ error: 'upstream error' });
-      }
-      res.set('Content-Type', upstream.headers.get('content-type') ?? 'image/jpeg');
-      res.set('Cache-Control', 'public, max-age=86400');
-      const buf = Buffer.from(await upstream.arrayBuffer());
-      res.send(buf);
-    } catch (e) {
-      console.error('[temple-photo] exception:', e);
-      res.status(502).json({ error: 'upstream error' });
-    }
+    res.set('Content-Type', photo.contentType);
+    res.set('Cache-Control', 'public, max-age=86400');
+    res.send(photo.body);
   });
 
   app.get('/temple/:no', (req, res) => {

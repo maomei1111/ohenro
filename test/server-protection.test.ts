@@ -286,6 +286,26 @@ describe('/temple-photo/:no', () => {
     r();
   });
 
+  it('recovers when the stored photo reference has expired: re-resolves it via Place Details and serves the image', async () => {
+    const fresh = Buffer.from('fresh-jpeg-bytes');
+    const fetchSpy = vi.spyOn(global, 'fetch').mockImplementation(async (input: any) => {
+      const url = String(input);
+      if (url.includes('/photos/FRESH/media')) return new Response(fresh, { status: 200, headers: { 'content-type': 'image/jpeg' } });
+      if (url.includes('/media')) return new Response('invalid photo', { status: 400 }); // 期限切れの参照名
+      return Response.json({ photos: [{ name: 'places/X/photos/FRESH', authorAttributions: [{ displayName: 'New Author' }] }] });
+    });
+    const { app, restore: r } = await loadAppWithEnv({ GOOGLE_MAPS_SERVER_API_KEY: 'fake-server-key' });
+    const res = await request(app).get('/temple-photo/1');
+    expect(res.status).toBe(200);
+    expect(Buffer.compare(res.body, fresh)).toBe(0);
+    expect(fetchSpy).toHaveBeenCalledTimes(3); // 期限切れのmedia → Place Details → 新しい参照のmedia
+    // 取り直した撮影者名が、その後の /temple/:no の帰属表示に反映される
+    const page = await request(app).get('/temple/1');
+    expect(page.text).toContain('Photo: New Author');
+    expect(page.text).not.toContain('fake-server-key');
+    r();
+  });
+
   it('returns 502 without leaking upstream error details when the upstream fetch fails', async () => {
     vi.spyOn(global, 'fetch').mockResolvedValue(new Response('forbidden', { status: 403 }));
     const { app, restore: r } = await loadAppWithEnv({});
