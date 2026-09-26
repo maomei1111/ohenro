@@ -3,8 +3,18 @@
  *
  * 使い方:
  *   1. 事業者のサイトから GTFS ZIP をダウンロードして手元に保存
- *      （例: 徳島市交通局 https://opendata.pref.tokushima.lg.jp/dataset/2649.html ）
- *   2. npx tsx src/import-gtfs.ts ./downloads/tokushima_city.zip tokushima_city
+ *      （例: 公共交通オープンデータセンター https://api.gtfs-data.jp/v2/organizations/{組織}/feeds/{フィード}/files/feed.zip ）
+ *   2. npx tsx src/import-gtfs.ts ./downloads/naruto.zip naruto
+ *
+ * 同じ agency_key を再取り込みすると、その事業者の既存データ（stops/routes/trips/stop_times/
+ * calendar/calendar_dates/fare/shapes）を**すべて削除してから**入れ直す（置き換え）。
+ * 「追加・更新」だけだと、新しいフィードで無くなった停留所・便・時刻が残り、service_idが
+ * 再利用されている場合は古い時刻表が新しい有効期間で動いてしまうため。削除から取り込みまでは
+ * 1つのトランザクションで行い、途中で失敗した場合は元のデータのまま何も変わらない。
+ *
+ * 安全確認: フィードの有効期間が今日より前に終わっている場合は、取り込まずに中止する
+ * （期限切れのデータで、有効なデータを置き換えてしまわないため）。意図的に取り込むときだけ
+ * --allow-expired を付ける。
  *
  * 必要パッケージ:
  *   npm install typeorm pg adm-zip csv-parse reflect-metadata
@@ -26,6 +36,7 @@ import {
   GtfsFareRule,
   GtfsShapePoint,
 } from './entities/gtfs.entities';
+import { feedServiceRange, isCurrentlyValid, todayJst } from './gtfs-validity';
 
 function readCsvFromZip(zip: AdmZip, fileName: string): Record<string, string>[] {
   const entry = zip.getEntry(fileName);
@@ -65,133 +76,185 @@ async function chunkedUpsert<T extends Record<string, any>>(
   }
 }
 
-async function importGtfs(zipPath: string, agencyKey: string) {
-  const zip = new AdmZip(zipPath);
-  const ds = await AppDataSource.initialize();
-
-  console.log(`[${agencyKey}] stops.txt を取り込み中...`);
-  let stops = readCsvFromZip(zip, 'stops.txt').map((s) => ({
-    agency_key: agencyKey,
-    stop_id: s.stop_id,
-    stop_name: s.stop_name,
-    stop_lat: Number(s.stop_lat),
-    stop_lon: Number(s.stop_lon),
-  }));
-  stops = dedupeByKey(stops, ['agency_key', 'stop_id']);
-  if (stops.length) await chunkedUpsert(ds.getRepository(GtfsStop), stops, ['agency_key', 'stop_id']);
-  console.log(`  → ${stops.length}件`);
-
-  console.log(`[${agencyKey}] routes.txt を取り込み中...`);
-  let routes = readCsvFromZip(zip, 'routes.txt').map((r) => ({
-    agency_key: agencyKey,
-    route_id: r.route_id,
-    route_short_name: r.route_short_name,
-    route_long_name: r.route_long_name,
-  }));
-  routes = dedupeByKey(routes, ['agency_key', 'route_id']);
-  if (routes.length) await chunkedUpsert(ds.getRepository(GtfsRoute), routes, ['agency_key', 'route_id']);
-  console.log(`  → ${routes.length}件`);
-
-  console.log(`[${agencyKey}] trips.txt を取り込み中...`);
-  let trips = readCsvFromZip(zip, 'trips.txt').map((t) => ({
-    agency_key: agencyKey,
-    trip_id: t.trip_id,
-    route_id: t.route_id,
-    service_id: t.service_id,
-    shape_id: t.shape_id || null,
-  }));
-  trips = dedupeByKey(trips, ['agency_key', 'trip_id']);
-  if (trips.length) await chunkedUpsert(ds.getRepository(GtfsTrip), trips, ['agency_key', 'trip_id']);
-  console.log(`  → ${trips.length}件`);
-
-  console.log(`[${agencyKey}] stop_times.txt を取り込み中（データ量が多いので時間がかかります）...`);
-  let stopTimes = readCsvFromZip(zip, 'stop_times.txt').map((st) => ({
-    agency_key: agencyKey,
-    trip_id: st.trip_id,
-    stop_sequence: Number(st.stop_sequence),
-    stop_id: st.stop_id,
-    departure_time: st.departure_time,
-    arrival_time: st.arrival_time,
-  }));
-  stopTimes = dedupeByKey(stopTimes, ['agency_key', 'trip_id', 'stop_sequence']);
-  if (stopTimes.length)
-    await chunkedUpsert(ds.getRepository(GtfsStopTime), stopTimes, ['agency_key', 'trip_id', 'stop_sequence']);
-  console.log(`  → ${stopTimes.length}件`);
-
-  console.log(`[${agencyKey}] calendar.txt を取り込み中...`);
-  let calendar = readCsvFromZip(zip, 'calendar.txt').map((c) => ({
-    agency_key: agencyKey,
-    service_id: c.service_id,
-    monday: c.monday === '1',
-    tuesday: c.tuesday === '1',
-    wednesday: c.wednesday === '1',
-    thursday: c.thursday === '1',
-    friday: c.friday === '1',
-    saturday: c.saturday === '1',
-    sunday: c.sunday === '1',
-    start_date: c.start_date,
-    end_date: c.end_date,
-  }));
-  calendar = dedupeByKey(calendar, ['agency_key', 'service_id']);
-  if (calendar.length) await chunkedUpsert(ds.getRepository(GtfsCalendar), calendar, ['agency_key', 'service_id']);
-  console.log(`  → ${calendar.length}件`);
-
-  console.log(`[${agencyKey}] calendar_dates.txt を取り込み中（祝日・特例日。無いフィードもあります）...`);
-  let calendarDates = readCsvFromZip(zip, 'calendar_dates.txt').map((cd) => ({
-    agency_key: agencyKey,
-    service_id: cd.service_id,
-    date: cd.date,
-    exception_type: Number(cd.exception_type),
-  }));
-  calendarDates = dedupeByKey(calendarDates, ['agency_key', 'service_id', 'date']);
-  if (calendarDates.length)
-    await chunkedUpsert(ds.getRepository(GtfsCalendarDate), calendarDates, ['agency_key', 'service_id', 'date']);
-  console.log(`  → ${calendarDates.length}件`);
-
-  console.log(`[${agencyKey}] fare_attributes.txt を取り込み中（運賃データ。無いフィードもあります）...`);
-  let fareAttributes = readCsvFromZip(zip, 'fare_attributes.txt').map((f) => ({
-    agency_key: agencyKey,
-    fare_id: f.fare_id,
-    price: Number(f.price),
-    currency_type: f.currency_type,
-  }));
-  fareAttributes = dedupeByKey(fareAttributes, ['agency_key', 'fare_id']);
-  if (fareAttributes.length)
-    await chunkedUpsert(ds.getRepository(GtfsFareAttribute), fareAttributes, ['agency_key', 'fare_id']);
-  console.log(`  → ${fareAttributes.length}件`);
-
-  console.log(`[${agencyKey}] fare_rules.txt を取り込み中（運賃と路線の対応表。無いフィードもあります）...`);
-  let fareRules = readCsvFromZip(zip, 'fare_rules.txt').map((f) => ({
-    agency_key: agencyKey,
-    fare_id: f.fare_id,
-    route_id: f.route_id ?? '',
-  }));
-  fareRules = dedupeByKey(fareRules, ['agency_key', 'fare_id', 'route_id']);
-  if (fareRules.length) await chunkedUpsert(ds.getRepository(GtfsFareRule), fareRules, ['agency_key', 'fare_id', 'route_id']);
-  console.log(`  → ${fareRules.length}件`);
-
-  console.log(`[${agencyKey}] shapes.txt を取り込み中（実際の走行経路形状。データ量が多い場合があります）...`);
-  let shapes = readCsvFromZip(zip, 'shapes.txt').map((s) => ({
-    agency_key: agencyKey,
-    shape_id: s.shape_id,
-    shape_pt_sequence: Number(s.shape_pt_sequence),
-    shape_pt_lat: Number(s.shape_pt_lat),
-    shape_pt_lon: Number(s.shape_pt_lon),
-  }));
-  shapes = dedupeByKey(shapes, ['agency_key', 'shape_id', 'shape_pt_sequence']);
-  if (shapes.length) await chunkedUpsert(ds.getRepository(GtfsShapePoint), shapes, ['agency_key', 'shape_id', 'shape_pt_sequence']);
-  console.log(`  → ${shapes.length}件`);
-
-  await ds.destroy();
-  console.log(`[${agencyKey}] 取り込み完了`);
+interface TableSpec {
+  label: string;
+  entity: any;
+  keys: string[];
+  rows: Record<string, any>[];
 }
 
-const [, , zipPath, agencyKey] = process.argv;
+function buildTables(zip: AdmZip, agencyKey: string): TableSpec[] {
+  const a = { agency_key: agencyKey };
+  const read = (file: string) => readCsvFromZip(zip, file);
+  return [
+    {
+      label: 'stops.txt',
+      entity: GtfsStop,
+      keys: ['agency_key', 'stop_id'],
+      rows: read('stops.txt').map((s) => ({
+        ...a,
+        stop_id: s.stop_id,
+        stop_name: s.stop_name,
+        stop_lat: Number(s.stop_lat),
+        stop_lon: Number(s.stop_lon),
+      })),
+    },
+    {
+      label: 'routes.txt',
+      entity: GtfsRoute,
+      keys: ['agency_key', 'route_id'],
+      rows: read('routes.txt').map((r) => ({
+        ...a,
+        route_id: r.route_id,
+        route_short_name: r.route_short_name,
+        route_long_name: r.route_long_name,
+      })),
+    },
+    {
+      label: 'trips.txt',
+      entity: GtfsTrip,
+      keys: ['agency_key', 'trip_id'],
+      rows: read('trips.txt').map((t) => ({
+        ...a,
+        trip_id: t.trip_id,
+        route_id: t.route_id,
+        service_id: t.service_id,
+        shape_id: t.shape_id || null,
+      })),
+    },
+    {
+      label: 'stop_times.txt（データ量が多いので時間がかかります）',
+      entity: GtfsStopTime,
+      keys: ['agency_key', 'trip_id', 'stop_sequence'],
+      rows: read('stop_times.txt').map((st) => ({
+        ...a,
+        trip_id: st.trip_id,
+        stop_sequence: Number(st.stop_sequence),
+        stop_id: st.stop_id,
+        departure_time: st.departure_time,
+        arrival_time: st.arrival_time,
+      })),
+    },
+    {
+      label: 'calendar.txt',
+      entity: GtfsCalendar,
+      keys: ['agency_key', 'service_id'],
+      rows: read('calendar.txt').map((c) => ({
+        ...a,
+        service_id: c.service_id,
+        monday: c.monday === '1',
+        tuesday: c.tuesday === '1',
+        wednesday: c.wednesday === '1',
+        thursday: c.thursday === '1',
+        friday: c.friday === '1',
+        saturday: c.saturday === '1',
+        sunday: c.sunday === '1',
+        start_date: c.start_date,
+        end_date: c.end_date,
+      })),
+    },
+    {
+      label: 'calendar_dates.txt（祝日・特例日。無いフィードもあります）',
+      entity: GtfsCalendarDate,
+      keys: ['agency_key', 'service_id', 'date'],
+      rows: read('calendar_dates.txt').map((cd) => ({
+        ...a,
+        service_id: cd.service_id,
+        date: cd.date,
+        exception_type: Number(cd.exception_type),
+      })),
+    },
+    {
+      label: 'fare_attributes.txt（運賃データ。無いフィードもあります）',
+      entity: GtfsFareAttribute,
+      keys: ['agency_key', 'fare_id'],
+      rows: read('fare_attributes.txt').map((f) => ({
+        ...a,
+        fare_id: f.fare_id,
+        price: Number(f.price),
+        currency_type: f.currency_type,
+      })),
+    },
+    {
+      label: 'fare_rules.txt（運賃と路線の対応表。無いフィードもあります）',
+      entity: GtfsFareRule,
+      keys: ['agency_key', 'fare_id', 'route_id'],
+      rows: read('fare_rules.txt').map((f) => ({
+        ...a,
+        fare_id: f.fare_id,
+        route_id: f.route_id ?? '',
+      })),
+    },
+    {
+      label: 'shapes.txt（実際の走行経路形状。データ量が多い場合があります）',
+      entity: GtfsShapePoint,
+      keys: ['agency_key', 'shape_id', 'shape_pt_sequence'],
+      rows: read('shapes.txt').map((s) => ({
+        ...a,
+        shape_id: s.shape_id,
+        shape_pt_sequence: Number(s.shape_pt_sequence),
+        shape_pt_lat: Number(s.shape_pt_lat),
+        shape_pt_lon: Number(s.shape_pt_lon),
+      })),
+    },
+  ];
+}
+
+async function importGtfs(zipPath: string, agencyKey: string, allowExpired: boolean) {
+  const zip = new AdmZip(zipPath);
+
+  // DBへ触れる前に、フィード全体を読み込んで検証する。
+  const tables = buildTables(zip, agencyKey).map((t) => ({ ...t, rows: dedupeByKey(t.rows, t.keys) }));
+  const count = (label: string) => tables.find((t) => t.label.startsWith(label))!.rows.length;
+
+  for (const required of ['stops.txt', 'trips.txt', 'stop_times.txt']) {
+    if (count(required) === 0) {
+      throw new Error(`[${agencyKey}] ${required} が空です。フィードが壊れている可能性があるため取り込みを中止します。`);
+    }
+  }
+
+  const calendar = tables.find((t) => t.label.startsWith('calendar.txt'))!.rows as { start_date: string; end_date: string }[];
+  const calendarDates = tables.find((t) => t.label.startsWith('calendar_dates.txt'))!.rows as {
+    date: string;
+    exception_type: number;
+  }[];
+  const range = feedServiceRange(calendar, calendarDates);
+  const today = todayJst();
+  console.log(`[${agencyKey}] フィードの運行期間: ${range.start ?? '-'} ～ ${range.end ?? '-'}（今日: ${today}）`);
+  if (!isCurrentlyValid(range, today) && !allowExpired) {
+    throw new Error(
+      `[${agencyKey}] このフィードは期限切れです（最終運行日 ${range.end ?? '不明'}）。取り込みを中止します。` +
+        `意図的に取り込む場合は --allow-expired を付けてください。`
+    );
+  }
+
+  const ds = await AppDataSource.initialize();
+  try {
+    await ds.transaction(async (em) => {
+      for (const t of tables) {
+        const res = await em.getRepository(t.entity).delete({ agency_key: agencyKey });
+        console.log(`[${agencyKey}] 既存の ${t.entity.name} を削除: ${res.affected ?? 0}件`);
+      }
+      for (const t of tables) {
+        console.log(`[${agencyKey}] ${t.label} を取り込み中...`);
+        if (t.rows.length) await chunkedUpsert(em.getRepository(t.entity), t.rows, t.keys);
+        console.log(`  → ${t.rows.length}件`);
+      }
+    });
+  } finally {
+    await ds.destroy();
+  }
+  console.log(`[${agencyKey}] 取り込み完了（置き換え）`);
+}
+
+const args = process.argv.slice(2);
+const allowExpired = args.includes('--allow-expired');
+const [zipPath, agencyKey] = args.filter((a) => !a.startsWith('--'));
 if (!zipPath || !agencyKey) {
-  console.error('使い方: npx tsx src/import-gtfs.ts <zipファイルパス> <agency_key>');
+  console.error('使い方: npx tsx src/import-gtfs.ts <zipファイルパス> <agency_key> [--allow-expired]');
   process.exit(1);
 }
-importGtfs(zipPath, agencyKey).catch((e) => {
-  console.error(e);
+importGtfs(zipPath, agencyKey, allowExpired).catch((e) => {
+  console.error(e instanceof Error ? e.message : e);
   process.exit(1);
 });
