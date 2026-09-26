@@ -44,10 +44,12 @@ function decorateSettingsCards(){
   const body = document.querySelector('#viewSettings .settings-body');
   if(!body || body.dataset.decorated === 'true') return;
   body.dataset.decorated = 'true';
-  const titles = [...body.querySelectorAll('.settings-section-title')];
-  const languageTitle = titles[0];
-  const locationTitle = titles[1];
-  const themeTitle = titles[2];
+  // 見出しは並び順ではなくdata-i18nキーで特定する（購入者特典など、間にセクションが
+  // 追加されても、別セクションの見出しがテーマカードへ混ざらないようにするため）。
+  const titleOf = key => body.querySelector(`.settings-section-title[data-i18n="${key}"]`);
+  const languageTitle = titleOf('settings_language_section');
+  const locationTitle = titleOf('settings_location_section');
+  const themeTitle = titleOf('settings_theme_section');
   const languageSelect = document.getElementById('langSelect');
   const themeSelect = document.getElementById('themeSelect');
   const locationDesc = body.querySelector('.settings-section-desc');
