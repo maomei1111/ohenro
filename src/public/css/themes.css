@@ -5,6 +5,9 @@
   html[data-theme="dark"] #viewSettings .settings-reference-card{background:#2a313d;color:#f4eee5;border-color:rgba(255,255,255,.1)}
   html[data-theme="dark"] #viewSettings .settings-section-title{color:#f4eee5}
   html[data-theme="dark"] #viewSettings .settings-select,html[data-theme="dark"] #viewSettings #settingsLocationStatus{color:#cfc8bd}
+  html[data-theme="dark"] .support-btn{background:#2a313d;color:#f4eee5;border-color:rgba(255,255,255,.1)}
+  html[data-theme="dark"] .support-btn .support-price{color:#ff7a5c}
+  html[data-theme="dark"] .support-btn .support-label{color:#9c9488}
   html[data-theme="dark"] .settings-entitlement-card{background:#2a313d;border-color:rgba(255,255,255,.1)}
   html[data-theme="dark"] .settings-entitlement-status{color:#ff7a5c}
   html[data-theme="dark"] .settings-entitlement-code-hint{color:#9c9488}
