@@ -574,3 +574,79 @@ async function restoreEntitlementByCode(){
   }
 }
 
+// ==================================================================
+// ---- 任意の応援（Google Play課金。Androidアプリ内のみ） ----
+// 機能の開放には一切使わない、純粋な任意の支援。決済はGoogle Playの課金システムで行い
+// (Play Paymentsポリシー)、商品の一覧(id・価格・名称)と購入結果は、Androidアプリ側
+// (AndroidBridge / window.__onSupport*)から受け取る。ブラウザ等でAndroidBridgeが無い場合や、
+// 商品を取得できない場合は、セクションごと表示しない。購入トークン等は扱わない。
+// ==================================================================
+function isSupportAvailable(){
+  return !!(window.AndroidBridge
+    && typeof window.AndroidBridge.requestSupportProducts === 'function'
+    && typeof window.AndroidBridge.purchaseSupport === 'function');
+}
+function initSupportSection(){
+  if(!isSupportAvailable()) return;
+  try{ window.AndroidBridge.requestSupportProducts(); }
+  catch(e){ console.warn('応援商品の取得に失敗しました', e); }
+}
+function setSupportButtonsDisabled(disabled){
+  document.querySelectorAll('#supportButtons .support-btn').forEach(b=>{ b.disabled = disabled; });
+}
+function renderSupportProducts(list){
+  const section = document.getElementById('supportSection');
+  const box = document.getElementById('supportButtons');
+  if(!section || !box) return;
+  box.textContent = '';
+  const items = (Array.isArray(list) ? list : []).filter(p => p && typeof p.id === 'string' && p.id && typeof p.price === 'string' && p.price);
+  if(!items.length){ section.hidden = true; return; }
+  items.forEach(p=>{
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'support-btn';
+    btn.dataset.productId = p.id;
+    const price = document.createElement('span');
+    price.className = 'support-price';
+    price.textContent = p.price;
+    btn.appendChild(price);
+    if(typeof p.title === 'string' && p.title){
+      const label = document.createElement('span');
+      label.className = 'support-label';
+      label.textContent = p.title;
+      btn.appendChild(label);
+    }
+    btn.addEventListener('click', ()=> purchaseSupport(p.id));
+    box.appendChild(btn);
+  });
+  section.hidden = false;
+}
+let supportPurchaseBusy = false;
+function purchaseSupport(productId){
+  if(!isSupportAvailable() || supportPurchaseBusy) return;
+  supportPurchaseBusy = true;
+  setSupportButtonsDisabled(true);
+  try{ window.AndroidBridge.purchaseSupport(productId); }
+  catch(e){
+    console.warn('応援の購入を開始できませんでした', e);
+    supportPurchaseBusy = false;
+    setSupportButtonsDisabled(false);
+    showToast(t('support_error'));
+  }
+}
+// Android側から呼ばれる。jsonは [{id, price, title}] のJSON文字列。
+window.__onSupportProducts = function(json){
+  let list = [];
+  try{ list = typeof json === 'string' ? JSON.parse(json) : json; }
+  catch(e){ console.warn('応援商品の一覧を解釈できませんでした', e); }
+  renderSupportProducts(list);
+};
+// Android側から呼ばれる。status: success | pending | canceled | error
+window.__onSupportPurchaseResult = function(productId, status){
+  supportPurchaseBusy = false;
+  setSupportButtonsDisabled(false);
+  if(status === 'success') showToast(t('support_thanks'));
+  else if(status === 'pending') showToast(t('support_pending'));
+  else if(status === 'error') showToast(t('support_error'));
+  // canceled: 利用者が自分でやめた操作なので、何も表示しない
+};
