@@ -141,6 +141,18 @@
     </div>
     <button type="button" class="settings-secondary-btn" onclick="settingsOpenAppSettings()" data-i18n="settings_location_opensettings_btn"></button>
 
+    <!-- 任意の応援(Google Play課金)。Androidアプリ(AndroidBridge)内でのみ、商品を取得できた場合に表示する -->
+    <div id="supportSection" hidden>
+      <div class="settings-divider"></div>
+      <div class="settings-section-title" data-i18n="support_section"></div>
+      <div class="settings-section-desc" data-i18n="support_desc"></div>
+      <div id="supportButtons" class="support-buttons"></div>
+      <div class="settings-section-desc" data-i18n="support_note"></div>
+    </div>
+
+    <!-- 購入者特典(有料版の購入者向け)。初回から無料の任意の応援方式にしたため、当面は非表示。
+         サーバー側の権利管理と関連スクリプトは、将来の「Pro」等のために残している。 -->
+    <div id="entitlementSection" hidden>
     <div class="settings-divider"></div>
 
     <div class="settings-section-title" data-i18n="settings_entitlement_section"></div>
@@ -154,6 +166,7 @@
       <input type="text" id="entitlementCodeInput" class="settings-entitlement-input" maxlength="19"
         data-i18n-placeholder="settings_entitlement_code_placeholder" autocapitalize="characters" autocomplete="off">
       <button type="button" class="settings-entitlement-restore-btn" onclick="restoreEntitlementByCode()" data-i18n="settings_entitlement_restore_btn"></button>
+    </div>
     </div>
 
     <div class="settings-divider"></div>
