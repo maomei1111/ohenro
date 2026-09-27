@@ -128,3 +128,15 @@
     border-radius:2px; font-family:'BIZ UDPGothic', 'Noto Sans JP', sans-serif; font-size:12.5px; cursor:pointer;
   }
   .settings-entitlement-restore-btn:disabled{ opacity:.6; cursor:default; }
+
+  /* 任意の応援(Google Play課金。Androidアプリ内のみ表示) */
+  .support-buttons{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin:10px 0 8px; }
+  .support-btn{
+    display:flex; flex-direction:column; align-items:center; gap:2px; padding:12px 10px;
+    border:1px solid rgba(43,40,37,.11); border-radius:14px; background:#fbf7ef; color:var(--sumi);
+    box-shadow:0 4px 12px rgba(43,40,37,.08); font-family:inherit; cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .support-btn .support-price{ font-size:17px; font-weight:700; color:var(--vermillion); }
+  .support-btn .support-label{ font-size:11px; color:#777064; }
+  .support-btn:disabled{ opacity:.55; cursor:default; }
