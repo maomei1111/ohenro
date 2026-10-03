@@ -18,10 +18,26 @@
   updateProgressLabel();
   // 言語切り替え時のページ再読み込みで、選択中だった出発・到着札所・日付・時刻をURLパラメータから復元
   const params = new URLSearchParams(location.search);
-  const restoredFrom = params.get('from');
-  const restoredTo = params.get('to');
-  const restoredDate = params.get('date');
-  const restoredTime = params.get('time');
+  let restoredFrom = params.get('from');
+  let restoredTo = params.get('to');
+  let restoredDate = params.get('date');
+  let restoredTime = params.get('time');
+
+  // URLに条件が無い(アプリを開き直した)ときは、端末内に保存した前回の検索へ戻る。
+  // 前回の日付がすでに過去の場合は、札所・時刻・モードだけ復元して日付は今日にする
+  // (過去の日付のバス・天気を出し直しても役に立たないため、結果は復元せず再計算を促す)。
+  let lastSearch = null;
+  if(!restoredFrom && !restoredTo){
+    lastSearch = loadLastSearch();
+    if(lastSearch){
+      restoredFrom = String(lastSearch.from);
+      restoredTo = String(lastSearch.to);
+      restoredTime = lastSearch.time || null;
+      if(lastSearch.date && lastSearch.date >= todayDateStr()) restoredDate = lastSearch.date;
+      else lastSearch = { ...lastSearch, arrival: null };
+      if(lastSearch.mode === 'walk' || lastSearch.mode === 'efficient'){ mode = lastSearch.mode; setModeBtn(); }
+    }
+  }
   if(restoredFrom && temples.some(t=>String(t.no)===restoredFrom)) startSel.value = restoredFrom;
   if(restoredTo && temples.some(t=>String(t.no)===restoredTo)) endSel.value = restoredTo;
   if(restoredDate){
@@ -34,7 +50,9 @@
   // 再計算せずにそのまま復元する（APIへの再問い合わせを避けるため）。
   let restoredFromCache = false;
   try{
-    const cached = JSON.parse(sessionStorage.getItem('ohenro_last_result') || 'null');
+    // 同じ起動中のキャッシュ(詳細ページからの戻り)を優先し、無ければ端末内に保存した前回の検索結果を使う
+    const cached = JSON.parse(sessionStorage.getItem('ohenro_last_result') || 'null')
+      || (lastSearch && lastSearch.arrival ? lastSearch : null);
     if(cached
       && String(cached.from) === (restoredFrom ?? String(startSel.value))
       && String(cached.to) === (restoredTo ?? String(endSel.value))

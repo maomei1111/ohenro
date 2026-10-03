@@ -90,8 +90,8 @@ function showToast(message){
 // 現在の計画(出発・到着札所、日付、時刻、言語)を、URL一つで共有できるようにする
 async function sharePlan(){
   const params = new URLSearchParams();
-  params.set('from', startSel.value);
-  params.set('to', endSel.value);
+  if(startSel.value) params.set('from', startSel.value);
+  if(endSel.value) params.set('to', endSel.value);
   params.set('date', getSelectedDateStr());
   params.set('time', getSelectedTimeStr());
   params.set('lang', currentLang);

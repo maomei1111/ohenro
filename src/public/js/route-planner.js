@@ -22,6 +22,14 @@ async function runPlanner(){
   const startTimeStr = getSelectedTimeStr();
   const startDateStr = getSelectedDateStr();
 
+  // 出発・到着が未選択(初回起動時)のままでは計算しない
+  if(!startNo || !endNo){
+    document.getElementById('timeline').innerHTML =
+      `<div class="segment-note">${t('prompt_press_button')}</div>`;
+    document.getElementById('summary').innerHTML = '';
+    return;
+  }
+
   // 詳細ページから戻った時・アプリを開き直した時に前回の内容を復元できるよう、
   // 計算実行のたびに現在の選択状態をURLに反映しておく(履歴には残さずURLだけ書き換える)。
   const stateParams = new URLSearchParams();
@@ -134,6 +142,9 @@ async function runPlanner(){
       arrival,
     }));
   }catch(e){ console.warn('結果のキャッシュに失敗しました', e); }
+
+  // アプリを閉じて開き直した時に前回の検索へ戻れるよう、条件と結果を端末内にも保存する
+  saveLastSearch({ from: startNo, to: endNo, date: startDateStr, time: startTimeStr, lang: currentLang, mode, arrival });
 }
 
 // 計算結果(arrival配列)を画面に描画する。新規計算時・キャッシュ復元時の両方から呼ばれる。
