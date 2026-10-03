@@ -165,6 +165,16 @@ describe('MaoMeiLabs official website', () => {
     restore();
   });
 
+  it('serves the data deletion page at /data-deletion', async () => {
+    const { app, restore } = await loadAppWithEnv({});
+    const res = await request(app).get('/data-deletion');
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('データの削除について');
+    expect(res.text).toContain('Data Deletion');
+    expect(res.text).toContain('maomeilabs@gmail.com');
+    restore();
+  });
+
   it('serves the mono帳 privacy policy at the fixed /monocho/privacy URL', async () => {
     const { app, restore } = await loadAppWithEnv({});
     const res = await request(app).get('/monocho/privacy');

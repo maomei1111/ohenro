@@ -416,6 +416,17 @@ export function createApp() {
     }
   });
 
+  // データ削除の案内（Google Playのデータセーフティで登録する公開URL）
+  app.get('/data-deletion', (_req, res) => {
+    try {
+      const html = fs.readFileSync(path.join(__dirname, 'public', 'data-deletion.html'), 'utf-8');
+      res.type('html').send(html);
+    } catch (e) {
+      console.error('[/data-deletion] failed to serve data-deletion.html:', e);
+      res.status(500).send('internal error');
+    }
+  });
+
   // mono帳(コレクション管理アプリ)の紹介ページ。docs/monocho-privacy-release-spec.md
   // の「最小変更案」に基づき、既存のお遍路サイトはそのまま残し、別ページとして追加する。
   app.get('/monocho', (_req, res) => {
