@@ -94,6 +94,10 @@ async function runPlanner(){
               : `${Math.round(busResult.farePrice)} ${busResult.fareCurrency}`;
             note += t('fare_label', amount);
           }
+          // 期限切れ(猶予内)の時刻表で案内している便は、いつ時点のデータかを明示して注意を促す
+          if(busResult.stale && busResult.stale_as_of){
+            note += t('bus_stale_warning', staleAsOfLabel(busResult.stale_as_of));
+          }
         } else {
           chosen = 'walk';
           arriveMin = walkArrive;

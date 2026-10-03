@@ -72,3 +72,47 @@ export function partitionAgenciesByValidity(
   }
   return { valid: valid.sort(), expired: expired.sort() };
 }
+
+/**
+ * 期限切れでも「注意文付きで案内する」猶予日数。公開元がGTFSを更新していないだけで、バス自体は
+ * 走り続けている事業者が多いため、期限切れから2年以内のデータは時刻が変わっている可能性を明示した
+ * うえで案内する。それより古いデータは、路線や事業者ごと変わっている可能性が高いので案内しない。
+ */
+export const STALE_GRACE_DAYS = 730;
+
+export type Freshness = 'valid' | 'stale' | 'expired';
+
+/** YYYYMMDD に日数を加算する（負数で過去）。 */
+export function addDaysYmd(yyyymmdd: string, days: number): string {
+  const d = new Date(Date.UTC(+yyyymmdd.slice(0, 4), +yyyymmdd.slice(4, 6) - 1, +yyyymmdd.slice(6, 8)));
+  d.setUTCDate(d.getUTCDate() + days);
+  return `${d.getUTCFullYear()}${String(d.getUTCMonth() + 1).padStart(2, '0')}${String(d.getUTCDate()).padStart(2, '0')}`;
+}
+
+/**
+ * 基準日(YYYYMMDD)の時点での、フィードの鮮度を返す。
+ *  valid   : 最終運行日が基準日以降（通常どおり案内する）
+ *  stale   : 期限切れだが猶予日数以内（注意文付きで案内する）
+ *  expired : 猶予日数より古い、または運行日が無い（案内しない）
+ */
+export function classifyFreshness(
+  endDate: string | null,
+  onDate: string,
+  graceDays: number = STALE_GRACE_DAYS
+): Freshness {
+  if (!endDate) return 'expired';
+  if (endDate >= onDate) return 'valid';
+  return addDaysYmd(endDate, graceDays) >= onDate ? 'stale' : 'expired';
+}
+
+/**
+ * 最終運行日以前で、指定の曜日(0=日曜…6=土曜)にあたる日付を新しい順に count 件返す。
+ * 期限切れのフィードで「同じ曜日のダイヤ」を引くための代表日の候補に使う。
+ */
+export function sameWeekdayDatesUpTo(endDate: string, weekday: number, count: number = 4): string[] {
+  const end = new Date(Date.UTC(+endDate.slice(0, 4), +endDate.slice(4, 6) - 1, +endDate.slice(6, 8)));
+  const back = (end.getUTCDay() - weekday + 7) % 7;
+  const out: string[] = [];
+  for (let i = 0; i < count; i++) out.push(addDaysYmd(endDate, -(back + 7 * i)));
+  return out;
+}

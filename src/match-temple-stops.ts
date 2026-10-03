@@ -4,17 +4,18 @@
  *
  * 使い方: npx tsx src/match-temple-stops.ts [--include-expired]
  *
- * 期限切れ(最終運行日が今日より前)の事業者の停留所は、既定では紐付け対象から外す。
- * 期限切れの停留所が「近い順に上位3件」の枠を占めてしまうと、同じ札所の近くにある
+ * 期限切れ(最終運行日が今日より前)の事業者のうち、猶予(STALE_GRACE_DAYS)内のものは、
+ * 検索で「時刻表が古い」注意文付きで案内するため、有効な事業者とは別枠(上位3件)で紐付ける。
+ * 別枠にするのは、期限切れの停留所が「近い順に上位3件」の枠を占めてしまうと、同じ札所の近くにある
  * 有効な事業者の停留所が候補から漏れ、検索でバスが使えなくなるため。
- * 期限切れも含めたい場合だけ --include-expired を付ける。
+ * 猶予より古い事業者は紐付け対象から外す。すべて含めたい場合だけ --include-expired を付ける。
  */
 import 'reflect-metadata';
 import fs from 'fs';
 import path from 'path';
 import { AppDataSource } from './data-source';
 import { GtfsStop, TempleStopLink } from './entities/gtfs.entities';
-import { partitionAgenciesByValidity, todayJst } from './gtfs-validity';
+import { classifyFreshness, partitionAgenciesByValidity, todayJst } from './gtfs-validity';
 
 // 88札所のマスタデータ（geocode-temples.ts で生成したものを src/data/temples_88.json に配置）
 const templesPath = path.join(__dirname, 'data', 'temples_88.json');
@@ -53,20 +54,32 @@ async function run() {
     [...lastServiceDay.entries()].map(([agency_key, end_date]) => ({ agency_key, end_date })),
     todayJst()
   );
-  console.log(`有効な事業者 ${valid.length}社 / 期限切れ ${expired.length}社${includeExpired ? '（期限切れも紐付け対象に含めます）' : '（期限切れは紐付け対象から除外します）'}`);
-  if (expired.length) console.log(`  期限切れ: ${expired.join(', ')}`);
-  if (!includeExpired) {
-    const validSet = new Set(valid);
-    allStops = allStops.filter((s) => validSet.has(s.agency_key));
-  }
+  // 期限切れのうち、猶予内(stale)の事業者は「注意文付きで案内する」ため紐付け対象に残す。
+  const today = todayJst();
+  const stale = expired.filter((k) => classifyFreshness(lastServiceDay.get(k) ?? null, today) === 'stale');
+  const tooOld = expired.filter((k) => !stale.includes(k));
+  console.log(
+    `有効な事業者 ${valid.length}社 / 期限切れ(猶予内・注意文付きで案内) ${stale.length}社 / 期限切れ(対象外) ${tooOld.length}社` +
+      (includeExpired ? '（--include-expired: 期限切れもすべて紐付け対象に含めます）' : '')
+  );
+  if (stale.length) console.log(`  猶予内: ${stale.join(', ')}`);
+  if (tooOld.length) console.log(`  対象外: ${tooOld.join(', ')}`);
+  const validSet = new Set(includeExpired ? [...valid, ...expired] : valid);
+  const staleSet = new Set(includeExpired ? [] : stale);
+  allStops = allStops.filter((s) => validSet.has(s.agency_key) || staleSet.has(s.agency_key));
 
   for (const temple of temples) {
     // 直線距離1.5km以内の停留所を候補にする（実際に歩ける距離感でフィルタ）
-    const candidates = allStops
+    const nearby = allStops
       .map((s) => ({ ...s, dist: metersBetween(temple.lat, temple.lng, s.stop_lat, s.stop_lon) }))
       .filter((s) => s.dist <= 1500)
-      .sort((a, b) => a.dist - b.dist)
-      .slice(0, 3); // 上位3件を候補として保存（複数系統アクセスできる場合があるため）
+      .sort((a, b) => a.dist - b.dist);
+    // 上位3件を候補として保存（複数系統アクセスできる場合があるため）。
+    // 猶予内の期限切れ事業者は別枠(上位3件)にして、有効な事業者の停留所を候補から押し出さないようにする。
+    const candidates = [
+      ...nearby.filter((s) => validSet.has(s.agency_key)).slice(0, 3),
+      ...nearby.filter((s) => staleSet.has(s.agency_key)).slice(0, 3),
+    ];
 
     if (candidates.length === 0) {
       // 有効な停留所が近くに無い場合も、古い(期限切れ事業者などの)リンクを残さないよう削除する。

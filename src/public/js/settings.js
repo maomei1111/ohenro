@@ -460,6 +460,12 @@ async function fetchNextBus(fromNo, toNo, timeStr, dateStr){
   }
 }
 
+// 時刻表データの最終運行日("YYYYMMDD")を、注意文に出す「年月」の表記にする
+function staleAsOfLabel(yyyymmdd){
+  const y = yyyymmdd.slice(0,4), m = yyyymmdd.slice(4,6);
+  return (currentLang === 'ja' || currentLang === 'zh-CN' || currentLang === 'zh-TW') ? `${y}年${Number(m)}月` : `${y}-${m}`;
+}
+
 function agencyDisplayName(key){
   const entry = AGENCY_NAMES[key];
   if(!entry) return key;
