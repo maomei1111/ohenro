@@ -562,7 +562,7 @@ export async function getForecastForTemple(
   if (daysOut <= 2) {
     const parsed = await getReport('VPFD51', area.forecastOfficeCode);
     if (!parsed || isTooStale(parsed)) return { available: false };
-    return selectShortTermForecast(
+    const shortTerm = selectShortTermForecast(
       parsed,
       area.forecastOfficeCode,
       area.forecastAreaCode,
@@ -570,6 +570,12 @@ export async function getForecastForTemple(
       area.temperatureAreaCode,
       targetDateTime
     );
+    if (shortTerm.available) return shortTerm;
+    // 短期予報が対象日を含まない場合は、週間予報で補う。5時発表の短期予報は今日・明日の分しか無く、
+    // 2日後が(11時の発表まで)どちらの予報からも外れて「取得できません」になっていたため。
+    const weekly = await getReport('VPFW50', area.forecastOfficeCode);
+    if (!weekly || isTooStale(weekly)) return shortTerm;
+    return selectWeeklyForecast(weekly, area.forecastOfficeCode, targetDateTime);
   }
 
   const parsed = await getReport('VPFW50', area.forecastOfficeCode);
