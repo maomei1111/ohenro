@@ -175,26 +175,11 @@ async function findOneTransferBus(
 
   // leg1: 出発停留所 → 中継停留所（乗換候補地点） / leg2: 中継停留所 → 到着停留所
   // 同一事業者内の乗り換えのみを対象とする（JOIN条件の agency_key 一致で担保）
+  // leg1・leg2は MATERIALIZED のCTEにして、それぞれを「札所の最寄り停留所」から先に絞り込ませる。
+  // サブクエリのままだと、プランナーが行数を過小に見積もって中継停留所側から総当たりする結合順を選び、
+  // 1回の検索に十数秒〜数分かかることがあった。
   const sql = `
-    SELECT
-      leg1.agency_key   AS agency_key,
-      leg1.from_stop_id AS from_stop_id,
-      leg1.from_stop_name,
-      leg1.trip1        AS trip1,
-      leg1.from_departure,
-      leg1.mid_stop_id,
-      leg1.mid_stop_name,
-      leg1.mid_arrival,
-      leg1.fare_id1,
-      leg2.trip2        AS trip2,
-      leg2.mid_departure,
-      leg2.to_stop_id,
-      leg2.to_stop_name,
-      leg2.to_stop_lat,
-      leg2.to_stop_lon,
-      leg2.to_arrival,
-      leg2.fare_id2
-    FROM (
+    WITH leg1 AS MATERIALIZED (
       SELECT
         st_a.agency_key   AS agency_key,
         st_a.stop_id      AS from_stop_id,
@@ -221,8 +206,8 @@ async function findOneTransferBus(
         ON s_b.agency_key = st_b.agency_key AND s_b.stop_id = st_b.stop_id
       WHERE (st_a.agency_key, st_a.stop_id) IN (SELECT * FROM unnest($1::text[], $2::text[]))
         AND (${serviceRunsOnDateClause('trip1', dayColumn).replace(/\$DATE/g, '$5')})
-    ) leg1
-    JOIN (
+    ),
+    leg2 AS MATERIALIZED (
       SELECT
         st_c.agency_key   AS agency_key,
         st_c.trip_id      AS trip2,
@@ -248,7 +233,27 @@ async function findOneTransferBus(
         ON s_d.agency_key = st_d.agency_key AND s_d.stop_id = st_d.stop_id
       WHERE (st_d.agency_key, st_d.stop_id) IN (SELECT * FROM unnest($3::text[], $4::text[]))
         AND (${serviceRunsOnDateClause('trip2', dayColumn).replace(/\$DATE/g, '$5')})
-    ) leg2
+    )
+    SELECT
+      leg1.agency_key   AS agency_key,
+      leg1.from_stop_id AS from_stop_id,
+      leg1.from_stop_name,
+      leg1.trip1        AS trip1,
+      leg1.from_departure,
+      leg1.mid_stop_id,
+      leg1.mid_stop_name,
+      leg1.mid_arrival,
+      leg1.fare_id1,
+      leg2.trip2        AS trip2,
+      leg2.mid_departure,
+      leg2.to_stop_id,
+      leg2.to_stop_name,
+      leg2.to_stop_lat,
+      leg2.to_stop_lon,
+      leg2.to_arrival,
+      leg2.fare_id2
+    FROM leg1
+    JOIN leg2
       ON leg2.agency_key = leg1.agency_key
      AND leg2.mid_stop_id = leg1.mid_stop_id
      AND leg2.trip2 <> leg1.trip1
