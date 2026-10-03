@@ -278,13 +278,31 @@ function setStartFromLocation(){
 }
 
 function populateTempleSelects(){
+  // 初回起動時は出発・到着とも未選択にする(前回の検索があれば起動処理で復元する)
+  const placeholder = `<option value="">${escapeHtml(t('select_temple_placeholder'))}</option>`;
+  startSel.insertAdjacentHTML('beforeend', placeholder);
+  endSel.insertAdjacentHTML('beforeend', placeholder);
   temples.forEach(t=>{
     const label = `${t.no}${currentLang==='en' ? '. ' : '番 '}${templeDisplayName(t)}`;
     startSel.insertAdjacentHTML('beforeend', `<option value="${t.no}">${label}</option>`);
     endSel.insertAdjacentHTML('beforeend', `<option value="${t.no}">${label}</option>`);
   });
-  startSel.value = temples[0] ? temples[0].no : 1;
-  endSel.value = temples[9] ? temples[9].no : (temples[temples.length-1] ? temples[temples.length-1].no : 1);
+  startSel.value = '';
+  endSel.value = '';
+}
+
+// ---- 前回のルート検索(条件と結果)を端末内に保存し、アプリを開き直した時に復元する ----
+const LAST_SEARCH_KEY = 'ohenro_last_search';
+function saveLastSearch(search){
+  try{ localStorage.setItem(LAST_SEARCH_KEY, JSON.stringify(search)); }
+  catch(e){ console.warn('前回の検索の保存に失敗しました', e); }
+}
+function loadLastSearch(){
+  try{
+    const s = JSON.parse(localStorage.getItem(LAST_SEARCH_KEY) || 'null');
+    if(!s || !s.from || !s.to) return null;
+    return s;
+  }catch(e){ return null; }
 }
 
 let mode = 'efficient';
