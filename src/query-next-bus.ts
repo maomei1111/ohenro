@@ -26,6 +26,7 @@
  */
 import { AppDataSource } from './data-source';
 import { TempleStopLink } from './entities/gtfs.entities';
+import { classifyFreshness, sameWeekdayDatesUpTo } from './gtfs-validity';
 
 const TRANSFER_MINUTES = 5; // 乗り換えに最低限必要な時間（固定値）
 const WALK_KMH = 4; // 徒歩速度の想定
@@ -365,6 +366,87 @@ async function attachFare(result: any, ds: any) {
   return result;
 }
 
+// 事業者ごとの最終運行日（calendar.txtの最終end_date と、calendar_datesの「追加運行」の最終日のうち遅い方）。
+// 検索のたびに引くと無駄なので、短時間だけメモリに保持する（取り込み直後は最長でこの時間だけ古い値になる）。
+const AGENCY_END_TTL_MS = 10 * 60 * 1000;
+const agencyEndCache = new Map<string, { end: string; at: number }>();
+
+async function agencyEndDates(ds: any, agencyKeys: string[]): Promise<Map<string, string>> {
+  const now = Date.now();
+  const out = new Map<string, string>();
+  const missing: string[] = [];
+  for (const k of agencyKeys) {
+    const c = agencyEndCache.get(k);
+    if (c && now - c.at < AGENCY_END_TTL_MS) out.set(k, c.end);
+    else missing.push(k);
+  }
+  if (missing.length) {
+    const rows: { agency_key: string; end_date: string | null }[] = await ds.query(
+      `SELECT agency_key, MAX(end_date) AS end_date FROM (
+         SELECT agency_key, end_date FROM gtfs_calendar WHERE agency_key = ANY($1)
+         UNION ALL
+         SELECT agency_key, date AS end_date FROM gtfs_calendar_dates WHERE agency_key = ANY($1) AND exception_type = 1
+       ) t GROUP BY agency_key`,
+      [missing]
+    );
+    for (const r of rows ?? []) {
+      if (!r?.agency_key || !r.end_date) continue;
+      agencyEndCache.set(r.agency_key, { end: r.end_date, at: now });
+      out.set(r.agency_key, r.end_date);
+    }
+  }
+  return out;
+}
+
+// 期限切れのフィードで「同じ曜日のダイヤ」を引くための代表日を選ぶ。
+// 最終運行日以前の同じ曜日の日付（直近4週分）のうち、運行する便が最も多い日を使う。
+// 最終週がたまたま祝日・年末年始の運休日にあたっていても、通常ダイヤの週を選べるようにするため。
+const referenceDateCache = new Map<string, { date: string | null; at: number }>();
+
+async function referenceDateFor(ds: any, agencyKey: string, endDate: string, weekday: number): Promise<string | null> {
+  const key = `${agencyKey}|${endDate}|${weekday}`;
+  const c = referenceDateCache.get(key);
+  if (c && Date.now() - c.at < AGENCY_END_TTL_MS) return c.date;
+
+  const candidates = sameWeekdayDatesUpTo(endDate, weekday);
+  const rows: { d: string; n: string }[] = await ds.query(
+    `SELECT refd.d AS d, (
+       SELECT count(*) FROM gtfs_trips trip
+       WHERE trip.agency_key = $1
+         AND (${serviceRunsOnDateClause('trip', WEEKDAY_COLUMNS[weekday]).replace(/\$DATE/g, 'refd.d')})
+     ) AS n
+     FROM unnest($2::text[]) AS refd(d)`,
+    [agencyKey, candidates]
+  );
+  let best: string | null = null;
+  let bestN = 0;
+  for (const d of candidates) {
+    const n = Number(rows?.find((r) => r.d === d)?.n ?? 0);
+    if (n > bestN) { best = d; bestN = n; } // 候補は新しい順なので、同数なら新しい日を優先
+  }
+  referenceDateCache.set(key, { date: best, at: Date.now() });
+  return best;
+}
+
+async function searchDirectAndTransfer(
+  fromLinks: TempleStopLink[],
+  toLinks: TempleStopLink[],
+  afterMinutes: number,
+  dayColumn: string,
+  dateStr: string
+) {
+  const [direct, withTransfer] = await Promise.all([
+    findDirectBus(fromLinks, toLinks, afterMinutes, dayColumn, dateStr),
+    findOneTransferBus(fromLinks, toLinks, afterMinutes, dayColumn, dateStr),
+  ]);
+
+  // 両方見つかった場合は、実際の到着(徒歩込み)が早い方を採用
+  // 僅差(3分以内)なら、乗り換えの手間が無い直通を優先する
+  return direct && withTransfer
+    ? (withTransfer.arrivalMin < direct.arrivalMin - NEGLIGIBLE_DIFF_MIN ? withTransfer : direct)
+    : direct ?? withTransfer ?? null;
+}
+
 export async function findNextBus(
   fromTempleNo: number,
   toTempleNo: number,
@@ -380,16 +462,50 @@ export async function findNextBus(
 
   const dayColumn = WEEKDAY_COLUMNS[weekday];
 
-  const [direct, withTransfer] = await Promise.all([
-    findDirectBus(fromLinks, toLinks, afterMinutes, dayColumn, dateStr),
-    findOneTransferBus(fromLinks, toLinks, afterMinutes, dayColumn, dateStr),
-  ]);
+  // 事業者ごとに、指定日の時点でデータが有効か(valid)、期限切れだが猶予内か(stale)、古すぎるか(expired)を
+  // 判定する。最終運行日が分からない事業者は、従来どおり指定日でそのまま検索する。
+  const agencies = Array.from(new Set([...fromLinks, ...toLinks].map((l) => l.agency_key)));
+  const endDates = await agencyEndDates(ds, agencies);
+  const freshnessOf = (agencyKey: string) => {
+    const end = endDates.get(agencyKey);
+    return end ? classifyFreshness(end, dateStr) : 'valid';
+  };
 
-  // 両方見つかった場合は、実際の到着(徒歩込み)が早い方を採用
-  // 僅差(3分以内)なら、乗り換えの手間が無い直通を優先する
-  const chosen = direct && withTransfer
-    ? (withTransfer.arrivalMin < direct.arrivalMin - NEGLIGIBLE_DIFF_MIN ? withTransfer : direct)
-    : direct ?? withTransfer ?? null;
+  // 1) 有効なデータを優先する。
+  const freshFrom = fromLinks.filter((l) => freshnessOf(l.agency_key) === 'valid');
+  const freshTo = toLinks.filter((l) => freshnessOf(l.agency_key) === 'valid');
+  let chosen: any = null;
+  if (freshFrom.length && freshTo.length) {
+    chosen = await searchDirectAndTransfer(freshFrom, freshTo, afterMinutes, dayColumn, dateStr);
+  }
+
+  // 2) 有効なデータで便が無いときだけ、期限切れ(猶予内)の事業者を、最終運行日以前の同じ曜日のダイヤで探す。
+  //    時刻が変わっている可能性があるため、結果に stale / stale_as_of を付け、画面側で注意文を出す。
+  //    直通・乗り換えとも同一事業者内でしか成立しないため、事業者ごとに代表日を決めて検索する。
+  if (!chosen) {
+    const staleAgencies = agencies.filter(
+      (k) =>
+        freshnessOf(k) === 'stale' &&
+        fromLinks.some((l) => l.agency_key === k) &&
+        toLinks.some((l) => l.agency_key === k)
+    );
+    const staleResults: any[] = [];
+    for (const k of staleAgencies) {
+      const end = endDates.get(k)!;
+      const refDate = await referenceDateFor(ds, k, end, weekday);
+      if (!refDate) continue;
+      const r = await searchDirectAndTransfer(
+        fromLinks.filter((l) => l.agency_key === k),
+        toLinks.filter((l) => l.agency_key === k),
+        afterMinutes,
+        dayColumn,
+        refDate
+      );
+      if (r) staleResults.push({ ...r, stale: true, stale_as_of: end });
+    }
+    staleResults.sort((a, b) => a.arrivalMin - b.arrivalMin);
+    chosen = staleResults[0] ?? null;
+  }
 
   const withFare = await attachFare(chosen, ds);
   return attachBusShape(withFare, ds);
