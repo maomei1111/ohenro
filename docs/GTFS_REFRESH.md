@@ -7,6 +7,8 @@ GTFS-JPの `calendar.txt` には運行の**有効期間**（`start_date`〜`end_
 そのため、取り込み済みのデータを定期的に点検し、期限切れ・まもなく期限切れの事業者を更新する必要がある。
 
 2026-09-26の点検では、取り込み済み50事業者のうち21社が期限切れ、7社が1週間以内に期限切れだった。
+2026-10-03の点検では23社が期限切れ（うち6社は10月初めのダイヤ改正で切れたもの）で、25・26・28・30・33・38・39・
+83・84番がバスなしになっていた。7社を更新し、期限切れは16社になった（4節・5節）。
 
 ## 2. 点検（読み取りのみ）
 
@@ -49,7 +51,7 @@ npm run gtfs:check -- --days=60
    `/next-bus?from=1&to=2&time=10:00&date=YYYY-MM-DD`）で、対象事業者の区間にバスが出ることを確認する。
 6. 事業者名・ライセンス表記が変わった場合は `src/public/credits.html` も更新する。
 
-## 4. agency_key と公開元の対応（2026-09-26時点で確認できたもの）
+## 4. agency_key と公開元の対応（2026-10-03時点で確認できたもの）
 
 | agency_key | 公開元（gtfs-data.jp の `organization_id/feed_id`） | 有効期間（公開元の最新） |
 |---|---|---|
@@ -59,7 +61,21 @@ npm run gtfs:check -- --days=60
 | kaiyocho | kaiyotown/kaiyotownbus | 2026-04-01 〜 2027-03-31 |
 | mitoyo | mitoyocity/mitoyocommunitybus | 2026-04-01 〜 2027-03-31 |
 
-上の5社は2026-09-26に最新版へ置き換え済み。
+| murotocity | murotocity/GTFS-Murotocity_Bus | 2026-10-01 〜 2027-09-30 |
+| konancity | kochi-konancity/GTFS-Konancity_Bus | 2026-10-01 〜 2027-10-01 |
+| tosaden | tosaden-kotsu/GTFS-Tosadentraffic_Regularbus（路線バス） | 2026-10-01 〜 2027-09-30 |
+| kochi_seinan_kotsu | kochi-seinan-kotsu/GTFS-Seinantraffic_Localbus（路線バス） | 2026-10-01 〜 **2026-10-31** |
+| yasudatown | yasudatown/GTFS-Yasudatown_Bus | 2026-09-01 〜 2027-10-02 |
+| tosashimizucity | tosashimizucity/GTFS-Tosashimizucity_Bus | 2026-10-01 〜 2027-09-30 |
+| kotoden | gtfs-data.jp には無い。ことでんの公開ページ https://www.kotoden.co.jp/publichtm/gtfs/index.html の `gtfsdata/latest/gtfs_kb.zip`（バス。`gtfs_kd.zip` は電車） | 2026-10-01 〜 2027-03-31 |
+
+naruto〜mitoyo の5社は2026-09-26に、murotocity 以下の7社は2026-10-03に最新版へ置き換え済み。7社とも、
+停留所IDは旧データと一致していた。
+
+- **kochi_seinan_kotsu は1か月分のフィード**（2026-10-31まで）。11月初めに再取り込みが必要。
+- tosaden の公開元には路線バスのほかに路面電車（`GTFS-Tosadentraffic_Streetcar`）と空港連絡バスのフィードが
+  あるが、取り込んでいるのは路線バスだけ。
+- 高知の事業者は10月1日前後にダイヤ改正でフィードが切り替わることが多い。10月初めに点検する。
 
 ## 5. 期限切れのまま残っている事業者（2026-09-26時点）
 
@@ -94,6 +110,10 @@ gtfs-data.jp の全フィード一覧、香川県・愛媛県・徳島県のオ�
 公開元の更新は `curl -s https://api.gtfs-data.jp/v2/feeds` の `latest_feed_end_date` などで定期的に確認する。
 
 ## 6. 注意
+
+- `match-temple-stops.ts` は期限切れ事業者を紐付けから外すため、期限切れのまま実行すると、その事業者だけに
+  紐付いていた札所のリンクが消える（2026-10-03に、kotoden 更新前の実行で83・84番のリンクが一時的に消えた）。
+  該当事業者を更新してから再実行すれば戻る。
 
 - 本番DBを直接操作する作業になる。取り込み前に、対象事業者の件数と `temple_stop_links` の内容を控えておく。
 - `match-temple-stops.ts` は札所ごとに上位3件の停留所を選ぶ。同じ札所の近くに同じ事業者の停留所が複数
