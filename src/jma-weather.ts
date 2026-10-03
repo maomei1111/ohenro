@@ -282,6 +282,25 @@ function selectPeriodContaining<T extends { dateTime: string; durationHours: num
   return null;
 }
 
+// targetDateTimeより後に始まり、かつ同じ日(JST)に始まる期間のうち、最も早いものを選ぶ。
+function selectNextPeriodSameDay<T extends { dateTime: string; durationHours: number | null }>(
+  periods: T[],
+  targetDateTime: Date
+): T | null {
+  const targetMs = targetDateTime.getTime();
+  const targetDate = jstDateStr(targetDateTime);
+  let best: T | null = null;
+  let bestStart = Infinity;
+  for (const p of periods) {
+    const start = new Date(p.dateTime).getTime();
+    if (Number.isNaN(start) || start <= targetMs || start >= bestStart) continue;
+    if (jstDateStr(new Date(start)) !== targetDate) continue;
+    best = p;
+    bestStart = start;
+  }
+  return best;
+}
+
 function jstDateStr(d: Date): string {
   // このプロセスはJSTで動く前提だが、念のためTZに依存しない計算にする。
   const utcMs = d.getTime() + d.getTimezoneOffset() * 60000;
@@ -326,8 +345,14 @@ export function selectShortTermForecast(
   const popPeriods = parsed.popByArea.get(forecastAreaCode) ?? [];
   const tempPoints = parsed.tempByStation.get(temperatureAreaCode) ?? [];
 
-  const weather = selectPeriodContaining(weatherPeriods, targetDateTime);
-  const pop = selectPeriodContaining(popPeriods, targetDateTime);
+  // 対象日時が、最新の発表に含まれる期間より前(今日のすでに過ぎた時間帯)の場合は、同じ日の残りの
+  // 期間のうち最初のものを使う。夕方の発表には当日日中の期間が無く、今日の日付で朝の出発時刻のまま
+  // 検索すると当日の全区間が「取得できません」になってしまうため。対象時間帯は precipitationPeriod
+  // として画面に併記される。
+  const weather =
+    selectPeriodContaining(weatherPeriods, targetDateTime) ?? selectNextPeriodSameDay(weatherPeriods, targetDateTime);
+  const pop =
+    selectPeriodContaining(popPeriods, targetDateTime) ?? selectNextPeriodSameDay(popPeriods, targetDateTime);
   const dateStr = jstDateStr(targetDateTime);
   const temp = selectTempForDate(tempPoints, dateStr);
 
