@@ -102,6 +102,10 @@ async function runPlanner(){
           chosen = 'walk';
           arriveMin = walkArrive;
           note = t('walk_faster', hhmm(busResult.from_departure));
+          // 比較に使ったバスの時刻が期限切れ(猶予内)の時刻表由来の場合も、同じ注意文を付ける
+          if(busResult.stale && busResult.stale_as_of){
+            note += t('bus_stale_warning', staleAsOfLabel(busResult.stale_as_of));
+          }
         }
       } else {
         chosen = 'walk';
