@@ -643,7 +643,7 @@ async function openMap(fromNo, toNo, mode, note, distanceKm, busResult){
   const myToken = ++mapReqToken;
 
   document.getElementById('mapTitle').textContent = `${templeDisplayName(from)} → ${templeDisplayName(to)}`;
-  const noLabel = currentLang==='en' ? '#' : '番';
+  const noLabel = (currentLang==='ja' || currentLang==='zh-CN' || currentLang==='zh-TW') ? '番' : '#';
   document.getElementById('mapSub').textContent = `${noLabel}${String(from.no).padStart(2,'0')} → ${noLabel}${String(to.no).padStart(2,'0')}｜${distanceKm}km`;
   document.getElementById('mapFoot').innerHTML =
     `<span class="badge-mode ${mode}">${mode==='bus'?'BUS':'WALK'}</span>${note}<br><span style="color:#8a8578;">${t('loading_route')}</span>`;

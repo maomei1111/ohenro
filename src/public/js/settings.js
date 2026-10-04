@@ -98,9 +98,9 @@ function renderZukan(){
   const set = getVisitedSet();
 
   const progressPct = temples.length ? Math.round((set.size / temples.length) * 100) : 0;
-  const progressHeading = currentLang==='ja' ? '進捗' : t('zukan_title');
-  const visitedLabel = currentLang==='ja' ? `訪問済み ${set.size}ヶ所` : `${set.size} visited`;
-  const unvisitedLabel = currentLang==='ja' ? `未訪問 ${temples.length-set.size}ヶ所` : `${temples.length-set.size} remaining`;
+  const progressHeading = t('zukan_progress_heading');
+  const visitedLabel = t('zukan_visited_count', set.size);
+  const unvisitedLabel = t('zukan_unvisited_count', temples.length-set.size);
   document.getElementById('zukanProgress').innerHTML = `
     <div class="zukan-progress-top">
       <div class="zukan-progress-heading"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4.5A3.5 3.5 0 0 1 7.5 1H12v20H7.5A3.5 3.5 0 0 0 4 24zM20 4.5A3.5 3.5 0 0 0 16.5 1H12v20h4.5A3.5 3.5 0 0 1 20 24z"/></svg>${progressHeading}</div>
@@ -283,7 +283,7 @@ function populateTempleSelects(){
   startSel.insertAdjacentHTML('beforeend', placeholder);
   endSel.insertAdjacentHTML('beforeend', placeholder);
   temples.forEach(t=>{
-    const label = `${t.no}${currentLang==='en' ? '. ' : '番 '}${templeDisplayName(t)}`;
+    const label = `${templeNoPrefix(t.no, currentLang)}${templeDisplayName(t)}`;
     startSel.insertAdjacentHTML('beforeend', `<option value="${t.no}">${label}</option>`);
     endSel.insertAdjacentHTML('beforeend', `<option value="${t.no}">${label}</option>`);
   });
