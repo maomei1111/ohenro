@@ -180,7 +180,7 @@ describe('MaoMeiLabs official website', () => {
     const res = await request(app).get('/monocho/privacy');
     expect(res.status).toBe(200);
     expect(res.text).toContain('mono帳 プライバシーポリシー');
-    expect(res.text).toContain('com.dkdna.mycollection');
+    expect(res.text).toContain('com.maomeilabs.monocho');
     restore();
   });
 });
