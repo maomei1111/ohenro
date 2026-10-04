@@ -634,10 +634,13 @@ function renderSupportProducts(list){
     price.className = 'support-price';
     price.textContent = p.price;
     btn.appendChild(price);
-    if(typeof p.title === 'string' && p.title){
+    // 名称は、アプリ内で選んだ表示言語のものを優先する。Playが返す名称(p.title)は端末の言語に従うため、
+    // アプリ内で言語を切り替えても変わらない。対応表に無い商品だけPlayの名称を使う。
+    const itemName = t(`support_item_${p.id}`) || (typeof p.title === 'string' ? p.title : '');
+    if(itemName){
       const label = document.createElement('span');
       label.className = 'support-label';
-      label.textContent = p.title;
+      label.textContent = itemName;
       btn.appendChild(label);
     }
     btn.addEventListener('click', ()=> purchaseSupport(p.id));

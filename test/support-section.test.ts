@@ -87,6 +87,21 @@ describe('rendering products', () => {
     expect(buttons[0].querySelector('.support-label')!.textContent).toBe('ささやかな応援');
   });
 
+  it('names the items in the in-app display language, not the language Play returned', () => {
+    const { win, doc } = load({ requestSupportProducts: vi.fn(), purchaseSupport: vi.fn() });
+    win.eval("currentLang = 'en'");
+    // Playは端末の言語(ここでは日本語)で名称を返すが、アプリ内の表示言語は英語
+    win.__onSupportProducts(PRODUCTS);
+    const labels = [...doc.querySelectorAll('#supportButtons .support-label')].map((e) => e.textContent);
+    expect(labels).toEqual(['A small thank-you', 'A cup of coffee']);
+  });
+
+  it('falls back to the name from Play for a product without a built-in name', () => {
+    const { win, doc } = load({ requestSupportProducts: vi.fn(), purchaseSupport: vi.fn() });
+    win.__onSupportProducts(JSON.stringify([{ id: 'support_9999', price: '¥9,999', title: 'Playの名称' }]));
+    expect(doc.querySelector('#supportButtons .support-label')!.textContent).toBe('Playの名称');
+  });
+
   it('keeps the section hidden when there are no products (e.g. not set up in Play Console yet)', () => {
     const { win, doc } = load({ requestSupportProducts: vi.fn(), purchaseSupport: vi.fn() });
     win.__onSupportProducts('[]');
