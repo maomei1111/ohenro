@@ -125,6 +125,8 @@ const I18N = {
     settings_location_app_off: 'アプリ内でOFFになっています', location_app_disabled: '設定画面で位置情報をONにしてください。',
     settings_location_request_btn: '位置情報の利用を許可する',
     settings_location_opensettings_btn: '端末の設定画面を開く',
+    // 応援アイテムの名称(アプリ内の表示言語に合わせる。Play Consoleの名称と同じ文言)
+    support_item_support_100: 'ささやかな応援', support_item_support_300: 'お茶1杯分の応援', support_item_support_500: 'コーヒー1杯分の応援', support_item_support_1000: 'しっかり応援',
     support_section: '開発者を応援', support_desc: '気に入っていただけたら、任意で応援できます。金額は自由に選べます。',
     support_note: '応援しても、機能は変わりません。広告もありません。ご負担のない範囲でお願いします。',
     support_thanks: 'ご支援ありがとうございます！励みになります。', support_pending: '決済の確認中です。完了すると反映されます。', support_error: '決済を完了できませんでした。しばらくしてからお試しください。',
@@ -267,6 +269,8 @@ const I18N = {
     settings_location_app_off: 'Turned off in the app', location_app_disabled: 'Turn on Location in Settings first.',
     settings_location_request_btn: 'Allow location access',
     settings_location_opensettings_btn: 'Open device settings',
+    // 応援アイテムの名称(アプリ内の表示言語に合わせる。Play Consoleの名称と同じ文言)
+    support_item_support_100: 'A small thank-you', support_item_support_300: 'A cup of tea', support_item_support_500: 'A cup of coffee', support_item_support_1000: 'A big thank-you',
     support_section: 'Support the developer', support_desc: 'If you find the app useful, you can support it with an optional contribution. Choose any amount.',
     support_note: 'Supporting does not change any features, and there are no ads. Please only give what you are comfortable with.',
     support_thanks: 'Thank you for your support! It really helps.', support_pending: 'Your payment is being confirmed. It will be applied once it completes.', support_error: 'The payment could not be completed. Please try again later.',
@@ -409,6 +413,8 @@ const I18N = {
     settings_location_app_off: '앱에서 꺼져 있습니다', location_app_disabled: '설정에서 위치 정보를 켜 주세요.',
     settings_location_request_btn: '위치 정보 사용 허용하기',
     settings_location_opensettings_btn: '기기 설정 화면 열기',
+    // 応援アイテムの名称(アプリ内の表示言語に合わせる。Play Consoleの名称と同じ文言)
+    support_item_support_100: '작은 응원', support_item_support_300: '차 한 잔의 응원', support_item_support_500: '커피 한 잔의 응원', support_item_support_1000: '든든한 응원',
     support_section: '개발자 응원하기', support_desc: '앱이 마음에 드셨다면 자유롭게 응원해 주실 수 있어요. 금액은 마음대로 고를 수 있습니다.',
     support_note: '응원해도 기능은 달라지지 않으며 광고도 없습니다. 부담 없는 범위에서만 부탁드립니다.',
     support_thanks: '응원해 주셔서 감사합니다! 큰 힘이 됩니다.', support_pending: '결제를 확인하는 중입니다. 완료되면 반영됩니다.', support_error: '결제를 완료하지 못했습니다. 잠시 후 다시 시도해 주세요.',
@@ -551,6 +557,8 @@ const I18N = {
     settings_location_app_off: '已在应用内关闭', location_app_disabled: '请先在设置中开启位置信息。',
     settings_location_request_btn: '允许使用位置信息',
     settings_location_opensettings_btn: '打开设备设置界面',
+    // 応援アイテムの名称(アプリ内の表示言語に合わせる。Play Consoleの名称と同じ文言)
+    support_item_support_100: '小小的支持', support_item_support_300: '一杯茶的支持', support_item_support_500: '一杯咖啡的支持', support_item_support_1000: '大力支持',
     support_section: '支持开发者', support_desc: '如果您喜欢这款应用，可以自愿支持。金额可自由选择。',
     support_note: '支持不会改变任何功能，应用也没有广告。请量力而行。',
     support_thanks: '感谢您的支持！这对我们是很大的鼓励。', support_pending: '正在确认付款，完成后会生效。', support_error: '未能完成付款，请稍后再试。',
@@ -693,6 +701,8 @@ const I18N = {
     settings_location_app_off: '已在應用程式內關閉', location_app_disabled: '請先在設定中開啟位置資訊。',
     settings_location_request_btn: '允許使用位置資訊',
     settings_location_opensettings_btn: '開啟裝置設定畫面',
+    // 応援アイテムの名称(アプリ内の表示言語に合わせる。Play Consoleの名称と同じ文言)
+    support_item_support_100: '小小的支持', support_item_support_300: '一杯茶的支持', support_item_support_500: '一杯咖啡的支持', support_item_support_1000: '大力支持',
     support_section: '支持開發者', support_desc: '如果您喜歡這款應用程式，可以自願支持。金額可自由選擇。',
     support_note: '支持不會改變任何功能，應用程式也沒有廣告。請量力而為。',
     support_thanks: '感謝您的支持！這對我們是很大的鼓勵。', support_pending: '正在確認付款，完成後會生效。', support_error: '未能完成付款，請稍後再試。',
@@ -835,6 +845,8 @@ const I18N = {
     settings_location_app_off: 'In der App ausgeschaltet', location_app_disabled: 'Aktivieren Sie zuerst den Standort in den Einstellungen.',
     settings_location_request_btn: 'Standortzugriff erlauben',
     settings_location_opensettings_btn: 'Geräteeinstellungen öffnen',
+    // 応援アイテムの名称(アプリ内の表示言語に合わせる。Play Consoleの名称と同じ文言)
+    support_item_support_100: 'Ein kleines Dankeschön', support_item_support_300: 'Eine Tasse Tee', support_item_support_500: 'Eine Tasse Kaffee', support_item_support_1000: 'Ein großes Dankeschön',
     support_section: 'Entwickler unterstützen', support_desc: 'Wenn dir die App gefällt, kannst du sie freiwillig unterstützen. Der Betrag ist frei wählbar.',
     support_note: 'Die Unterstützung ändert keine Funktionen, und es gibt keine Werbung. Bitte nur im Rahmen dessen, was dir angenehm ist.',
     support_thanks: 'Vielen Dank für deine Unterstützung! Das motiviert sehr.', support_pending: 'Die Zahlung wird bestätigt. Sie wird wirksam, sobald sie abgeschlossen ist.', support_error: 'Die Zahlung konnte nicht abgeschlossen werden. Bitte versuche es später erneut.',
@@ -977,6 +989,8 @@ const I18N = {
     settings_location_app_off: 'Desativado no aplicativo', location_app_disabled: 'Ative primeiro a localização nas Configurações.',
     settings_location_request_btn: 'Permitir acesso à localização',
     settings_location_opensettings_btn: 'Abrir configurações do dispositivo',
+    // 応援アイテムの名称(アプリ内の表示言語に合わせる。Play Consoleの名称と同じ文言)
+    support_item_support_100: 'Um pequeno agradecimento', support_item_support_300: 'Uma xícara de chá', support_item_support_500: 'Uma xícara de café', support_item_support_1000: 'Um grande agradecimento',
     support_section: 'Apoie o desenvolvedor', support_desc: 'Se gostou do app, pode apoiá-lo com uma contribuição opcional. O valor é livre.',
     support_note: 'Apoiar não altera nenhuma função, e não há anúncios. Contribua apenas se estiver confortável.',
     support_thanks: 'Obrigado pelo seu apoio! Ajuda muito.', support_pending: 'O pagamento está sendo confirmado. Será aplicado quando for concluído.', support_error: 'Não foi possível concluir o pagamento. Tente novamente mais tarde.',
