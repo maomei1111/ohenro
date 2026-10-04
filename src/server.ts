@@ -13,6 +13,9 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import { findNextBus } from './query-next-bus';
+const { templeNameForLang } = require('./public/js/constants.js') as {
+  templeNameForLang: (no: number, jaName: string, lang: string) => string;
+};
 import { AppDataSource } from './data-source';
 import { parseBooleanEnv, parseAllowedOrigins, parseTrustProxyHops, maskConnectionString, sanitizeDbError } from './env-utils';
 import { getForecastForTemple } from './jma-weather';
@@ -253,6 +256,8 @@ export function createApp() {
     const lang = TEMPLE_PAGE_UI[String(req.query.lang)] ? String(req.query.lang) : 'ja';
     const ui = TEMPLE_PAGE_UI[lang];
     const desc = templeDescriptions[String(no)]?.[lang] ?? templeDescriptions[String(no)]?.ja;
+    // 札所名も表示言語に合わせる(画面側と同じ対応表 public/js/constants.js を使う)
+    const templeName: string = templeNameForLang(no, temple.name, lang);
 
     const placeInfo = templesPlacesInfo[String(no)];
     // 実際のGoogle URL・APIキーはクライアントへ渡さず、自前の代理エンドポイント経由で配信する。
@@ -276,7 +281,7 @@ export function createApp() {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>${no}${ui.title} ${temple.name} - Ohenro</title>
+<title>${no}${ui.title} ${templeName} - Ohenro</title>
 <style>
   body{ font-family:'Noto Sans JP', sans-serif; max-width:640px; margin:0 auto; padding:24px; background:#F7F1E6; color:#2B2825; line-height:1.9; }
   h1{ font-family:'Noto Serif JP', serif; font-size:26px; color:#1D2B4F; margin-bottom:4px; }
@@ -293,8 +298,8 @@ export function createApp() {
 </style>
 </head>
 <body>
-  <h1><span class="no">${no}${ui.title}</span> ${temple.name}</h1>
-  ${photoUrl ? `<img src="${photoUrl}" alt="${temple.name}"><div class="credit">Photo: ${placeInfo.photoAttribution || 'Google'}</div>` : ''}
+  <h1><span class="no">${no}${ui.title}</span> ${templeName}</h1>
+  ${photoUrl ? `<img src="${photoUrl}" alt="${templeName}"><div class="credit">Photo: ${placeInfo.photoAttribution || 'Google'}</div>` : ''}
   ${desc ? `
     <h2>${ui.history}</h2>
     <p>${desc.history}</p>

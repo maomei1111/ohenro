@@ -311,13 +311,14 @@ async function attachWeather(arrival, dateStr){
     const periodLine = w.isDailyForecast
       ? `${t('weather_daily_label')}・${t('weather_source_jma')}`
       : `${w.precipitationPeriod ? w.precipitationPeriod + '・' : ''}${t('weather_period_label')}・${t('weather_source_jma')}`;
-    const subLine = [w.forecastAreaName, periodLine].filter(Boolean).join('・');
+    const areaName = forecastAreaNameForLang(w.forecastAreaName, currentLang);
+    const subLine = [areaName, periodLine].filter(Boolean).join('・');
 
     const tempFullParts = [];
     if(maxC != null) tempFullParts.push(`${t('temp_max_label')}${Math.round(maxC)}℃`);
     if(minC != null) tempFullParts.push(`${t('temp_min_label')}${Math.round(minC)}℃`);
     // titleは補助情報(長い原文全文の確認手段)として残すが、必要な情報は本文2行に必ず出す。
-    const fullTitle = [w.forecastAreaName, tempFullParts.join(' / '), periodLine, w.weatherText]
+    const fullTitle = [areaName, tempFullParts.join(' / '), periodLine, w.weatherText]
       .filter(Boolean).join('　');
 
     chip.hidden = false;

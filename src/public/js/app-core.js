@@ -12,7 +12,7 @@ const { I18N, createTranslator, weatherSimpleTextFromCode, metersBetween, distTo
   evaluateVisitProximity, toKanjiNumber, getWarekiDate, toMinutes, toHHMM, formatGtfsTime,
   warekiDateLengthClass, nokyoStatus, durationParts, TEMPLE_NAMES_EN, ROMANIZED_LANGS,
   TEMPLE_HONZON, HONZON_EN, MAX_AUTO_START_DISTANCE_M, DATE_FIELD_ORDER, INTL_LOCALES,
-  AGENCY_NAMES } = window.OhenroApp;
+  AGENCY_NAMES, templeNameForLang, templeNoPrefix, forecastAreaNameForLang } = window.OhenroApp;
 // 共有されたリンクを開いた場合は、URLのlangパラメータ(送信者が選んだ言語)を優先する。
 // 通常のアクセスでは、端末に保存済みの言語設定(localStorage)を使う。
 const __urlLang = new URLSearchParams(location.search).get('lang');
@@ -41,8 +41,7 @@ function formatDurationMinutes(minutes){
   return parts.isHours ? t('duration_hm', parts.hours, parts.minutes) : t('duration_m', parts.value);
 }
 function templeDisplayName(temple){
-  if(ROMANIZED_LANGS.includes(currentLang)) return TEMPLE_NAMES_EN[temple.no] || temple.name;
-  return temple.name;
+  return templeNameForLang(temple.no, temple.name, currentLang);
 }
 
 function applyStaticTranslations(){
