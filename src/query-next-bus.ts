@@ -336,32 +336,51 @@ async function attachBusShape(result: any, ds: any) {
   return result;
 }
 
-// 選ばれた便に、実際の運賃額(fare_attributes)を紐付ける。
+// 選ばれた便に、運賃額(fare_attributes)を紐付ける。
 // 運賃データが無いフィードも多いため、見つからない場合は何も付与しない（undefinedのまま）。
+//
+// 運賃を出すのは、その路線の運賃が1種類(均一運賃)のときだけ。区間によって運賃が変わる路線は、
+// 取り込み時に「どの停留所からどの停留所まで」の対応(fare_rulesのorigin_id/destination_id)を
+// 保存していないため、乗車区間の運賃を特定できない。以前は路線の運賃から1つを選んで表示しており、
+// 4分の乗車に¥1,000と出るなど、誤った金額になることがあった。
 async function attachFare(result: any, ds: any) {
   if (!result) return result;
-  const fareIds = [result.fare_id, result.fare_id1, result.fare_id2].filter(Boolean);
-  if (!fareIds.length) return result;
+  const tripIds: string[] =
+    result.transfers === 1 ? [result.trip1, result.trip2] : [result.trip_id];
+  if (tripIds.some((id) => !id)) return result;
 
-  const rows = await ds.query(
-    `SELECT fare_id, price, currency_type FROM gtfs_fare_attributes WHERE agency_key = $1 AND fare_id = ANY($2)`,
-    [result.agency_key, fareIds]
-  );
-  const map = new Map<string, any>(rows.map((r: any): [string, any] => [r.fare_id, r]));
+  // 便ごとに、路線に対応する運賃の種類数と金額を調べる。路線を指定した運賃ルールが無い事業者は、
+  // 路線を指定しない(事業者共通の)ルールを使う。
+  const rows: { trip_id: string; prices: string; price: number | null; currency_type: string | null }[] =
+    await ds.query(
+      `SELECT t.trip_id,
+              count(DISTINCT fa.price) AS prices,
+              min(fa.price) AS price,
+              min(fa.currency_type) AS currency_type
+       FROM gtfs_trips t
+       JOIN gtfs_fare_rules fr
+         ON fr.agency_key = t.agency_key
+        AND fr.route_id = CASE
+              WHEN EXISTS (SELECT 1 FROM gtfs_fare_rules x WHERE x.agency_key = t.agency_key AND x.route_id = t.route_id)
+              THEN t.route_id ELSE '' END
+       JOIN gtfs_fare_attributes fa
+         ON fa.agency_key = fr.agency_key AND fa.fare_id = fr.fare_id
+       WHERE t.agency_key = $1 AND t.trip_id = ANY($2)
+       GROUP BY t.trip_id`,
+      [result.agency_key, tripIds]
+    );
+  const flatFare = new Map<string, { price: number; currency: string }>();
+  for (const r of rows ?? []) {
+    if (Number(r.prices) === 1 && r.price != null) {
+      flatFare.set(r.trip_id, { price: Number(r.price), currency: r.currency_type || 'JPY' });
+    }
+  }
 
-  if (result.transfers === 1) {
-    const f1 = map.get(result.fare_id1);
-    const f2 = map.get(result.fare_id2);
-    if (f1 || f2) {
-      result.farePrice = (f1?.price ?? 0) + (f2?.price ?? 0);
-      result.fareCurrency = f1?.currency_type || f2?.currency_type || 'JPY';
-    }
-  } else {
-    const f = map.get(result.fare_id);
-    if (f) {
-      result.farePrice = f.price;
-      result.fareCurrency = f.currency_type;
-    }
+  // 乗り換えは、両方の便の運賃が確定しているときだけ合計を出す(片方だけの金額は出さない)。
+  const fares = tripIds.map((id) => flatFare.get(id));
+  if (fares.every(Boolean)) {
+    result.farePrice = fares.reduce((sum, f) => sum + f!.price, 0);
+    result.fareCurrency = fares[0]!.currency;
   }
   return result;
 }
